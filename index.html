@@ -106,6 +106,28 @@
   .res:hover,.res.hi{background:var(--surface-2)}
   .res .rv{margin-left:auto;font-weight:700;font-size:12.5px}
   .empty-note{padding:22px 14px;text-align:center;color:var(--ink-faint);font-size:13px}
+  .res-fp{margin-left:8px;color:var(--ink-faint);text-decoration:none;font-size:13px;font-weight:700;
+    padding:2px 6px;border-radius:6px;flex:none}
+  .res-fp:hover{background:var(--gold-wash);color:var(--gold)}
+  .plink{color:inherit;text-decoration:none;cursor:pointer;border-bottom:1px dotted var(--ink-faint)}
+  .plink:hover{color:var(--gold);border-bottom-color:var(--gold)}
+  #pop{position:fixed;z-index:100;width:270px;background:var(--surface);border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);padding:12px;pointer-events:none;opacity:0;
+    transform:translateY(-4px);transition:opacity .12s,transform .12s}
+  #pop.show{opacity:1;transform:none}
+  .pop-head{display:flex;gap:9px;align-items:center;margin-bottom:11px}
+  .pop-name{font-weight:800;font-size:15px;line-height:1.1}
+  .pop-team{font-size:11px;color:var(--ink-faint);font-weight:600;margin-top:1px}
+  .pop-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px 10px}
+  .pop-grid > div{display:flex;flex-direction:column;gap:2px}
+  .pop-grid span{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);font-weight:700}
+  .pop-grid b{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+  .pop-foot{margin-top:11px;padding-top:9px;border-top:1px solid var(--line-soft);
+    font-size:10.5px;color:var(--gold);font-weight:700}
+  .pop-photo{width:48px;height:48px;border-radius:10px;object-fit:cover;object-position:top center;
+    background:var(--surface-2);flex:none;border:1px solid var(--line-soft)}
+  .pop-photo--off{display:none}
+  .pop-photo--pill{display:inline-flex;align-items:center;justify-content:center;font-size:14px}
   .res-group{padding:7px 11px 3px;font-family:var(--cond);text-transform:uppercase;
     letter-spacing:.14em;font-size:10px;font-weight:700;color:var(--ink-faint)}
 
@@ -220,6 +242,7 @@
     <div class="prem">
       <span>Keepers off board</span>
       <div class="seg" id="segKeepers" role="group" aria-label="Keepers off board leaguewide">
+        <button data-v="0" aria-pressed="false">0</button>
         <button data-v="16" aria-pressed="false">16</button>
         <button data-v="20" aria-pressed="true">20</button>
         <button data-v="24" aria-pressed="false">24</button>
@@ -278,7 +301,11 @@
   <section class="pickchart" aria-label="Draft pick value scale">
     <div class="pc-head">
       <span class="vhead">Draft-Pick Value Chart — 1.01 to 16.12</span>
-      <span class="pc-note">Rows = round, columns = slot · snake draft order (2.01 = pick #13, 2.12 = #24) · same 0–10,000 scale as players · each pick = the best player left after <b id="pcKeepers">20</b> keepers are gone · add any slot to a trade by typing it (e.g. "3.07"); 2027 picks (~8% less) are searchable too</span>
+      <span class="pc-note">Snake draft order (2.01 = pick #13) · same 0–10,000 scale as players · each pick = the best player left after <b id="pcKeepers">20</b> keepers are gone · add any slot to a trade by typing it (e.g. "3.07"); 2027 picks (~8% less) are searchable too</span>
+      <div class="seg" id="segView" role="group" aria-label="Chart view" style="margin:10px auto 0;width:max-content">
+        <button data-v="slots" aria-pressed="true">All slots</button>
+        <button data-v="tiers" aria-pressed="false">Early / Mid / Late</button>
+      </div>
     </div>
     <div class="pc-grid pc-wrap" id="pcGrid"></div>
   </section>
@@ -383,9 +410,57 @@
   }
   var fcMapBaked = {}; FC.forEach(function(r){ fcMapBaked[keyOf(r[0])] = r[1]; });
 
+  // Bio: [age, bye] from the DraftSharks CSV, for the hover card.
+  var BIO = {
+    "Puka Nacua":[25,11],"Ja'Marr Chase":[26,6],"Jahmyr Gibbs":[24,6],"Bijan Robinson":[24,11],
+    "Christian McCaffrey":[30,8],"Jaxon Smith-Njigba":[24,11],"Amon-Ra St. Brown":[27,6],"CeeDee Lamb":[27,14],
+    "Justin Jefferson":[27,6],"Jonathan Taylor":[27,13],"Ashton Jeanty":[23,13],"James Cook":[27,7],
+    "Drake London":[25,11],"A.J. Brown":[29,11],"Rashee Rice":[26,5],"Nico Collins":[27,8],
+    "De'Von Achane":[25,6],"Saquon Barkley":[29,10],"George Pickens":[25,14],"Kenneth Walker III":[26,5],
+    "Chase Brown":[26,6],"Omarion Hampton":[23,7],"Josh Allen":[30,7],"Brock Bowers":[24,13],
+    "Trey McBride":[27,14],"Derrick Henry":[33,13],"Jeremiyah Love":[21,14],"Zay Flowers":[26,13],
+    "Chris Olave":[26,8],"Malik Nabers":[23,8],"DeVonta Smith":[28,10],"Tee Higgins":[27,6],
+    "Garrett Wilson":[26,13],"Breece Hall":[25,13],"Colston Loveland":[22,10],"Josh Jacobs":[28,11],
+    "Javonte Williams":[26,14],"Travis Etienne":[27,8],"Tyler Warren":[24,13],"Jaylen Waddle":[28,10],
+    "Davante Adams":[34,11],"Kyren Williams":[26,11],"Terry McLaurin":[31,7],"Emeka Egbuka":[24,10],
+    "Tetairoa McMillan":[23,5],"Christian Watson":[27,11],"Luther Burden III":[23,10],"Ladd McConkey":[25,7],
+    "Lamar Jackson":[30,13],"Cameron Skattebo":[24,8],"Drake Maye":[24,11],"Tucker Kraft":[26,11],
+    "Joe Burrow":[30,6],"D'Andre Swift":[27,10],"Jayden Daniels":[26,7],"Jalen Hurts":[28,10],
+    "Jameson Williams":[25,6],"Bucky Irving":[24,10],"Mike Evans":[33,8],"Harold Fannin Jr.":[22,11],
+    "David Montgomery":[29,8],"Sam LaPorta":[25,6],"TreVeyon Henderson":[24,11],"Quinshon Judkins":[23,11],
+    "Trevor Lawrence":[27,7],"Rome Odunze":[24,10],"Justin Herbert":[28,7],"Caleb Williams":[25,10],
+    "Brock Purdy":[27,8],"D.K. Metcalf":[29,9],"Parker Washington":[24,7],"Jaylen Warren":[28,9],
+    "Dak Prescott":[33,14],"Jaxson Dart":[23,8],"Rhamondre Stevenson":[28,11],"D.J. Moore":[29,7],
+    "Bhayshul Tuten":[24,7],"Bo Nix":[26,10],"Patrick Mahomes":[31,5],"Michael Pittman Jr.":[29,9],
+    "Tony Pollard":[29,9],"Chuba Hubbard":[27,5],"Kyler Murray":[29,6],"Marvin Harrison Jr.":[24,14],
+    "Courtland Sutton":[31,10],"Kyle Pitts":[26,11],"Jadarian Price":[23,11],"Carnell Tate":[21,9],
+    "Jordyn Tyson":[22,8],"Jayden Reed":[26,11],"Alec Pierce":[26,13],"Rico Dowdle":[28,9],
+    "RJ Harvey":[25,10],"Jordan Addison":[24,6],"J.K. Dobbins":[28,10],"Jakobi Meyers":[30,7],
+    "Brian Thomas Jr.":[24,7],"George Kittle":[33,8],"Jared Goff":[32,6],"Matthew Stafford":[38,11],
+    "Tyler Shough":[27,8],"Ricky Pearsall":[26,8],"Jordan Love":[28,11],"Jonathon Brooks":[23,5],
+    "Quentin Johnston":[25,7],"Rachaad White":[27,7],"Baker Mayfield":[31,10],"Josh Downs":[25,13],
+    "Kyle Monangai":[24,10],"Chris Godwin":[30,10],"Xavier Worthy":[23,5],"Travis Kelce":[37,5],
+    "Jordan Mason":[27,6],"Blake Corum":[26,11],"Tyjae Spears":[25,9],"Aaron Jones":[32,6],
+    "Malik Willis":[27,6],"Makai Lemon":[22,10],"C.J. Stroud":[25,8],"Daniel Jones":[29,13],
+    "KC Concepcion":[22,11],"Woody Marks":[26,8],"Isiah Pacheco":[27,6],"Michael Wilson":[26,14],
+    "Dylan Sampson":[22,11],"Wan'Dale Robinson":[26,9],"Jayden Higgins":[24,8],"Alvin Kamara":[31,8],
+    "Matthew Golden":[23,11],"Cameron Ward":[24,9]
+  };
+  // FantasyPros profile links: rule-based slug + overrides for names FP handles irregularly.
+  // Overrides where FantasyPros' slug isn't derivable (shared-name collisions get a -pos suffix, "St." collapses, etc.)
+  var FP_OVR = {
+    "Amon-Ra St. Brown":"amonra-stbrown", "Kenneth Walker III":"kenneth-walker-rb",
+    "Josh Allen":"josh-allen-qb"
+  };
+  function fpSlug(name){
+    return name.toLowerCase().replace(/[.''’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+  }
+  function fpUrl(p){ return "https://www.fantasypros.com/nfl/players/"+(FP_OVR[p.n]||fpSlug(p.n))+".php"; }
+
   // Blend: average of DraftSharks 3D and FantasyCalc (normalized to 0-100). One source falls back cleanly.
   var DB = DS.map(function(r,i){
-    return {id:i, n:r[0], p:r[1], t:r[2], ds:r[3], base:r[3], pick:false};
+    var bio = BIO[r[0]] || [null,null];
+    return {id:i, n:r[0], p:r[1], t:r[2], ds:r[3], base:r[3], age:bio[0], bye:bio[1], pick:false};
   });
   function blendValues(fcLookup, fcMax){
     DB.forEach(function(p){
@@ -396,7 +471,7 @@
   }
   blendValues(fcMapBaked, FC_MAX);
 
-  var S = { leagueSize:12, premium:0.55, keepersGone:20, sides:{A:[],B:[]} };
+  var S = { leagueSize:12, premium:0.55, keepersGone:20, pickView:"slots", sides:{A:[],B:[]} };
   var uid=1, DISP=100, BAND=1000; // 1,000-point auto-approval band on the display scale
 
   // ---- ONE value scale for players AND picks ----
@@ -500,7 +575,7 @@
         li.innerHTML =
           '<div class="card">'+
             '<div class="card-top"><span class="pill pos-'+e.ref.p+'">'+e.ref.p+'</span>'+
-              '<div><div class="pname">'+e.ref.n+'</div><div class="pmeta">'+e.ref.t+' · market '+fmt(mv)+'</div></div>'+
+              '<div><a class="pname plink" href="'+fpUrl(e.ref)+'" target="_blank" rel="noopener">'+e.ref.n+'</a><div class="pmeta">'+e.ref.t+' · market '+fmt(mv)+'</div></div>'+
               '<button class="x" title="Remove" aria-label="Remove '+e.ref.n+'">×</button></div>'+
             '<div class="controls">'+
               '<div class="ctl"><label>Value</label><input data-k="mv" type="number" step="50" min="0" value="'+fmt(mv)+'"></div>'+
@@ -535,6 +610,7 @@
           renderFoot(side); renderVerdict();
         });
       });
+      var plink=li.querySelector(".plink"); if(plink) attachPop(plink, e.ref);
       list.appendChild(li);
     });
     renderFoot(side);
@@ -614,12 +690,19 @@
         return '<div class="res'+(i===hi?" hi":"")+'" data-i="'+i+'">'+
           '<span class="pill pos-'+p.p+'">'+(p.pick?"PICK":p.p)+'</span>'+
           '<span><b>'+p.n+'</b>'+(p.pick?"":' <span style="color:var(--ink-faint);font-size:11px">'+p.t+'</span>')+'</span>'+
-          '<span class="rv num">'+fmt(marketOf(p))+'</span></div>';
+          '<span class="rv num">'+fmt(marketOf(p))+'</span>'+
+          (p.pick?"":'<a class="res-fp" href="'+fpUrl(p)+'" target="_blank" rel="noopener" title="Open FantasyPros profile">↗</a>')+
+          '</div>';
       }).join("");
       box.classList.add("open");
       box.querySelectorAll(".res").forEach(function(el){
+        var p=matches[+el.getAttribute("data-i")];
         el.addEventListener("mousedown",function(ev){ ev.preventDefault();
-          addAsset(side, matches[+el.getAttribute("data-i")]); input.value=""; close(); input.focus(); });
+          addAsset(side, p); input.value=""; close(); input.focus(); });
+        if(p && !p.pick){ el.addEventListener("mouseenter",function(){showPop(el,p);}); el.addEventListener("mouseleave",hidePop); }
+      });
+      box.querySelectorAll(".res-fp").forEach(function(a){
+        a.addEventListener("mousedown",function(ev){ ev.stopPropagation(); hidePop(); });
       });
     }
     input.addEventListener("input",function(){ render(input.value); });
@@ -634,22 +717,29 @@
     });
   }
 
-  // ---- pick value chart: 16 rounds x 12 slots, heatmap ----
+  // ---- pick value chart: all 192 slots, or Early/Mid/Late tiers ----
+  function heatCell(v,max){ var a=Math.max(0.03,Math.min(1,v/max))*0.55;
+    return '<td style="background:rgba(201,138,0,'+a.toFixed(3)+')">'+Math.round(v*DISP).toLocaleString()+'</td>'; }
   function renderPickChart(){
     document.getElementById("pcKeepers").textContent=S.keepersGone;
-    var C=12, max=pickSlotValue(1,1,0);
-    var h='<table class="pcg"><thead><tr><th class="pcr">Rd\\Slot</th>';
-    for(var s=1;s<=C;s++) h+='<th>'+pad2(s)+'</th>';
-    h+='</tr></thead><tbody>';
-    for(var r=1;r<=ROUNDS;r++){
-      h+='<tr><th class="pcr">R'+r+'</th>';
-      for(var s=1;s<=C;s++){
-        var v=pickSlotValue(r,s,0), a=Math.max(0.03,Math.min(1,v/max));
-        h+='<td style="background:rgba(201,138,0,'+(a*0.55).toFixed(3)+')">'+Math.round(v*DISP).toLocaleString()+'</td>';
-      }
-      h+='</tr>';
+    var h;
+    if(S.pickView==="tiers"){
+      var TI=[["Early",2.5],["Mid",6.5],["Late",10.5]], max=pickSlotValue(1,2.5,0);
+      h='<table class="pcg"><thead><tr><th class="pcr">Round</th><th>Early</th><th>Mid</th><th>Late</th></tr></thead><tbody>';
+      for(var r=1;r<=ROUNDS;r++){ h+='<tr><th class="pcr">R'+r+'</th>';
+        for(var i=0;i<3;i++) h+=heatCell(pickSlotValue(r,TI[i][1],0),max);
+        h+='</tr>'; }
+      h+='</tbody></table>';
+    } else {
+      var C=12, mx=pickSlotValue(1,1,0);
+      h='<table class="pcg"><thead><tr><th class="pcr">Rd\\Slot</th>';
+      for(var s=1;s<=C;s++) h+='<th>'+pad2(s)+'</th>';
+      h+='</tr></thead><tbody>';
+      for(var r2=1;r2<=ROUNDS;r2++){ h+='<tr><th class="pcr">R'+r2+'</th>';
+        for(var s2=1;s2<=C;s2++) h+=heatCell(pickSlotValue(r2,s2,0),mx);
+        h+='</tr>'; }
+      h+='</tbody></table>';
     }
-    h+='</tbody></table>';
     document.getElementById("pcGrid").innerHTML=h;
   }
 
@@ -659,6 +749,11 @@
     this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
     S.premium=parseFloat(b.getAttribute("data-v"));
     renderSide("A"); renderSide("B"); renderVerdict();
+  });
+  document.getElementById("segView").addEventListener("click",function(ev){
+    var b=ev.target.closest("button"); if(!b) return;
+    this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
+    S.pickView=b.getAttribute("data-v"); renderPickChart();
   });
   document.getElementById("segKeepers").addEventListener("click",function(ev){
     var b=ev.target.closest("button"); if(!b) return;
@@ -672,6 +767,51 @@
   document.getElementById("resetBtn").addEventListener("click",function(){
     S.sides.A=[]; S.sides.B=[]; renderSide("A"); renderSide("B"); renderVerdict();
   });
+
+  // ---- hover popup (quick-look card) ----
+  var pop=document.createElement("div"); pop.id="pop"; document.body.appendChild(pop);
+  var popT=null;
+  function posRank(p){ var a=DB.filter(function(q){return q.p===p.p;}); return a.indexOf(p)+1; }
+  function popHTML(p){
+    var ovr=DB.indexOf(p)+1, pr=posRank(p);
+    var age=(p.liveAge!=null)?Math.round(p.liveAge):(p.age!=null?p.age:"—");
+    var bye=(p.bye!=null)?p.bye:"—";
+    var roster=(p.roster!=null)?Math.round(p.roster*100)+"%":"—";
+    var photo = p.sleeperId
+      ? '<img class="pop-photo" src="https://sleepercdn.com/content/nfl/players/'+p.sleeperId+'.jpg" alt="" onerror="this.classList.add(\'pop-photo--off\')">'
+      : '<span class="pill pos-'+p.p+' pop-photo pop-photo--pill">'+p.p+'</span>';
+    var trendCell;
+    if(p.trend!=null && p.trend!==0){ var up=p.trend>0;
+      trendCell='<div><span>30-day</span><b style="color:'+(up?'var(--win)':'var(--lose)')+'">'+(up?'▲ ':'▼ ')+Math.abs(Math.round(p.trend)).toLocaleString()+'</b></div>'; }
+    else trendCell='<div><span>30-day</span><b>—</b></div>';
+    return '<div class="pop-head">'+photo+
+      '<div><div class="pop-name">'+p.n+'</div><div class="pop-team">'+p.p+' · '+(p.team||p.t)+' · Age '+age+'</div></div></div>'+
+      '<div class="pop-grid">'+
+        '<div><span>Keeper value</span><b>'+fmt(p.base)+'</b></div>'+
+        '<div><span>Overall</span><b>#'+ovr+'</b></div>'+
+        '<div><span>Pos rank</span><b>'+p.p+pr+'</b></div>'+
+        '<div><span>Rostered</span><b>'+roster+'</b></div>'+
+        '<div><span>Bye</span><b>'+bye+'</b></div>'+
+        trendCell+
+      '</div>'+
+      '<div class="pop-foot">Click name → full FantasyPros profile ↗</div>';
+  }
+  function showPop(el,p){
+    if(!p||p.pick) return;
+    clearTimeout(popT);
+    pop.innerHTML=popHTML(p);
+    var r=el.getBoundingClientRect(), w=270;
+    var left=Math.max(8, Math.min(r.left, window.innerWidth-w-8));
+    var top=r.bottom+8;
+    if(top+190>window.innerHeight) top=Math.max(8, r.top-198);
+    pop.style.left=left+"px"; pop.style.top=top+"px";
+    pop.classList.add("show");
+  }
+  function hidePop(){ popT=setTimeout(function(){ pop.classList.remove("show"); }, 60); }
+  function attachPop(el,p){
+    el.addEventListener("mouseenter",function(){ showPop(el,p); });
+    el.addEventListener("mouseleave",hidePop);
+  }
 
   // ---- init ----
   setupSearch("A"); setupSearch("B");
@@ -697,19 +837,31 @@
   function applyBlend(fcLookup, fcMax){
     blendValues(fcLookup, fcMax);
     ["A","B"].forEach(function(sd){ S.sides[sd].forEach(function(e){ if(!e.ref.pick && !e.mvEdited) e.mv=e.ref.base; }); });
-    renderSide("A"); renderSide("B"); renderVerdict();
+    renderSide("A"); renderSide("B"); renderVerdict(); renderPickChart();
   }
   function fetchLive(){
     setValStatus("loading");
     fetch(FC_URL).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(data){
-      var live={}, max=0;
+      var live={}, meta={}, max=0;
       (data||[]).forEach(function(row){
         var pl=row.player||{}, pos=(pl.position||"").toUpperCase();
         if(["QB","RB","WR","TE"].indexOf(pos)<0) return;
         var v=+row.value||0; if(v>max) max=v;
-        var nm=pl.name||""; if(nm){ var k=keyOf(nm); live[k]=Math.max(live[k]||0, v); }
+        var nm=pl.name||""; if(!nm) return;
+        var k=keyOf(nm);
+        if(v>(live[k]||0)){
+          live[k]=v;
+          meta[k]={sleeperId:pl.sleeperId, espnId:pl.espnId, age:pl.maybeAge,
+                   team:pl.maybeTeam, roster:row.maybeRosterPercent, trend:row.trend30Day};
+        }
       });
       if(max<=0) throw 0;
+      // attach photos + live bio to matching players
+      DB.forEach(function(p){
+        var m=meta[keyOf(p.n)]; if(!m) return;
+        p.sleeperId=m.sleeperId; p.espnId=m.espnId; p.liveAge=m.age;
+        p.roster=m.roster; p.trend=m.trend; if(m.team) p.team=m.team;
+      });
       var merged={}, k; for(k in fcMapBaked) merged[k]=fcMapBaked[k]; for(k in live) merged[k]=live[k];
       applyBlend(merged, max);
       setValStatus("live");
