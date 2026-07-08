@@ -447,10 +447,17 @@
     "Matthew Golden":[23,11],"Cameron Ward":[24,9]
   };
   // FantasyPros profile links: rule-based slug + overrides for names FP handles irregularly.
-  // Overrides where FantasyPros' slug isn't derivable (shared-name collisions get a -pos suffix, "St." collapses, etc.)
+  // Overrides where FantasyPros' slug isn't derivable — every one verified live against FantasyPros
+  // (name + team confirmed). All other players use the rule slug, also verified.
   var FP_OVR = {
-    "Amon-Ra St. Brown":"amonra-stbrown", "Kenneth Walker III":"kenneth-walker-rb",
-    "Josh Allen":"josh-allen-qb"
+    "Amon-Ra St. Brown":"amonra-stbrown",   // "St." collapses to "stbrown"
+    "Kenneth Walker III":"kenneth-walker-rb",// shared name -> position suffix
+    "Josh Allen":"josh-allen-qb",            // shared name (Josh Allen LB) -> position suffix
+    "D.J. Moore":"dj-moore-wr",              // shared name (DJ Moore CB) -> position suffix
+    "Michael Pittman Jr.":"michael-pittman", // FP drops the "Jr."
+    "Cameron Skattebo":"cam-skattebo",       // FP uses "Cam"
+    "Cameron Ward":"cam-ward",               // FP uses "Cam"
+    "KC Concepcion":"kevin-concepcion"       // FP files under legal name "Kevin"
   };
   function fpSlug(name){
     return name.toLowerCase().replace(/[.''’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
