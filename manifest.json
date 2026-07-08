@@ -1,0 +1,20 @@
+{
+  "name": "GRIDIRON — NFL & Fantasy Football HQ",
+  "short_name": "GRIDIRON",
+  "description": "NFL news, live scores, dynasty & redraft rankings, and fantasy trade calculators.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0A0E16",
+  "theme_color": "#0A0E16",
+  "categories": ["sports", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='104' fill='%230A0E16'/%3E%3Ctext x='256' y='368' font-size='300' text-anchor='middle'%3E%F0%9F%8F%88%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

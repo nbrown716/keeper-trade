@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0D1016">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏈%3C/text%3E%3C/svg%3E">
+<script>(function(){try{var t=localStorage.getItem('gi-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<title>Keeper Trade Desk — GRIDIRON</title>
+<style>
+  :root{
+    --bg:#EEF0F4; --surface:#FFFFFF; --surface-2:#F6F7FA; --ink:#12161C;
+    --ink-soft:#4A5261; --ink-faint:#828B9C; --line:#D7DCE5; --line-soft:#E6EAF1;
+    --gold:#C98A00; --gold-bright:#E8A400; --gold-wash:#FBF1DA;
+    --market:#2F63C8; --market-wash:#E7EEFA;
+    --win:#0E7A47; --win-wash:#DCF0E6; --lose:#BE3A31; --lose-wash:#FAE3E1;
+    --shadow:0 1px 2px rgba(18,22,28,.06),0 8px 24px rgba(18,22,28,.06);
+    --radius:14px;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --cond:"Arial Narrow","Helvetica Neue",var(--sans);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0D1016; --surface:#161B23; --surface-2:#1C222C; --ink:#E9EDF3;
+      --ink-soft:#A6B0C0; --ink-faint:#727C8D; --line:#2A313D; --line-soft:#222834;
+      --gold:#E7A81E; --gold-bright:#F5BC3C; --gold-wash:#33280F;
+      --market:#6FA0F0; --market-wash:#182338; --win:#3FBE7E; --win-wash:#14301F;
+      --lose:#E5695F; --lose-wash:#33191A;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#EEF0F4; --surface:#FFFFFF; --surface-2:#F6F7FA; --ink:#12161C;
+    --ink-soft:#4A5261; --ink-faint:#828B9C; --line:#D7DCE5; --line-soft:#E6EAF1;
+    --gold:#C98A00; --gold-bright:#E8A400; --gold-wash:#FBF1DA; --market:#2F63C8;
+    --market-wash:#E7EEFA; --win:#0E7A47; --win-wash:#DCF0E6; --lose:#BE3A31; --lose-wash:#FAE3E1;
+    --shadow:0 1px 2px rgba(18,22,28,.06),0 8px 24px rgba(18,22,28,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0D1016; --surface:#161B23; --surface-2:#1C222C; --ink:#E9EDF3;
+    --ink-soft:#A6B0C0; --ink-faint:#727C8D; --line:#2A313D; --line-soft:#222834;
+    --gold:#E7A81E; --gold-bright:#F5BC3C; --gold-wash:#33280F; --market:#6FA0F0;
+    --market-wash:#182338; --win:#3FBE7E; --win-wash:#14301F; --lose:#E5695F; --lose-wash:#33191A;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0}
+  .wrap{font-family:var(--sans);color:var(--ink);background:var(--bg);
+    min-height:100vh;padding:22px clamp(12px,3vw,34px) 60px;line-height:1.45}
+  .num{font-variant-numeric:tabular-nums}
+
+  .mast{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+    flex-wrap:wrap;margin-bottom:16px}
+  .brand{display:flex;flex-direction:column;gap:3px}
+  .kicker{font-family:var(--cond);text-transform:uppercase;letter-spacing:.26em;
+    font-size:11px;font-weight:700;color:var(--gold)}
+  h1{font-family:var(--cond);font-weight:800;text-transform:uppercase;
+    letter-spacing:.01em;font-size:clamp(30px,5vw,46px);line-height:.94;margin:0;text-wrap:balance}
+  .sub{color:var(--ink-faint);font-size:13px;max-width:56ch}
+  .reset{border:1px solid var(--line);background:transparent;color:var(--ink-soft);
+    font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer}
+  .reset:hover{background:var(--surface-2);color:var(--ink)}
+  .mast-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .pagenav{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;box-shadow:var(--shadow)}
+  .pagenav a{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-size:13px;font-weight:700;
+    color:var(--ink-soft);padding:8px 13px;border-radius:8px;white-space:nowrap}
+  .pagenav a:hover{color:var(--ink);background:var(--surface-2)}
+  .pagenav a.on{background:var(--ink);color:#fff}
+  :root[data-theme="dark"] .pagenav a.on{background:var(--gold);color:#161B23}
+  @media (prefers-color-scheme:dark){.pagenav a.on{background:var(--gold);color:#161B23}}
+
+  /* league strip */
+  .league{display:flex;flex-wrap:wrap;align-items:center;gap:10px 8px;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:12px 15px;margin-bottom:18px}
+  .chip{font-size:12px;font-weight:600;color:var(--ink-soft);background:var(--surface-2);
+    border:1px solid var(--line-soft);padding:5px 10px;border-radius:8px;white-space:nowrap}
+  .chip b{color:var(--ink)}
+  .valstat{cursor:pointer;display:inline-flex;align-items:center;gap:7px;user-select:none}
+  .valstat:hover{border-color:var(--gold)}
+  .valstat .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint);flex:none}
+  .valstat.live .dot{background:var(--win)}
+  .valstat.snap .dot{background:var(--gold)}
+  .valstat.loading .dot{background:var(--market);animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+  .league .spacer{flex:1 1 20px}
+  .prem{display:flex;align-items:center;gap:9px;flex:none}
+  .prem > span{font-family:var(--cond);text-transform:uppercase;letter-spacing:.12em;
+    font-size:10.5px;font-weight:700;color:var(--ink-faint)}
+  .seg{display:flex;background:var(--surface-2);border:1px solid var(--line);
+    border-radius:9px;padding:3px;gap:2px}
+  .seg button{border:0;background:transparent;color:var(--ink-soft);font-family:var(--sans);
+    font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:6px;cursor:pointer;transition:.13s;white-space:nowrap}
+  .seg button:hover{color:var(--ink)}
+  .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);
+    box-shadow:0 1px 2px rgba(0,0,0,.12);font-weight:700}
+
+  .desk{display:grid;grid-template-columns:1fr minmax(210px,320px) 1fr;gap:16px;align-items:start}
+  @media (max-width:960px){.desk{grid-template-columns:1fr;gap:14px}}
+  .team{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+  .team-head{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:13px 15px;border-bottom:1px solid var(--line-soft)}
+  .team-name{font-family:var(--cond);text-transform:uppercase;letter-spacing:.06em;
+    font-weight:800;font-size:19px;background:transparent;border:0;color:var(--ink);width:100%;min-width:0}
+  .team-name:focus{outline:none;border-bottom:2px solid var(--gold)}
+  .side-tag{font-family:var(--cond);font-weight:700;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:#fff;background:var(--ink-soft);padding:3px 8px;border-radius:5px;flex:none}
+  .team.a .side-tag{background:var(--market)} .team.b .side-tag{background:var(--gold)}
+
+  .adder{position:relative;padding:11px 13px;border-bottom:1px solid var(--line-soft)}
+  .adder input{width:100%;border:1px solid var(--line);background:var(--surface-2);
+    border-radius:9px;padding:9px 11px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
+  .adder input::placeholder{color:var(--ink-faint)}
+  .adder input:focus{outline:none;border-color:var(--gold);background:var(--surface)}
+  .results{position:absolute;z-index:30;left:13px;right:13px;top:calc(100% - 2px);
+    background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    box-shadow:var(--shadow);max-height:300px;overflow:auto;display:none}
+  .results.open{display:block}
+  .res{display:flex;align-items:center;gap:9px;padding:8px 11px;cursor:pointer;border-bottom:1px solid var(--line-soft)}
+  .res:last-child{border-bottom:0}
+  .res:hover,.res.hi{background:var(--surface-2)}
+  .res .rv{margin-left:auto;font-weight:700;font-size:12.5px}
+  .empty-note{padding:22px 14px;text-align:center;color:var(--ink-faint);font-size:13px}
+  .res-fp{margin-left:8px;color:var(--ink-faint);text-decoration:none;font-size:13px;font-weight:700;
+    padding:2px 6px;border-radius:6px;flex:none}
+  .res-fp:hover{background:var(--gold-wash);color:var(--gold)}
+  .plink{color:inherit;text-decoration:none;cursor:pointer;border-bottom:1px dotted var(--ink-faint)}
+  .plink:hover{color:var(--gold);border-bottom-color:var(--gold)}
+  #pop{position:fixed;z-index:100;width:270px;background:var(--surface);border:1px solid var(--line);
+    border-radius:12px;box-shadow:var(--shadow);padding:12px;pointer-events:none;opacity:0;
+    transform:translateY(-4px);transition:opacity .12s,transform .12s}
+  #pop.show{opacity:1;transform:none}
+  .pop-head{display:flex;gap:9px;align-items:center;margin-bottom:11px}
+  .pop-name{font-weight:800;font-size:15px;line-height:1.1}
+  .pop-team{font-size:11px;color:var(--ink-faint);font-weight:600;margin-top:1px}
+  .pop-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px 10px}
+  .pop-grid > div{display:flex;flex-direction:column;gap:2px}
+  .pop-grid span{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);font-weight:700}
+  .pop-grid b{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+  .pop-foot{margin-top:11px;padding-top:9px;border-top:1px solid var(--line-soft);
+    font-size:10.5px;color:var(--gold);font-weight:700}
+  .pop-photo{width:48px;height:48px;border-radius:10px;object-fit:cover;object-position:top center;
+    background:var(--surface-2);flex:none;border:1px solid var(--line-soft)}
+  .pop-photo--off{display:none}
+  .pop-photo--pill{display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+  .res-group{padding:7px 11px 3px;font-family:var(--cond);text-transform:uppercase;
+    letter-spacing:.14em;font-size:10px;font-weight:700;color:var(--ink-faint)}
+
+  .players{list-style:none;margin:0;padding:9px;display:flex;flex-direction:column;gap:9px;min-height:70px}
+  .pill{display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);
+    font-weight:700;font-size:11px;letter-spacing:.04em;padding:2px 6px;border-radius:5px;min-width:34px}
+  :root[data-theme="dark"] .pos-QB,.pos-QB{background:#3A2247;color:#D9AEEC}
+  :root[data-theme="dark"] .pos-RB,.pos-RB{background:#183020;color:#7FD6A0}
+  :root[data-theme="dark"] .pos-WR,.pos-WR{background:#1B2A47;color:#9CBEF5}
+  :root[data-theme="dark"] .pos-TE,.pos-TE{background:#3A2915;color:#EEB483}
+  :root[data-theme="dark"] .pos-PICK,.pos-PICK{background:#2A2A2A;color:#C9C9C9}
+  :root[data-theme="light"] .pos-QB{background:#EFE0F5;color:#7A2E9E}
+  :root[data-theme="light"] .pos-RB{background:#DCEEE1;color:#1E7A44}
+  :root[data-theme="light"] .pos-WR{background:#DCE7FB;color:#24509E}
+  :root[data-theme="light"] .pos-TE{background:#FBE7D6;color:#9E5A1E}
+  :root[data-theme="light"] .pos-PICK{background:#E7E9EE;color:#565E6C}
+  @media (prefers-color-scheme:light){
+    .pos-QB{background:#EFE0F5;color:#7A2E9E} .pos-RB{background:#DCEEE1;color:#1E7A44}
+    .pos-WR{background:#DCE7FB;color:#24509E} .pos-TE{background:#FBE7D6;color:#9E5A1E}
+    .pos-PICK{background:#E7E9EE;color:#565E6C}}
+
+  .card{border:1px solid var(--line);border-radius:11px;background:var(--surface-2);padding:10px 11px 11px}
+  .card.pick{background:var(--surface)}
+  .card-top{display:flex;align-items:center;gap:8px}
+  .pname{font-weight:700;font-size:14px;line-height:1.15}
+  .pmeta{font-size:11px;color:var(--ink-faint)}
+  .x{margin-left:auto;border:0;background:transparent;color:var(--ink-faint);cursor:pointer;
+    font-size:17px;line-height:1;padding:2px 4px;border-radius:6px;flex:none}
+  .x:hover{background:var(--lose-wash);color:var(--lose)}
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+  .ctl{display:flex;flex-direction:column;gap:3px}
+  .ctl label{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);font-weight:700}
+  .ctl input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:7px;
+    padding:6px 7px;font-size:13px;font-weight:700;color:var(--ink);text-align:center;-moz-appearance:textfield}
+  .ctl input::-webkit-outer-spin-button,.ctl input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .ctl input:focus{outline:none;border-color:var(--gold)}
+  .keepnote{margin-top:8px;font-size:10.5px;color:var(--ink-faint);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .keepnote .tag{background:var(--gold-wash);color:var(--gold);font-weight:700;padding:1px 6px;border-radius:5px}
+  .valrow{display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;
+    padding-top:9px;border-top:1px dashed var(--line)}
+  .valrow .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);font-weight:700}
+  .adj{font-weight:800;font-size:17px}
+  .surplus{font-size:11px;font-weight:700;margin-left:6px}
+  .surplus.up{color:var(--win)} .surplus.down{color:var(--lose)}
+
+  .team-foot{margin-top:auto;padding:12px 15px;border-top:1px solid var(--line-soft);
+    background:var(--surface-2);display:flex;flex-direction:column;gap:5px}
+  .foot-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
+  .foot-row .k{color:var(--ink-faint);font-weight:600}
+  .foot-row .v{font-weight:700}
+  .foot-row.total .k{color:var(--ink);text-transform:uppercase;font-size:11px;letter-spacing:.08em;font-weight:800;font-family:var(--cond)}
+  .foot-row.total .v{font-size:22px;font-weight:800}
+
+  .verdict{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 16px;position:sticky;top:14px;
+    display:flex;flex-direction:column;gap:13px;align-items:center;text-align:center}
+  @media (max-width:960px){.verdict{position:static;order:-1}}
+  .vhead{font-family:var(--cond);text-transform:uppercase;letter-spacing:.2em;font-size:11px;font-weight:700;color:var(--ink-faint)}
+  .stamp{font-family:var(--cond);text-transform:uppercase;font-weight:800;letter-spacing:.02em;
+    font-size:22px;line-height:1.05;padding:10px 12px;border-radius:11px;width:100%}
+  .stamp.ok{background:var(--win-wash);color:var(--win);border:1.5px solid var(--win)}
+  .stamp.vote{background:var(--lose-wash);color:var(--lose);border:1.5px solid var(--lose)}
+  .stamp.idle{background:var(--surface-2);color:var(--ink-faint);border:1.5px dashed var(--line)}
+  .gap{display:flex;align-items:baseline;gap:6px;justify-content:center}
+  .gap .big{font-size:40px;font-weight:800;font-family:var(--cond);line-height:1}
+  .gap .unit{font-size:12px;color:var(--ink-faint);font-weight:600}
+  .vmsg{font-size:13px;color:var(--ink-soft);min-height:34px}
+  .vmsg b{color:var(--ink)}
+  .scale{width:100%}
+  .scalebar{height:12px;border-radius:99px;overflow:hidden;display:flex;background:var(--line);border:1px solid var(--line)}
+  .scalebar .seg-a{background:var(--market)} .scalebar .seg-b{background:var(--gold)}
+  .scale-ends{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;font-weight:700;color:var(--ink-faint)}
+  .mkt-note{font-size:11px;color:var(--ink-faint);border-top:1px solid var(--line-soft);padding-top:10px;width:100%}
+  .mkt-note b{color:var(--ink-soft)}
+
+  .pickchart{max-width:860px;margin:28px auto 0;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:15px 17px 17px}
+  .pc-head{display:flex;flex-direction:column;gap:3px;margin-bottom:11px;text-align:center}
+  .pc-note{font-size:11px;color:var(--ink-faint)} .pc-note b{color:var(--ink-soft)}
+  .pc-wrap{overflow-x:auto}
+  table.pcg{border-collapse:collapse;margin:0 auto;font-variant-numeric:tabular-nums;font-size:11px}
+  table.pcg th,table.pcg td{padding:5px 7px;text-align:center;border:1px solid var(--line-soft);white-space:nowrap}
+  table.pcg thead th{font-family:var(--cond);font-weight:700;color:var(--ink-faint);letter-spacing:.05em;
+    position:sticky;top:0}
+  table.pcg th.pcr{font-family:var(--cond);font-weight:800;color:var(--ink-soft);
+    position:sticky;left:0;background:var(--surface);z-index:1}
+  table.pcg td{font-weight:600;color:var(--ink)}
+  .foot-explain{max-width:920px;margin:26px auto 0;color:var(--ink-faint);font-size:12px;line-height:1.6}
+  .foot-explain b{color:var(--ink-soft)}
+  .foot-explain code{background:var(--surface-2);border:1px solid var(--line-soft);padding:1px 5px;border-radius:4px;font-size:11px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">
+      <span class="kicker">Sleeper Keeper League · Trade Desk</span>
+      <h1>The Keeper Cost Calculator</h1>
+      <span class="sub">Weighs each player's value against your league's actual keeper cost — one round earlier every year, until it tops a 1st. Tells you straight up whether a deal clears the 1,000-point auto-approval line.</span>
+    </div>
+    <div class="mast-right">
+      <nav class="pagenav">
+        <a href="index.html">Home</a>
+        <a href="keeper.html" class="on">Keeper</a>
+        <a href="redraft.html">Redraft</a>
+        <a href="rankings.html">Rankings</a>
+        <a href="tools.html">Tools</a>
+        <a href="research.html">Research</a>
+      </nav>
+      <button class="reset" id="resetBtn">Clear trade</button>
+    </div>
+  </header>
+
+  <section class="league" aria-label="League settings">
+    <span class="chip"><b>12</b>-team</span>
+    <span class="chip"><b>Full PPR</b></span>
+    <span class="chip">Snake · <b>2 keepers</b></span>
+    <span class="chip">Cost: <b>−1 round / yr</b></span>
+    <span class="chip">Cap: keep while cost <b>≤ 1st</b></span>
+    <span class="chip valstat loading" id="valStatus" title="Click to refresh values from FantasyCalc"><span class="dot"></span>Values: <b>loading…</b></span>
+    <span class="spacer"></span>
+    <div class="prem">
+      <span>Keepers off board</span>
+      <div class="seg" id="segKeepers" role="group" aria-label="Keepers off board leaguewide">
+        <button data-v="0" aria-pressed="false">0</button>
+        <button data-v="16" aria-pressed="false">16</button>
+        <button data-v="20" aria-pressed="true">20</button>
+        <button data-v="24" aria-pressed="false">24</button>
+      </div>
+    </div>
+    <div class="prem">
+      <span>Keeper value weight</span>
+      <div class="seg" id="segPrem" role="group" aria-label="Keeper premium">
+        <button data-v="0.35" aria-pressed="false">Light</button>
+        <button data-v="0.55" aria-pressed="true">Standard</button>
+        <button data-v="0.78" aria-pressed="false">Heavy</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="desk">
+    <section class="team a" data-side="A">
+      <div class="team-head">
+        <input class="team-name" value="Team A" aria-label="Team A name" spellcheck="false">
+        <span class="side-tag">Gives A</span>
+      </div>
+      <div class="adder">
+        <input type="text" placeholder="Add a player or draft pick…" autocomplete="off" data-search="A" aria-label="Search for Team A">
+        <div class="results" data-results="A"></div>
+      </div>
+      <ul class="players" data-list="A"></ul>
+      <div class="team-foot" data-foot="A"></div>
+    </section>
+
+    <aside class="verdict" aria-live="polite">
+      <span class="vhead">Auto-Approval Check</span>
+      <div class="stamp idle" id="vStamp">Add players</div>
+      <div class="gap"><span class="big num" id="vGap">0</span><span class="unit" id="vUnit">points apart</span></div>
+      <div class="vmsg" id="vMsg">Build both sides to test the trade against your 1,000-point rule.</div>
+      <div class="scale">
+        <div class="scalebar"><div class="seg-a" id="segA" style="width:50%"></div><div class="seg-b" id="segB" style="width:50%"></div></div>
+        <div class="scale-ends"><span id="endA">Team A</span><span id="endB">Team B</span></div>
+      </div>
+      <div class="mkt-note" id="mktNote">Straight value, ignoring keeper cost: <b>—</b></div>
+    </aside>
+
+    <section class="team b" data-side="B">
+      <div class="team-head">
+        <input class="team-name" value="Team B" aria-label="Team B name" spellcheck="false">
+        <span class="side-tag">Gives B</span>
+      </div>
+      <div class="adder">
+        <input type="text" placeholder="Add a player or draft pick…" autocomplete="off" data-search="B" aria-label="Search for Team B">
+        <div class="results" data-results="B"></div>
+      </div>
+      <ul class="players" data-list="B"></ul>
+      <div class="team-foot" data-foot="B"></div>
+    </section>
+  </div>
+
+  <section class="pickchart" aria-label="Draft pick value scale">
+    <div class="pc-head">
+      <span class="vhead">Draft-Pick Value Chart — 1.01 to 16.12</span>
+      <span class="pc-note">Snake draft order (2.01 = pick #13) · same 0–10,000 scale as players · each pick = the best player left after <b id="pcKeepers">20</b> keepers are gone · add any slot to a trade by typing it (e.g. "3.07"); 2027 picks (~8% less) are searchable too</span>
+      <div class="seg" id="segView" role="group" aria-label="Chart view" style="margin:10px auto 0;width:max-content">
+        <button data-v="slots" aria-pressed="true">All slots</button>
+        <button data-v="tiers" aria-pressed="false">Early / Mid / Late</button>
+      </div>
+    </div>
+    <div class="pc-grid pc-wrap" id="pcGrid"></div>
+  </section>
+
+  <p class="foot-explain">
+    <b>How it reads your rules.</b> Each player has a <b>market value</b> (Full-PPR, 0–10,000 scale). Their <b>keeper value</b> adds the <b>surplus</b> of their contract: market value minus what it costs to keep them, summed over every season you still control them. Cost rises <b>one round earlier each year</b> until it would beat a 1st — a <code>2nd-round</code> keeper costs a 1st, a <code>1st-round</code> keeper costs a <b>1st + 3rd</b>, and that's where the ladder ends. So a stud you keep in the <code>10th</code> carries years of cheap surplus; a 1st-rounder carries almost none. The stamp compares keeper-adjusted totals against your <b>1,000-point</b> band: inside it, the trade auto-approves; outside, it goes to a league vote. <b>Player values</b> are a consensus of <b>DraftSharks 3D dynasty</b> (your CSV) and <b>FantasyCalc dynasty</b> (1QB, 12-team, pulled live), averaged and scaled to 10,000 — KTC tracks within a few points. <b>Draft picks</b> ride the <i>same</i> curve: unlike a rookie-only dynasty pick, a snake keeper pick drafts the best player still on the board once leaguewide keepers are gone, so a pick is worth the player you'd take with it — and the keeper cost you pay is that exact pick value. Adjust "keepers off board" to match how many studs your league locks up. Click any value to override toward your own board.
+  </p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // --- Source 1: DraftSharks "3D Value" dynasty (from your keeper-rankings-ppr.csv), 0-100 ---
+  var DS = [
+    ["Puka Nacua","WR","LAR",100],["Ja'Marr Chase","WR","CIN",95.6],["Jahmyr Gibbs","RB","DET",94.2],
+    ["Bijan Robinson","RB","ATL",92.8],["Christian McCaffrey","RB","SF",87.9],["Jaxon Smith-Njigba","WR","SEA",83.5],
+    ["Amon-Ra St. Brown","WR","DET",81.1],["CeeDee Lamb","WR","DAL",75.1],["Justin Jefferson","WR","MIN",72.7],
+    ["Jonathan Taylor","RB","IND",70],["Ashton Jeanty","RB","LV",68.8],["James Cook","RB","BUF",63],
+    ["Drake London","WR","ATL",62.2],["A.J. Brown","WR","NE",61.7],["Rashee Rice","WR","KC",61.5],
+    ["Nico Collins","WR","HOU",60.8],["De'Von Achane","RB","MIA",58.6],["Saquon Barkley","RB","PHI",58.6],
+    ["George Pickens","WR","DAL",54.8],["Kenneth Walker III","RB","KC",53.7],["Chase Brown","RB","CIN",53.2],
+    ["Omarion Hampton","RB","LAC",53.1],["Josh Allen","QB","BUF",50.8],["Brock Bowers","TE","LV",50.4],
+    ["Trey McBride","TE","ARI",49.5],["Derrick Henry","RB","BAL",49.3],["Jeremiyah Love","RB","ARI",48.7],
+    ["Zay Flowers","WR","BAL",46.6],["Chris Olave","WR","NO",45.6],["Malik Nabers","WR","NYG",45.1],
+    ["DeVonta Smith","WR","PHI",44.2],["Tee Higgins","WR","CIN",43.7],["Garrett Wilson","WR","NYJ",43.4],
+    ["Breece Hall","RB","NYJ",42.1],["Colston Loveland","TE","CHI",41.6],["Josh Jacobs","RB","GB",39.5],
+    ["Javonte Williams","RB","DAL",37.4],["Travis Etienne","RB","NO",36.6],["Tyler Warren","TE","IND",36.6],
+    ["Jaylen Waddle","WR","DEN",36.3],["Davante Adams","WR","LAR",36.1],["Kyren Williams","RB","LAR",35.3],
+    ["Terry McLaurin","WR","WAS",34.4],["Emeka Egbuka","WR","TB",34.1],["Tetairoa McMillan","WR","CAR",34],
+    ["Christian Watson","WR","GB",33.8],["Luther Burden III","WR","CHI",33.7],["Ladd McConkey","WR","LAC",33.5],
+    ["Lamar Jackson","QB","BAL",32.8],["Cameron Skattebo","RB","NYG",31.9],["Drake Maye","QB","NE",30.7],
+    ["Tucker Kraft","TE","GB",30.7],["Joe Burrow","QB","CIN",29.8],["D'Andre Swift","RB","CHI",28.7],
+    ["Jayden Daniels","QB","WAS",28.3],["Jalen Hurts","QB","PHI",28.2],["Jameson Williams","WR","DET",27.4],
+    ["Bucky Irving","RB","TB",27.4],["Mike Evans","WR","SF",26.7],["Harold Fannin Jr.","TE","CLE",26.3],
+    ["David Montgomery","RB","HOU",26.2],["Sam LaPorta","TE","DET",25.9],["TreVeyon Henderson","RB","NE",25.8],
+    ["Quinshon Judkins","RB","CLE",25.4],["Trevor Lawrence","QB","JAX",25.3],["Rome Odunze","WR","CHI",25.3],
+    ["Justin Herbert","QB","LAC",25.1],["Caleb Williams","QB","CHI",25],["Brock Purdy","QB","SF",24.7],
+    ["D.K. Metcalf","WR","PIT",24.7],["Parker Washington","WR","JAX",23.9],["Jaylen Warren","RB","PIT",23.9],
+    ["Dak Prescott","QB","DAL",23.8],["Jaxson Dart","QB","NYG",23.6],["Rhamondre Stevenson","RB","NE",22.4],
+    ["D.J. Moore","WR","BUF",22.2],["Bhayshul Tuten","RB","JAX",22],["Bo Nix","QB","DEN",21.7],
+    ["Patrick Mahomes","QB","KC",21.7],["Michael Pittman Jr.","WR","PIT",21.4],["Tony Pollard","RB","TEN",21.2],
+    ["Chuba Hubbard","RB","CAR",21],["Kyler Murray","QB","ARI",20.8],["Marvin Harrison Jr.","WR","ARI",20.6],
+    ["Courtland Sutton","WR","DEN",20.3],["Kyle Pitts","TE","ATL",20.3],["Jadarian Price","RB","SEA",20.3],
+    ["Carnell Tate","WR","TEN",20],["Jordyn Tyson","WR","NO",19.8],["Jayden Reed","WR","GB",19.3],
+    ["Alec Pierce","WR","IND",19.2],["Rico Dowdle","RB","PIT",19.2],["RJ Harvey","RB","DEN",19.1],
+    ["Jordan Addison","WR","MIN",19],["J.K. Dobbins","RB","DEN",19],["Jakobi Meyers","WR","JAX",18.9],
+    ["Brian Thomas Jr.","WR","JAX",18.7],["George Kittle","TE","SF",18.7],["Jared Goff","QB","DET",18.6],
+    ["Matthew Stafford","QB","LAR",17.9],["Tyler Shough","QB","NO",17.6],["Ricky Pearsall","WR","SF",17.6],
+    ["Jordan Love","QB","GB",17.5],["Jonathon Brooks","RB","CAR",17.5],["Quentin Johnston","WR","LAC",17.2],
+    ["Rachaad White","RB","WAS",17.2],["Baker Mayfield","QB","TB",16.5],["Josh Downs","WR","IND",15.5],
+    ["Kyle Monangai","RB","CHI",15.5],["Chris Godwin","WR","TB",15.4],["Xavier Worthy","WR","KC",15.2],
+    ["Travis Kelce","TE","KC",14.8],["Jordan Mason","RB","MIN",14.2],["Blake Corum","RB","LAR",14.2],
+    ["Tyjae Spears","RB","TEN",13.4],["Aaron Jones","RB","MIN",13.2],["Malik Willis","QB","MIA",12.4],
+    ["Makai Lemon","WR","PHI",12.4],["C.J. Stroud","QB","HOU",11.9],["Daniel Jones","QB","IND",11.8],
+    ["KC Concepcion","WR","CLE",10.2],["Woody Marks","RB","HOU",10.2],["Isiah Pacheco","RB","DET",10.1],
+    ["Michael Wilson","WR","ARI",9.9],["Dylan Sampson","RB","CLE",9.7],["Wan'Dale Robinson","WR","TEN",9.5],
+    ["Jayden Higgins","WR","HOU",9.5],["Alvin Kamara","RB","NO",8.8],["Matthew Golden","WR","GB",8.6],
+    ["Cameron Ward","QB","TEN",8.4]
+  ];
+  // --- Source 2: FantasyCalc dynasty, 1QB / 12-team (pulled from their API), raw ~0-10700 ---
+  var FC = [
+    ["Jahmyr Gibbs",10699],["Bijan Robinson",10687],["Ja'Marr Chase",9919],["Jaxon Smith-Njigba",9073],
+    ["Puka Nacua",8508],["Ashton Jeanty",7937],["Jeremiyah Love",7403],["Amon-Ra St. Brown",7387],
+    ["Brock Bowers",7103],["Justin Jefferson",6910],["Malik Nabers",6521],["Omarion Hampton",6394],
+    ["De'Von Achane",6386],["CeeDee Lamb",6332],["Trey McBride",6111],["Jonathan Taylor",5957],
+    ["Drake London",5795],["James Cook",5696],["Josh Allen",5449],["Tetairoa McMillan",4872],
+    ["Drake Maye",4637],["Colston Loveland",4606],["George Pickens",4575],["Kenneth Walker",4538],
+    ["Christian McCaffrey",4510],["Emeka Egbuka",4460],["Carnell Tate",4385],["Quinshon Judkins",4322],
+    ["Chase Brown",4285],["Breece Hall",4224],["Nico Collins",4219],["Tyler Warren",4181],
+    ["Saquon Barkley",4177],["TreVeyon Henderson",4165],["Garrett Wilson",4027],["Jayden Daniels",3955],
+    ["Caleb Williams",3900],["Chris Olave",3787],["A.J. Brown",3756],["Lamar Jackson",3738],
+    ["Kyren Williams",3674],["Rashee Rice",3650],["Ladd McConkey",3607],["Joe Burrow",3600],
+    ["Cam Skattebo",3487],["Jordyn Tyson",3475],["Bucky Irving",3444],["Marvin Harrison Jr",3415],
+    ["Luther Burden",3406],["Jadarian Price",3368],["DeVonta Smith",3335],["Javonte Williams",3325],
+    ["Tee Higgins",3296],["Brian Thomas",3264],["Makai Lemon",3263],["Rome Odunze",3247],
+    ["Zay Flowers",3234],["Travis Etienne",3219],["Tucker Kraft",3156],["Justin Herbert",3126],
+    ["Jaylen Waddle",3067],["Patrick Mahomes",3040],["Derrick Henry",2998],["Jalen Hurts",2912],
+    ["Jaxson Dart",2886],["Harold Fannin",2830],["Josh Jacobs",2828],["Sam LaPorta",2724],
+    ["KC Concepcion",2712],["Jameson Williams",2692],["Trevor Lawrence",2672],["Kyle Pitts",2627],
+    ["Bo Nix",2546],["Bhayshul Tuten",2498],["D'Andre Swift",2342],["Brock Purdy",2337],
+    ["David Montgomery",2309],["Christian Watson",2227],["Dak Prescott",2226],["Jordan Addison",2215],
+    ["Terry McLaurin",2195],["DJ Moore",2192],["Alec Pierce",2130],["Jordan Love",2117],
+    ["Chuba Hubbard",2073],["Kyle Monangai",2021],["Mike Evans",2016],["Michael Wilson",2007],
+    ["RJ Harvey",1997],["Quentin Johnston",1996],["Parker Washington",1979],["Jaylen Warren",1969],
+    ["Matthew Golden",1963],["Davante Adams",1943],["Jonathon Brooks",1934],["Ricky Pearsall",1905],
+    ["Wan'Dale Robinson",1880],["George Kittle",1867],["Blake Corum",1864],["Jayden Higgins",1861],
+    ["C.J. Stroud",1854],["DK Metcalf",1847],["Xavier Worthy",1845],["Josh Downs",1831],
+    ["Jared Goff",1824],["Rico Dowdle",1790],["Cam Ward",2049],["Chris Godwin",1720],
+    ["Rachaad White",1610],["Jakobi Meyers",1600],["Baker Mayfield",1560],["Kyler Murray",1720],
+    ["Michael Pittman Jr",1700],["Tony Pollard",1560],["Jordan Mason",1500],["Isiah Pacheco",1470],
+    ["Dylan Sampson",1520],["Aaron Jones",1300],["Woody Marks",1560],["Jayden Reed",1560],
+    ["J.K. Dobbins",1500],["Alvin Kamara",1180],["Courtland Sutton",1800],["Tyjae Spears",1250],
+    ["Matthew Stafford",1650],["Tyler Shough",1560],["Daniel Jones",1400],["Malik Willis",900]
+  ];
+
+  var FC_MAX = 10699;
+  function keyOf(name){
+    var k = name.toLowerCase().replace(/[.''’]/g,"").replace(/\s+/g," ").trim();
+    k = k.replace(/\b(jr|sr|ii|iii|iv|v)\b/g,"").replace(/\s+/g," ").trim();
+    if(k.indexOf("cam ")===0) k = "cameron " + k.slice(4);
+    return k;
+  }
+  var fcMapBaked = {}; FC.forEach(function(r){ fcMapBaked[keyOf(r[0])] = r[1]; });
+
+  // Bio: [age, bye] from the DraftSharks CSV, for the hover card.
+  var BIO = {
+    "Puka Nacua":[25,11],"Ja'Marr Chase":[26,6],"Jahmyr Gibbs":[24,6],"Bijan Robinson":[24,11],
+    "Christian McCaffrey":[30,8],"Jaxon Smith-Njigba":[24,11],"Amon-Ra St. Brown":[27,6],"CeeDee Lamb":[27,14],
+    "Justin Jefferson":[27,6],"Jonathan Taylor":[27,13],"Ashton Jeanty":[23,13],"James Cook":[27,7],
+    "Drake London":[25,11],"A.J. Brown":[29,11],"Rashee Rice":[26,5],"Nico Collins":[27,8],
+    "De'Von Achane":[25,6],"Saquon Barkley":[29,10],"George Pickens":[25,14],"Kenneth Walker III":[26,5],
+    "Chase Brown":[26,6],"Omarion Hampton":[23,7],"Josh Allen":[30,7],"Brock Bowers":[24,13],
+    "Trey McBride":[27,14],"Derrick Henry":[33,13],"Jeremiyah Love":[21,14],"Zay Flowers":[26,13],
+    "Chris Olave":[26,8],"Malik Nabers":[23,8],"DeVonta Smith":[28,10],"Tee Higgins":[27,6],
+    "Garrett Wilson":[26,13],"Breece Hall":[25,13],"Colston Loveland":[22,10],"Josh Jacobs":[28,11],
+    "Javonte Williams":[26,14],"Travis Etienne":[27,8],"Tyler Warren":[24,13],"Jaylen Waddle":[28,10],
+    "Davante Adams":[34,11],"Kyren Williams":[26,11],"Terry McLaurin":[31,7],"Emeka Egbuka":[24,10],
+    "Tetairoa McMillan":[23,5],"Christian Watson":[27,11],"Luther Burden III":[23,10],"Ladd McConkey":[25,7],
+    "Lamar Jackson":[30,13],"Cameron Skattebo":[24,8],"Drake Maye":[24,11],"Tucker Kraft":[26,11],
+    "Joe Burrow":[30,6],"D'Andre Swift":[27,10],"Jayden Daniels":[26,7],"Jalen Hurts":[28,10],
+    "Jameson Williams":[25,6],"Bucky Irving":[24,10],"Mike Evans":[33,8],"Harold Fannin Jr.":[22,11],
+    "David Montgomery":[29,8],"Sam LaPorta":[25,6],"TreVeyon Henderson":[24,11],"Quinshon Judkins":[23,11],
+    "Trevor Lawrence":[27,7],"Rome Odunze":[24,10],"Justin Herbert":[28,7],"Caleb Williams":[25,10],
+    "Brock Purdy":[27,8],"D.K. Metcalf":[29,9],"Parker Washington":[24,7],"Jaylen Warren":[28,9],
+    "Dak Prescott":[33,14],"Jaxson Dart":[23,8],"Rhamondre Stevenson":[28,11],"D.J. Moore":[29,7],
+    "Bhayshul Tuten":[24,7],"Bo Nix":[26,10],"Patrick Mahomes":[31,5],"Michael Pittman Jr.":[29,9],
+    "Tony Pollard":[29,9],"Chuba Hubbard":[27,5],"Kyler Murray":[29,6],"Marvin Harrison Jr.":[24,14],
+    "Courtland Sutton":[31,10],"Kyle Pitts":[26,11],"Jadarian Price":[23,11],"Carnell Tate":[21,9],
+    "Jordyn Tyson":[22,8],"Jayden Reed":[26,11],"Alec Pierce":[26,13],"Rico Dowdle":[28,9],
+    "RJ Harvey":[25,10],"Jordan Addison":[24,6],"J.K. Dobbins":[28,10],"Jakobi Meyers":[30,7],
+    "Brian Thomas Jr.":[24,7],"George Kittle":[33,8],"Jared Goff":[32,6],"Matthew Stafford":[38,11],
+    "Tyler Shough":[27,8],"Ricky Pearsall":[26,8],"Jordan Love":[28,11],"Jonathon Brooks":[23,5],
+    "Quentin Johnston":[25,7],"Rachaad White":[27,7],"Baker Mayfield":[31,10],"Josh Downs":[25,13],
+    "Kyle Monangai":[24,10],"Chris Godwin":[30,10],"Xavier Worthy":[23,5],"Travis Kelce":[37,5],
+    "Jordan Mason":[27,6],"Blake Corum":[26,11],"Tyjae Spears":[25,9],"Aaron Jones":[32,6],
+    "Malik Willis":[27,6],"Makai Lemon":[22,10],"C.J. Stroud":[25,8],"Daniel Jones":[29,13],
+    "KC Concepcion":[22,11],"Woody Marks":[26,8],"Isiah Pacheco":[27,6],"Michael Wilson":[26,14],
+    "Dylan Sampson":[22,11],"Wan'Dale Robinson":[26,9],"Jayden Higgins":[24,8],"Alvin Kamara":[31,8],
+    "Matthew Golden":[23,11],"Cameron Ward":[24,9]
+  };
+  // FantasyPros profile links: rule-based slug + overrides for names FP handles irregularly.
+  // Overrides where FantasyPros' slug isn't derivable — every one verified live against FantasyPros
+  // (name + team confirmed). All other players use the rule slug, also verified.
+  var FP_OVR = {
+    "Amon-Ra St. Brown":"amonra-stbrown",   // "St." collapses to "stbrown"
+    "Kenneth Walker III":"kenneth-walker-rb",// shared name -> position suffix
+    "Josh Allen":"josh-allen-qb",            // shared name (Josh Allen LB) -> position suffix
+    "D.J. Moore":"dj-moore-wr",              // shared name (DJ Moore CB) -> position suffix
+    "Michael Pittman Jr.":"michael-pittman", // FP drops the "Jr."
+    "Cameron Skattebo":"cam-skattebo",       // FP uses "Cam"
+    "Cameron Ward":"cam-ward",               // FP uses "Cam"
+    "KC Concepcion":"kevin-concepcion"       // FP files under legal name "Kevin"
+  };
+  function fpSlug(name){
+    return name.toLowerCase().replace(/[.''’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+  }
+  function fpUrl(p){ return "https://www.fantasypros.com/nfl/players/"+(FP_OVR[p.n]||fpSlug(p.n))+".php"; }
+
+  // Blend: average of DraftSharks 3D and FantasyCalc (normalized to 0-100). One source falls back cleanly.
+  var DB = DS.map(function(r,i){
+    var bio = BIO[r[0]] || [null,null];
+    return {id:i, n:r[0], p:r[1], t:r[2], ds:r[3], base:r[3], age:bio[0], bye:bio[1], pick:false};
+  });
+  function blendValues(fcLookup, fcMax){
+    DB.forEach(function(p){
+      var fc = fcLookup[keyOf(p.n)];
+      p.base = (fc!=null) ? Math.round(((p.ds + fc/fcMax*100)/2)*10)/10 : p.ds;
+    });
+    DB.sort(function(a,b){ return b.base - a.base; });
+  }
+  blendValues(fcMapBaked, FC_MAX);
+
+  var S = { leagueSize:12, premium:0.55, keepersGone:20, pickView:"slots", sides:{A:[],B:[]} };
+  var uid=1, DISP=100, BAND=1000; // 1,000-point auto-approval band on the display scale
+
+  // ---- ONE value scale for players AND picks ----
+  // A snake keeper pick drafts the best player left after leaguewide keepers are gone,
+  // so its value = the player you'd take with it. Keeper cost = the pick you forfeit.
+  // Everything lives on the same blended (DraftSharks + FantasyCalc) curve.
+  function playerValueByRank(r){
+    r=Math.max(1,r); var n=DB.length, idx=r-1;
+    if(idx<=n-1){ var lo=Math.floor(idx), hi=Math.ceil(idx);
+      return DB[lo].base + (DB[hi].base-DB[lo].base)*(idx-lo); }
+    return Math.max(0.5, DB[n-1].base*Math.pow(0.955, idx-(n-1)));   // decay past the list
+  }
+  function pickAssetValue(round, yr){
+    var rank = S.keepersGone + (round-0.5)*S.leagueSize;            // slot, shifted past kept studs
+    return playerValueByRank(rank) * Math.pow(0.92, yr||0);          // ~8% haircut per year out
+  }
+  // Picks are labeled by draft ORDER through the snake: 1.01=#1, 2.01=#13, 2.12=#24, 3.01=#25 …
+  function overallPickNo(round, slot){ return (round-1)*S.leagueSize + slot; }
+  function pickSlotValue(round, slot, yr){
+    return playerValueByRank(S.keepersGone + overallPickNo(round,slot)) * Math.pow(0.92, yr||0);
+  }
+  function marketOf(p){
+    if(!p.pick) return p.base;
+    if(p.slot) return pickSlotValue(p.round, p.slot, p.yr);   // specific slot, e.g. 3.07
+    return pickAssetValue(p.round, p.yr);                      // unknown-slot future round
+  }
+  // keeper cost = the draft pick you give up to keep them, per league rules
+  function costForRound(r){
+    r=Math.max(1,Math.round(r));
+    if(r<=1) return pickAssetValue(1,0)+pickAssetValue(3,0); // 1st costs a 1st + 3rd
+    if(r===2) return pickAssetValue(1,0);                    // 2nd costs a 1st
+    return pickAssetValue(r,0);
+  }
+  function impliedRound(mv){ // neutral default keeper round ≈ fair cost for that value
+    var best=8, bd=1e9;
+    for(var r=1;r<=15;r++){ var d=Math.abs(costForRound(r)-mv); if(d<bd){ bd=d; best=r; } }
+    return best;
+  }
+  // ---- draft picks: every slot 1.01–16.12 (this draft) + 2027 rounds (unknown order, tradeable) ----
+  var ORD=["","1st","2nd","3rd","4th","5th","6th"];
+  var ROUNDS=16;
+  function pad2(n){ return n<10 ? "0"+n : ""+n; }
+  var PICKS=[]; (function(){ var id=1000, C=12;
+    for(var r=1;r<=ROUNDS;r++) for(var s=1;s<=C;s++)
+      PICKS.push({id:id++, n:r+"."+pad2(s), p:"PICK", t:"pick", pick:true, round:r, slot:s, yr:0});
+    for(var rd=1;rd<=6;rd++)
+      PICKS.push({id:id++, n:"2027 "+ORD[rd], p:"PICK", t:"pick", pick:true, round:rd, yr:1});
+  })();
+  var ALL = DB.concat(PICKS);
+  function yearsKeepable(R){ return Math.max(1, Math.min(Math.round(R), 6)); } // ladder R..1, capped
+  function keeperSurplus(e){
+    if(e.ref.pick) return 0;
+    var mv=e.mv, total=0, yrs=yearsKeepable(e.cost);
+    for(var y=0;y<yrs;y++){
+      var r=e.cost-y; if(r<1) break;
+      total += Math.max(0, mv-costForRound(r)) * Math.pow(S.premium,y);
+    }
+    return total;
+  }
+  function adjustedOf(e){ return e.mv + keeperSurplus(e); }
+
+  function addAsset(side, item){
+    var mv=marketOf(item);
+    S.sides[side].push({ uid:uid++, ref:item, mv:mv, mvEdited:false,
+      cost: item.pick?0:impliedRound(mv) });
+    renderSide(side); renderVerdict();
+  }
+
+  // ---- formatting ----
+  function fmt(n){ return Math.round(n*DISP).toLocaleString(); }
+  function costLabel(r){
+    r=Math.round(r);
+    if(r<=1) return "keeps for a 1st + 3rd";
+    if(r===2) return "keeps for a 1st";
+    return "keeps at round "+r;
+  }
+
+  function renderSide(side){
+    var list=document.querySelector('[data-list="'+side+'"]');
+    var arr=S.sides[side];
+    list.innerHTML="";
+    if(!arr.length){
+      var li=document.createElement("li");
+      li.className="empty-note"; li.textContent="No assets yet — search above.";
+      list.appendChild(li);
+    }
+    arr.forEach(function(e){
+      var mv=e.mv, adj=adjustedOf(e), surplus=adj-mv, up=surplus>=0.05, down=surplus<=-0.05;
+      var li=document.createElement("li");
+      if(e.ref.pick){
+        li.innerHTML =
+          '<div class="card pick">'+
+            '<div class="card-top"><span class="pill pos-PICK">PICK</span>'+
+              '<div><div class="pname">'+e.ref.n+'</div><div class="pmeta">Draft pick · no keeper cost</div></div>'+
+              '<button class="x" title="Remove" aria-label="Remove">×</button></div>'+
+            '<div class="controls" style="grid-template-columns:1fr">'+
+              '<div class="ctl"><label>Value</label><input data-k="mv" type="number" step="50" min="0" value="'+fmt(mv)+'"></div></div>'+
+            '<div class="valrow"><span class="lab">Trade value</span><span class="adj">'+fmt(adj)+'</span></div>'+
+          '</div>';
+      } else {
+        li.innerHTML =
+          '<div class="card">'+
+            '<div class="card-top"><span class="pill pos-'+e.ref.p+'">'+e.ref.p+'</span>'+
+              '<div><a class="pname plink" href="'+fpUrl(e.ref)+'" target="_blank" rel="noopener">'+e.ref.n+'</a><div class="pmeta">'+e.ref.t+' · market '+fmt(mv)+'</div></div>'+
+              '<button class="x" title="Remove" aria-label="Remove '+e.ref.n+'">×</button></div>'+
+            '<div class="controls">'+
+              '<div class="ctl"><label>Value</label><input data-k="mv" type="number" step="50" min="0" value="'+fmt(mv)+'"></div>'+
+              '<div class="ctl"><label>Keeper round (this yr)</label><input data-k="cost" type="number" step="1" min="1" max="16" value="'+Math.round(e.cost)+'"></div>'+
+            '</div>'+
+            '<div class="keepnote"><span class="tag" data-keeptag>'+costLabel(e.cost)+'</span>'+
+              '<span data-keepyrs>controllable ~'+yearsKeepable(e.cost)+' yr'+(yearsKeepable(e.cost)>1?"s":"")+'</span></div>'+
+            '<div class="valrow"><span class="lab">Keeper value</span>'+
+              '<span><span class="adj">'+fmt(adj)+'</span>'+
+              '<span class="surplus '+(up?"up":down?"down":"")+'">'+(surplus>=0?"+":"")+fmt(surplus)+'</span></span></div>'+
+          '</div>';
+      }
+      li.querySelector(".x").addEventListener("click",function(){
+        S.sides[side]=S.sides[side].filter(function(x){return x.uid!==e.uid;});
+        renderSide(side); renderVerdict();
+      });
+      li.querySelectorAll("input[data-k]").forEach(function(inp){
+        inp.addEventListener("input",function(){
+          var k=inp.getAttribute("data-k"), val=parseFloat(inp.value.replace(/,/g,""));
+          if(isNaN(val)) return;
+          if(k==="mv"){ e.mv=val/DISP; e.mvEdited=true; }
+          else if(k==="cost"){ e.cost=Math.max(1,Math.min(16,Math.round(val))); }
+          var adj2=adjustedOf(e), sp=adj2-e.mv, card=inp.closest(".card");
+          card.querySelector(".adj").textContent=fmt(adj2);
+          var spEl=card.querySelector(".surplus");
+          if(spEl){ spEl.textContent=(sp>=0?"+":"")+fmt(sp);
+            spEl.className="surplus "+(sp>=0.05?"up":sp<=-0.05?"down":""); }
+          var kt=card.querySelector("[data-keeptag]"); if(kt) kt.textContent=costLabel(e.cost);
+          var ky=card.querySelector("[data-keepyrs]");
+          if(ky){ var yk=yearsKeepable(e.cost); ky.textContent="controllable ~"+yk+" yr"+(yk>1?"s":""); }
+          var pm=card.querySelector(".pmeta"); if(pm && !e.ref.pick) pm.textContent=e.ref.t+' · market '+fmt(e.mv);
+          renderFoot(side); renderVerdict();
+        });
+      });
+      var plink=li.querySelector(".plink"); if(plink) attachPop(plink, e.ref);
+      list.appendChild(li);
+    });
+    renderFoot(side);
+  }
+
+  function sideTotals(side){
+    var m=0,a=0;
+    S.sides[side].forEach(function(e){ m+=e.mv; a+=adjustedOf(e); });
+    return {market:m, adj:a, count:S.sides[side].length};
+  }
+  function renderFoot(side){
+    var foot=document.querySelector('[data-foot="'+side+'"]'), t=sideTotals(side);
+    foot.innerHTML =
+      '<div class="foot-row"><span class="k">Market value</span><span class="v num">'+fmt(t.market)+'</span></div>'+
+      '<div class="foot-row"><span class="k">Keeper surplus</span><span class="v num" style="color:var(--gold)">+'+fmt(t.adj-t.market)+'</span></div>'+
+      '<div class="foot-row total"><span class="k">Keeper total</span><span class="v num">'+fmt(t.adj)+'</span></div>';
+  }
+
+  function renderVerdict(){
+    var A=sideTotals("A"), B=sideTotals("B");
+    var stamp=document.getElementById("vStamp"), vGap=document.getElementById("vGap"),
+        vUnit=document.getElementById("vUnit"), vMsg=document.getElementById("vMsg"),
+        segA=document.getElementById("segA"), segB=document.getElementById("segB"),
+        mktNote=document.getElementById("mktNote");
+    var nameA=document.querySelector('.team.a .team-name').value||"Team A";
+    var nameB=document.querySelector('.team.b .team-name').value||"Team B";
+    document.getElementById("endA").textContent=nameA;
+    document.getElementById("endB").textContent=nameB;
+
+    var tot=A.adj+B.adj, pa= tot>0 ? A.adj/tot*100 : 50;
+    segA.style.width=pa+"%"; segB.style.width=(100-pa)+"%";
+
+    if(A.count===0 || B.count===0){
+      stamp.textContent="Add players"; stamp.className="stamp idle";
+      vGap.textContent="0"; vUnit.textContent="points apart";
+      vMsg.textContent="Build both sides to test the trade against your 1,000-point rule.";
+      mktNote.innerHTML="Straight value, ignoring keeper cost: <b>—</b>";
+      return;
+    }
+    var diff=(A.adj-B.adj)*DISP, absd=Math.abs(diff);
+    vGap.textContent=Math.round(absd).toLocaleString();
+    var winName = diff>0?nameA:nameB;
+
+    if(absd<=BAND){
+      stamp.textContent="Auto-Approved ✓"; stamp.className="stamp ok";
+      vUnit.textContent="points apart — inside the band";
+      if(absd<150) vMsg.innerHTML="Dead even on keeper value. This one sails through.";
+      else vMsg.innerHTML="Within your <b>1,000-point</b> window — <b>"+winName+"</b> comes out a touch ahead but it clears automatically.";
+    } else {
+      stamp.textContent="Goes to a Vote"; stamp.className="stamp vote";
+      vUnit.textContent="points past the band";
+      var over=Math.round((absd-BAND)).toLocaleString();
+      vMsg.innerHTML="<b>"+winName+"</b> wins by <b>"+Math.round(absd).toLocaleString()+"</b> keeper points — <b>"+over+"</b> over the line. Needs league approval.";
+    }
+    var md=(A.market-B.market)*DISP, mabs=Math.abs(md);
+    if(mabs<=BAND) mktNote.innerHTML="Ignoring keeper cost, this is <b>within the band</b> on straight value too.";
+    else mktNote.innerHTML="Ignoring keeper cost, <b>"+(md>0?nameA:nameB)+"</b> wins by "+Math.round(mabs).toLocaleString()+" on straight value.";
+  }
+
+  // ---- search ----
+  function setupSearch(side){
+    var input=document.querySelector('[data-search="'+side+'"]');
+    var box=document.querySelector('[data-results="'+side+'"]');
+    var hi=-1, matches=[];
+    function close(){ box.classList.remove("open"); box.innerHTML=""; hi=-1; }
+    function render(q){
+      q=q.trim().toLowerCase();
+      if(!q){ close(); return; }
+      var used={}; S.sides[side].forEach(function(e){ if(!e.ref.pick) used[e.ref.id]=1; });
+      matches=ALL.filter(function(p){
+        if(!p.pick && used[p.id]) return false;
+        return p.n.toLowerCase().indexOf(q)>=0 || p.t.toLowerCase().indexOf(q)>=0 ||
+               p.p.toLowerCase()===q || (p.pick && ("pick 1st 2nd 3rd 4th 5th 6th draft 2026 2027".indexOf(q)>=0));
+      }).sort(function(a,b){return marketOf(b)-marketOf(a);}).slice(0,9);
+      if(!matches.length){ box.innerHTML='<div class="empty-note">No match. Try a name, team, position, or "pick".</div>'; box.classList.add("open"); return; }
+      box.innerHTML=matches.map(function(p,i){
+        return '<div class="res'+(i===hi?" hi":"")+'" data-i="'+i+'">'+
+          '<span class="pill pos-'+p.p+'">'+(p.pick?"PICK":p.p)+'</span>'+
+          '<span><b>'+p.n+'</b>'+(p.pick?"":' <span style="color:var(--ink-faint);font-size:11px">'+p.t+'</span>')+'</span>'+
+          '<span class="rv num">'+fmt(marketOf(p))+'</span>'+
+          (p.pick?"":'<a class="res-fp" href="'+fpUrl(p)+'" target="_blank" rel="noopener" title="Open FantasyPros profile">↗</a>')+
+          '</div>';
+      }).join("");
+      box.classList.add("open");
+      box.querySelectorAll(".res").forEach(function(el){
+        var p=matches[+el.getAttribute("data-i")];
+        el.addEventListener("mousedown",function(ev){ ev.preventDefault();
+          addAsset(side, p); input.value=""; close(); input.focus(); });
+        if(p && !p.pick){ el.addEventListener("mouseenter",function(){showPop(el,p);}); el.addEventListener("mouseleave",hidePop); }
+      });
+      box.querySelectorAll(".res-fp").forEach(function(a){
+        a.addEventListener("mousedown",function(ev){ ev.stopPropagation(); hidePop(); });
+      });
+    }
+    input.addEventListener("input",function(){ render(input.value); });
+    input.addEventListener("focus",function(){ if(input.value) render(input.value); });
+    input.addEventListener("blur",function(){ setTimeout(close,120); });
+    input.addEventListener("keydown",function(ev){
+      if(!box.classList.contains("open")) return;
+      if(ev.key==="ArrowDown"){ ev.preventDefault(); hi=Math.min(hi+1,matches.length-1); render(input.value); }
+      else if(ev.key==="ArrowUp"){ ev.preventDefault(); hi=Math.max(hi-1,0); render(input.value); }
+      else if(ev.key==="Enter"){ ev.preventDefault(); if(hi>=0&&matches[hi]){ addAsset(side,matches[hi]); input.value=""; close(); } }
+      else if(ev.key==="Escape"){ close(); }
+    });
+  }
+
+  // ---- pick value chart: all 192 slots, or Early/Mid/Late tiers ----
+  function heatCell(v,max){ var a=Math.max(0.03,Math.min(1,v/max))*0.55;
+    return '<td style="background:rgba(201,138,0,'+a.toFixed(3)+')">'+Math.round(v*DISP).toLocaleString()+'</td>'; }
+  function renderPickChart(){
+    document.getElementById("pcKeepers").textContent=S.keepersGone;
+    var h;
+    if(S.pickView==="tiers"){
+      var TI=[["Early",2.5],["Mid",6.5],["Late",10.5]], max=pickSlotValue(1,2.5,0);
+      h='<table class="pcg"><thead><tr><th class="pcr">Round</th><th>Early</th><th>Mid</th><th>Late</th></tr></thead><tbody>';
+      for(var r=1;r<=ROUNDS;r++){ h+='<tr><th class="pcr">R'+r+'</th>';
+        for(var i=0;i<3;i++) h+=heatCell(pickSlotValue(r,TI[i][1],0),max);
+        h+='</tr>'; }
+      h+='</tbody></table>';
+    } else {
+      var C=12, mx=pickSlotValue(1,1,0);
+      h='<table class="pcg"><thead><tr><th class="pcr">Rd\\Slot</th>';
+      for(var s=1;s<=C;s++) h+='<th>'+pad2(s)+'</th>';
+      h+='</tr></thead><tbody>';
+      for(var r2=1;r2<=ROUNDS;r2++){ h+='<tr><th class="pcr">R'+r2+'</th>';
+        for(var s2=1;s2<=C;s2++) h+=heatCell(pickSlotValue(r2,s2,0),mx);
+        h+='</tr>'; }
+      h+='</tbody></table>';
+    }
+    document.getElementById("pcGrid").innerHTML=h;
+  }
+
+  // ---- selectors ----
+  document.getElementById("segPrem").addEventListener("click",function(ev){
+    var b=ev.target.closest("button"); if(!b) return;
+    this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
+    S.premium=parseFloat(b.getAttribute("data-v"));
+    renderSide("A"); renderSide("B"); renderVerdict();
+  });
+  document.getElementById("segView").addEventListener("click",function(ev){
+    var b=ev.target.closest("button"); if(!b) return;
+    this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
+    S.pickView=b.getAttribute("data-v"); renderPickChart();
+  });
+  document.getElementById("segKeepers").addEventListener("click",function(ev){
+    var b=ev.target.closest("button"); if(!b) return;
+    this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
+    S.keepersGone=parseInt(b.getAttribute("data-v"),10);
+    // picks & keeper costs both shift — recompute non-edited pick values, then re-render everything
+    ["A","B"].forEach(function(sd){ S.sides[sd].forEach(function(e){ if(e.ref.pick && !e.mvEdited) e.mv=marketOf(e.ref); }); });
+    renderSide("A"); renderSide("B"); renderVerdict(); renderPickChart();
+  });
+  document.querySelectorAll(".team-name").forEach(function(inp){ inp.addEventListener("input",renderVerdict); });
+  document.getElementById("resetBtn").addEventListener("click",function(){
+    S.sides.A=[]; S.sides.B=[]; renderSide("A"); renderSide("B"); renderVerdict();
+  });
+
+  // ---- hover popup (quick-look card) ----
+  var pop=document.createElement("div"); pop.id="pop"; document.body.appendChild(pop);
+  var popT=null;
+  function posRank(p){ var a=DB.filter(function(q){return q.p===p.p;}); return a.indexOf(p)+1; }
+  function popHTML(p){
+    var ovr=DB.indexOf(p)+1, pr=posRank(p);
+    var age=(p.liveAge!=null)?Math.round(p.liveAge):(p.age!=null?p.age:"—");
+    var bye=(p.bye!=null)?p.bye:"—";
+    var roster=(p.roster!=null)?Math.round(p.roster*100)+"%":"—";
+    var photo = p.sleeperId
+      ? '<img class="pop-photo" src="https://sleepercdn.com/content/nfl/players/'+p.sleeperId+'.jpg" alt="" onerror="this.classList.add(\'pop-photo--off\')">'
+      : '<span class="pill pos-'+p.p+' pop-photo pop-photo--pill">'+p.p+'</span>';
+    var trendCell;
+    if(p.trend!=null && p.trend!==0){ var up=p.trend>0;
+      trendCell='<div><span>30-day</span><b style="color:'+(up?'var(--win)':'var(--lose)')+'">'+(up?'▲ ':'▼ ')+Math.abs(Math.round(p.trend)).toLocaleString()+'</b></div>'; }
+    else trendCell='<div><span>30-day</span><b>—</b></div>';
+    return '<div class="pop-head">'+photo+
+      '<div><div class="pop-name">'+p.n+'</div><div class="pop-team">'+p.p+' · '+(p.team||p.t)+' · Age '+age+'</div></div></div>'+
+      '<div class="pop-grid">'+
+        '<div><span>Keeper value</span><b>'+fmt(p.base)+'</b></div>'+
+        '<div><span>Overall</span><b>#'+ovr+'</b></div>'+
+        '<div><span>Pos rank</span><b>'+p.p+pr+'</b></div>'+
+        '<div><span>Rostered</span><b>'+roster+'</b></div>'+
+        '<div><span>Bye</span><b>'+bye+'</b></div>'+
+        trendCell+
+      '</div>'+
+      '<div class="pop-foot">Click name → full FantasyPros profile ↗</div>';
+  }
+  function showPop(el,p){
+    if(!p||p.pick) return;
+    clearTimeout(popT);
+    pop.innerHTML=popHTML(p);
+    var r=el.getBoundingClientRect(), w=270;
+    var left=Math.max(8, Math.min(r.left, window.innerWidth-w-8));
+    var top=r.bottom+8;
+    if(top+190>window.innerHeight) top=Math.max(8, r.top-198);
+    pop.style.left=left+"px"; pop.style.top=top+"px";
+    pop.classList.add("show");
+  }
+  function hidePop(){ popT=setTimeout(function(){ pop.classList.remove("show"); }, 60); }
+  function attachPop(el,p){
+    el.addEventListener("mouseenter",function(){ showPop(el,p); });
+    el.addEventListener("mouseleave",hidePop);
+  }
+
+  // ---- init ----
+  setupSearch("A"); setupSearch("B");
+  renderSide("A"); renderSide("B"); renderVerdict(); renderPickChart();
+
+  // seed an illustrative deal
+  addAsset("A", DB.find(function(p){return p.n==="Amon-Ra St. Brown";}));
+  addAsset("B", DB.find(function(p){return p.n==="Ashton Jeanty";}));
+  addAsset("B", PICKS.find(function(p){return p.n==="2027 3rd";}));
+  S.sides.A[0].cost=9;  // ARSB cheap keeper
+  S.sides.B[0].cost=4;  // Jeanty pricier
+  renderSide("A"); renderSide("B"); renderVerdict();
+
+  // ---- live values: refresh FantasyCalc dynasty on load (snapshot stays as fallback) ----
+  var FC_URL = "https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=1&numTeams=12&ppr=1";
+  function setValStatus(state){
+    var el=document.getElementById("valStatus"); if(!el) return;
+    el.className="chip valstat "+state;
+    if(state==="live")        el.innerHTML='<span class="dot"></span>Values: <b>live</b> · FantasyCalc + DraftSharks';
+    else if(state==="loading")el.innerHTML='<span class="dot"></span>Values: <b>refreshing…</b>';
+    else                      el.innerHTML='<span class="dot"></span>Values: <b>snapshot</b> · click to retry';
+  }
+  function applyBlend(fcLookup, fcMax){
+    blendValues(fcLookup, fcMax);
+    ["A","B"].forEach(function(sd){ S.sides[sd].forEach(function(e){ if(!e.ref.pick && !e.mvEdited) e.mv=e.ref.base; }); });
+    renderSide("A"); renderSide("B"); renderVerdict(); renderPickChart();
+  }
+  function fetchLive(){
+    setValStatus("loading");
+    fetch(FC_URL).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(data){
+      var live={}, meta={}, max=0;
+      (data||[]).forEach(function(row){
+        var pl=row.player||{}, pos=(pl.position||"").toUpperCase();
+        if(["QB","RB","WR","TE"].indexOf(pos)<0) return;
+        var v=+row.value||0; if(v>max) max=v;
+        var nm=pl.name||""; if(!nm) return;
+        var k=keyOf(nm);
+        if(v>(live[k]||0)){
+          live[k]=v;
+          meta[k]={sleeperId:pl.sleeperId, espnId:pl.espnId, age:pl.maybeAge,
+                   team:pl.maybeTeam, roster:row.maybeRosterPercent, trend:row.trend30Day};
+        }
+      });
+      if(max<=0) throw 0;
+      // attach photos + live bio to matching players
+      DB.forEach(function(p){
+        var m=meta[keyOf(p.n)]; if(!m) return;
+        p.sleeperId=m.sleeperId; p.espnId=m.espnId; p.liveAge=m.age;
+        p.roster=m.roster; p.trend=m.trend; if(m.team) p.team=m.team;
+      });
+      var merged={}, k; for(k in fcMapBaked) merged[k]=fcMapBaked[k]; for(k in live) merged[k]=live[k];
+      applyBlend(merged, max);
+      setValStatus("live");
+    }).catch(function(){ setValStatus("snap"); });
+  }
+  document.getElementById("valStatus").addEventListener("click",fetchLive);
+  fetchLive();
+})();
+</script>

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NFL Fantasy Rankings — Keeper, Redraft &amp; Dynasty · GRIDIRON</title>
+<meta name="theme-color" content="#0A0E16">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏈%3C/text%3E%3C/svg%3E">
+<script>(function(){try{var t=localStorage.getItem('gi-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+  :root{--bg:#0A0E16;--surface:#121826;--surface-2:#1A2234;--ink:#EAF0F8;--ink-soft:#9DAAC0;--ink-faint:#63708A;
+    --line:#232B3D;--line-soft:#1B2231;--gold:#F0B429;--redraft:#2DD4A7;--research:#4C9AFF;--win:#2DD4A7;--lose:#F0596B;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.35);--radius:15px;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--cond:"Arial Narrow","Helvetica Neue",var(--sans);}
+  :root[data-theme="light"]{--bg:#F2F4F8;--surface:#FFFFFF;--surface-2:#F6F8FB;--ink:#0E1626;--ink-soft:#4A5468;--ink-faint:#8A94A8;
+    --line:#E1E6EE;--line-soft:#EDF0F5;--gold:#C98A00;--redraft:#0FA37F;--research:#2F6FE0;--win:#0E7A47;--lose:#C9372C;
+    --shadow:0 1px 2px rgba(18,22,28,.05),0 10px 30px rgba(18,22,28,.08);}
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none} .num{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 clamp(14px,3vw,26px)}
+  .site-header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .site-header .wrap{display:flex;align-items:center;gap:14px;height:60px}
+  .logo{display:flex;align-items:center;gap:9px;font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:22px}
+  .logo .lg{color:var(--gold)}
+  .site-nav{display:flex;gap:2px;margin-left:14px}
+  .site-nav a{font-size:14px;font-weight:600;color:var(--ink-soft);padding:8px 12px;border-radius:9px}
+  .site-nav a:hover{color:var(--ink);background:var(--surface-2)} .site-nav a.on{color:var(--ink);background:var(--surface-2)}
+  .hspill{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .tglbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+  .tglbtn:hover{color:var(--ink);border-color:var(--gold)} .menu-btn{display:none}
+  @media (max-width:820px){.site-nav{position:fixed;inset:60px 0 auto 0;flex-direction:column;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 14px 14px;margin:0;transform:translateY(-120%);transition:.22s;box-shadow:var(--shadow)}.site-nav.open{transform:none}.site-nav a{padding:12px 10px;font-size:15px}.menu-btn{display:flex}}
+
+  .head{padding:24px 0 6px}
+  .crumb{display:flex;align-items:center;gap:8px;font-family:var(--cond);text-transform:uppercase;letter-spacing:.08em;font-weight:800;font-size:clamp(22px,4vw,34px)}
+  .crumb .sep{color:var(--ink-faint)} .crumb .mode{color:var(--gold)}
+  .sub{color:var(--ink-soft);font-size:13.5px;margin:6px 0 0}
+
+  .barA{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 10px}
+  .barB{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+  .seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+  .seg.big button{font-size:13.5px;padding:9px 18px}
+  .seg button{border:0;background:transparent;color:var(--ink-soft);font-size:12.5px;font-weight:700;padding:7px 13px;border-radius:7px;cursor:pointer;white-space:nowrap}
+  .seg button:hover{color:var(--ink)} .seg button[aria-pressed="true"]{background:var(--gold);color:#1A1204}
+  .seg.mode button[aria-pressed="true"]{background:var(--gold);color:#1A1204}
+  .field label{display:block;font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;font-weight:700;color:var(--ink-faint);margin-bottom:5px}
+  select,.search input{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:9px;padding:8px 11px;font-family:var(--sans);font-size:13px;font-weight:600}
+  select:focus,.search input:focus{outline:none;border-color:var(--gold)}
+  .search input{min-width:200px}
+  .statuschip{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--ink-faint)}
+  .statuschip .dot{width:8px;height:8px;border-radius:50%;background:var(--win)} .statuschip.loading .dot{background:var(--research);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+
+  .tablecard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .tblwrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead th{text-align:left;font-family:var(--cond);text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;color:var(--ink-faint);font-weight:700;padding:11px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+  tbody td{padding:9px 12px;border-bottom:1px solid var(--line-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+  tbody tr:last-child td{border-bottom:0} tbody tr:hover{background:var(--surface-2)}
+  .rk{font-family:var(--cond);font-weight:800;font-size:15px;color:var(--ink-faint);width:34px}
+  .pl{display:flex;align-items:center;gap:10px;min-width:170px}
+  .pl img{width:32px;height:32px;border-radius:8px;object-fit:cover;object-position:top;background:var(--surface-2);flex:none}
+  .pl .nm{font-weight:700}
+  .pill{display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);font-weight:700;font-size:10px;padding:1px 6px;border-radius:4px}
+  .pos-QB{background:#3A2247;color:#D9AEEC}.pos-RB{background:#173025;color:#7FD6A0}.pos-WR{background:#17263F;color:#9CBEF5}.pos-TE{background:#332512;color:#EEB483}
+  :root[data-theme="light"] .pos-QB{background:#EFE0F5;color:#7A2E9E}:root[data-theme="light"] .pos-RB{background:#DCEEE1;color:#1E7A44}:root[data-theme="light"] .pos-WR{background:#DCE7FB;color:#24509E}:root[data-theme="light"] .pos-TE{background:#FBE7D6;color:#9E5A1E}
+  .val{font-weight:800} .tier{color:var(--ink-faint);font-weight:700}
+  .trend{font-weight:700} .trend.up{color:var(--win)} .trend.down{color:var(--lose)}
+  .skel{padding:44px;text-align:center;color:var(--ink-faint)}
+  .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}} @media (prefers-reduced-motion:reduce){.spin,.dot{animation:none!important}}
+  .foot-note{max-width:900px;margin:24px auto 40px;color:var(--ink-faint);font-size:11.5px;line-height:1.6;text-align:center}
+  .foot-note b{color:var(--ink-soft)}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html">🏈 <span>GRID<span class="lg">IRON</span></span></a>
+    <nav class="site-nav" id="nav">
+      <a href="index.html">Home</a><a href="keeper.html">Keeper</a><a href="redraft.html">Redraft</a>
+      <a href="rankings.html" class="on">Rankings</a><a href="tools.html">Tools</a><a href="research.html">Research</a>
+    </nav>
+    <div class="hspill"><button class="tglbtn" id="themeBtn" aria-label="Toggle theme">🌙</button><button class="tglbtn menu-btn" id="menuBtn" aria-label="Menu">☰</button></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="head">
+    <div class="crumb">Rankings <span class="sep">›</span> <span class="mode" id="modeLabel">Redraft</span></div>
+    <p class="sub">Live consensus values from FantasyCalc, tuned to your format &amp; scoring. Filter by position or team, or search a player.</p>
+  </div>
+
+  <div class="barA">
+    <div class="seg big mode" id="segMode"><button data-v="redraft" aria-pressed="true">Redraft</button><button data-v="keeper">Keeper</button><button data-v="dynasty">Dynasty</button></div>
+  </div>
+  <div class="barB">
+    <div class="field"><label>Scoring</label><div class="seg" id="segPpr"><button data-v="1" aria-pressed="true">PPR</button><button data-v="0.5">Half</button><button data-v="0">Non</button></div></div>
+    <div class="field"><label>QB</label><div class="seg" id="segQb"><button data-v="1" aria-pressed="true">1QB</button><button data-v="2">SF</button></div></div>
+    <div class="field"><label>Position</label><div class="seg" id="segPos"><button data-v="ALL" aria-pressed="true">All</button><button data-v="QB">QB</button><button data-v="RB">RB</button><button data-v="WR">WR</button><button data-v="TE">TE</button></div></div>
+    <div class="field"><label>Team</label><select id="teamSel"><option value="ALL">All teams</option></select></div>
+    <div class="field search"><label>Search</label><input type="text" id="search" placeholder="Player name…" autocomplete="off"></div>
+    <span class="statuschip loading" id="valStatus"><span class="dot"></span>Loading…</span>
+  </div>
+
+  <div class="tablecard">
+    <div class="tblwrap"><table>
+      <thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Team</th><th>Age</th><th>Tier</th><th>Value</th><th>30-Day</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="8"><div class="skel"><span class="spin"></span></div></td></tr></tbody>
+    </table></div>
+  </div>
+
+  <p class="foot-note"><b>Keeper</b> blends redraft &amp; dynasty value (rewards young, cheap-to-hold players without going full dynasty). <b>Redraft</b> = this-year value · <b>Dynasty</b> = long-term. Values &amp; 30-day trends from FantasyCalc, live. Not affiliated with FantasyCalc or DraftSharks.</p>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  function $(s){return document.querySelector(s);}
+  function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function jget(u){return fetch(u).then(function(r){if(!r.ok)throw 0;return r.json();});}
+  function head(id){return "https://a.espncdn.com/i/headshots/nfl/players/full/"+id+".png";}
+  var tb=$("#themeBtn");
+  function setTheme(t){document.documentElement.setAttribute("data-theme",t);try{localStorage.setItem("gi-theme",t);}catch(e){}tb.textContent=t==="dark"?"🌙":"☀️";}
+  setTheme(document.documentElement.getAttribute("data-theme")||"dark");
+  tb.addEventListener("click",function(){setTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");});
+  $("#menuBtn").addEventListener("click",function(){$("#nav").classList.toggle("open");});
+
+  var S={mode:"redraft",ppr:"1",qb:"1",pos:"ALL",team:"ALL",q:""};
+  var cache={}, rows=[];
+  function url(dyn){return "https://api.fantasycalc.com/values/current?isDynasty="+dyn+"&numQbs="+S.qb+"&numTeams=12&ppr="+S.ppr;}
+  function mapRows(data){return (data||[]).map(function(r){var p=r.player||{};return{name:p.name,pos:(p.position||"").toUpperCase(),
+    team:p.maybeTeam||"FA",val:r.value,espnId:p.espnId,sleeperId:p.sleeperId,age:p.maybeAge,tier:r.maybeTier,trend:r.trend30Day,posRank:r.positionRank};})
+    .filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0&&p.name;});}
+  function setStatus(s){var e=$("#valStatus");e.className="statuschip "+(s==="loading"?"loading":"");e.innerHTML='<span class="dot"></span>'+(s==="loading"?"Loading…":(s==="offline"?"Offline — retry":"Live · FantasyCalc"));}
+
+  function load(){
+    setStatus("loading");
+    function build(list){ rows=list; buildTeams(); render(); setStatus("live"); }
+    if(S.mode==="keeper"){
+      var ur=url(false), ud=url(true);
+      Promise.all([cache[ur]?Promise.resolve(cache[ur]):jget(ur).then(function(d){cache[ur]=d;return d;}),
+                   cache[ud]?Promise.resolve(cache[ud]):jget(ud).then(function(d){cache[ud]=d;return d;})])
+        .then(function(res){
+          var rd=mapRows(res[0]), dy=mapRows(res[1]), byN={};
+          dy.forEach(function(p){byN[p.name]=p;});
+          var merged=rd.map(function(p){var d=byN[p.name];var blend=d?Math.round((p.val+d.val)/2):p.val;
+            return {name:p.name,pos:p.pos,team:p.team,espnId:p.espnId,sleeperId:p.sleeperId,age:p.age,
+              tier:p.tier,trend:d?d.trend:p.trend,val:blend};});
+          merged.sort(function(a,b){return b.val-a.val;});
+          // recompute posRank on blended
+          var pc={}; merged.forEach(function(p){pc[p.pos]=(pc[p.pos]||0)+1;p.posRank=pc[p.pos];});
+          build(merged);
+        }).catch(function(){setStatus("offline");});
+    } else {
+      var u=url(S.mode==="dynasty");
+      (cache[u]?Promise.resolve(cache[u]):jget(u).then(function(d){cache[u]=d;return d;}))
+        .then(function(d){build(mapRows(d));}).catch(function(){setStatus("offline");});
+    }
+  }
+
+  var teamsBuilt=false;
+  function buildTeams(){
+    if(teamsBuilt)return; teamsBuilt=true;
+    var sel=$("#teamSel"), teams={};
+    rows.forEach(function(p){if(p.team&&p.team!=="FA")teams[p.team]=1;});
+    Object.keys(teams).sort().forEach(function(t){var o=document.createElement("option");o.value=t;o.textContent=t;sel.appendChild(o);});
+  }
+  function photo(p){return p.espnId?head(p.espnId):(p.sleeperId?"https://sleepercdn.com/content/nfl/players/"+p.sleeperId+".jpg":"");}
+  function render(){
+    var list=rows.filter(function(p){
+      if(S.pos!=="ALL"&&p.pos!==S.pos)return false;
+      if(S.team!=="ALL"&&p.team!==S.team)return false;
+      if(S.q&&p.name.toLowerCase().indexOf(S.q)<0)return false;
+      return true;
+    });
+    var body=$("#rows");
+    if(!list.length){body.innerHTML='<tr><td colspan="8"><div class="skel">No players match these filters.</div></td></tr>';return;}
+    body.innerHTML=list.slice(0,300).map(function(p,i){
+      var tr=(p.trend!=null&&p.trend!==0)?'<span class="trend '+(p.trend>0?"up":"down")+'">'+(p.trend>0?"▲":"▼")+Math.abs(Math.round(p.trend)).toLocaleString()+'</span>':'<span class="trend" style="color:var(--ink-faint)">—</span>';
+      return '<tr><td class="rk">'+(i+1)+'</td>'+
+        '<td><span class="pl"><img src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'"><span class="nm">'+esc(p.name)+'</span></span></td>'+
+        '<td><span class="pill pos-'+p.pos+'">'+p.pos+(p.posRank||"")+'</span></td>'+
+        '<td>'+esc(p.team)+'</td>'+
+        '<td>'+(p.age!=null?Math.round(p.age):"—")+'</td>'+
+        '<td class="tier">'+(p.tier!=null?"T"+p.tier:"—")+'</td>'+
+        '<td class="val">'+(p.val||0).toLocaleString()+'</td>'+
+        '<td>'+tr+'</td></tr>';
+    }).join("");
+  }
+
+  function seg(id,key,after){$("#"+id).addEventListener("click",function(ev){var b=ev.target.closest("button");if(!b)return;
+    this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
+    S[key]=b.getAttribute("data-v"); if(after)after(); });}
+  seg("segMode","mode",function(){$("#modeLabel").textContent=S.mode.charAt(0).toUpperCase()+S.mode.slice(1);load();});
+  seg("segPpr","ppr",load); seg("segQb","qb",load);
+  seg("segPos","pos",render);
+  $("#teamSel").addEventListener("change",function(){S.team=this.value;render();});
+  $("#search").addEventListener("input",function(){S.q=this.value.trim().toLowerCase();render();});
+
+  load();
+})();
+</script>
+</body>
+</html>
