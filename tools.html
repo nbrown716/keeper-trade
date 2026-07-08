@@ -103,11 +103,27 @@
   </div>
 
   <div class="tabs" id="tabs">
-    <button class="tab on" data-tab="picks">Draft Pick Values</button>
+    <button class="tab on" data-tab="adp">ADP &amp; Tiers</button>
+    <button class="tab" data-tab="picks" data-picks>Draft Pick Values</button>
     <button class="tab" data-tab="depth">Depth Charts</button>
   </div>
 
-  <section class="panel on" data-panel="picks">
+  <section class="panel on" data-panel="adp">
+    <div class="controls">
+      <div class="field"><label>Position</label><div class="seg" id="segAdpPos"><button data-v="ALL" aria-pressed="true">All</button><button data-v="QB">QB</button><button data-v="RB">RB</button><button data-v="WR">WR</button><button data-v="TE">TE</button></div></div>
+      <div class="field search"><label>Search</label><input type="text" id="adpSearch" placeholder="Player name…" autocomplete="off" style="border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:9px;padding:8px 11px;font-size:13px;font-weight:600;min-width:190px"></div>
+      <span class="statuschip loading" id="adpStatus" style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--ink-faint)"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:var(--gold)"></span>Loading…</span>
+    </div>
+    <p class="legend"><b>Sleeper Dynasty ADP</b> (1QB PPR) cross-referenced with <b>FantasyCalc</b> value. <b>Tiers</b> mark value cliffs — draft to the tier, not the ranking. <b>Value</b> flags players falling past what they're worth (▲ = value, ▼ = reach).</p>
+    <div class="tablecard" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden">
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px">
+        <thead><tr id="adpHead"></tr></thead>
+        <tbody id="adpRows"><tr><td colspan="7"><div class="skel"><span class="spin"></span></div></td></tr></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <section class="panel" data-panel="picks">
     <div class="controls">
       <div class="field"><label>League size</label>
         <div class="seg" id="segSize"><button data-v="10">10</button><button data-v="12" aria-pressed="true">12</button><button data-v="14">14</button></div></div>
@@ -197,12 +213,110 @@
   }
   sel.addEventListener("change",function(){loadDepth(sel.value);});
 
+  /* ---- ADP & Tiers (Sleeper Dynasty 1QB PPR + FantasyCalc) ---- */
+  var ADP=[
+    ["Bijan Robinson","ATL","RB",1,1],["Ja'Marr Chase","CIN","WR",1,2],["Jahmyr Gibbs","DET","RB",1,3],["Puka Nacua","LAR","WR",1,4],
+    ["Jaxon Smith-Njigba","SEA","WR",1,5],["Josh Allen","BUF","QB",1,6],["Amon-Ra St. Brown","DET","WR",1,7],["Malik Nabers","NYG","WR",1,8],
+    ["Drake Maye","NE","QB",1,9],["Brock Bowers","LV","TE",1,10],["Joe Burrow","CIN","QB",1,11],["Trey McBride","ARI","TE",1,12],
+    ["Justin Jefferson","MIN","WR",2,1],["Ashton Jeanty","LV","RB",2,2],["Jayden Daniels","WAS","QB",2,3],["Jeremiyah Love","ARI","RB",2,4],
+    ["Lamar Jackson","BAL","QB",2,5],["CeeDee Lamb","DAL","WR",2,6],["De'Von Achane","MIA","RB",2,7],["Omarion Hampton","LAC","RB",2,8],
+    ["Drake London","ATL","WR",2,9],["Jonathan Taylor","IND","RB",2,10],["Tetairoa McMillan","CAR","WR",2,11],["Colston Loveland","CHI","TE",2,12],
+    ["James Cook","BUF","RB",3,1],["Jalen Hurts","PHI","QB",3,2],["George Pickens","DAL","WR",3,3],["Nico Collins","HOU","WR",3,4],
+    ["Chris Olave","NO","WR",3,5],["Emeka Egbuka","TB","WR",3,6],["Tyler Warren","IND","TE",3,7],["Garrett Wilson","NYJ","WR",3,8],
+    ["Chase Brown","CIN","RB",3,9],["TreVeyon Henderson","NE","RB",3,10],["Christian McCaffrey","SF","RB",3,11],["Ladd McConkey","LAC","WR",3,12],
+    ["Harold Fannin Jr.","CLE","TE",4,1],["Kenneth Walker III","KC","RB",4,2],["Breece Hall","NYJ","RB",4,3],["Carnell Tate","TEN","WR",4,4],
+    ["Bucky Irving","TB","RB",4,5],["Rashee Rice","KC","WR",4,6],["Quinshon Judkins","CLE","RB",4,7],["Patrick Mahomes","KC","QB",4,8],
+    ["Luther Burden III","CHI","WR",4,9],["Rome Odunze","CHI","WR",4,10],["Saquon Barkley","PHI","RB",4,11],["Jordyn Tyson","NO","WR",4,12],
+    ["Tucker Kraft","GB","TE",5,1],["Marvin Harrison Jr.","ARI","WR",5,2],["A.J. Brown","NE","WR",5,3],["Caleb Williams","CHI","QB",5,4],
+    ["Justin Herbert","LAC","QB",5,5],["Tee Higgins","CIN","WR",5,6],["Jaxson Dart","NYG","QB",5,7],["Brian Thomas Jr.","JAX","WR",5,8],
+    ["Kyren Williams","LAR","RB",5,9],["Zay Flowers","BAL","WR",5,10],["Makai Lemon","PHI","WR",5,11],["Bo Nix","DEN","QB",5,12],
+    ["Sam LaPorta","DET","TE",6,1],["Jameson Williams","DET","WR",6,2],["Javonte Williams","DAL","RB",6,3],["Josh Jacobs","GB","RB",6,4],
+    ["Trevor Lawrence","JAX","QB",6,5],["Travis Etienne","NO","RB",6,6],["DeVonta Smith","PHI","WR",6,7],["Cameron Skattebo","NYG","RB",6,8],
+    ["Kyle Pitts","ATL","TE",6,9],["Jaylen Waddle","DEN","WR",6,10],["Jadarian Price","SEA","RB",6,11],["RJ Harvey","DEN","RB",6,12],
+    ["Derrick Henry","BAL","RB",7,1],["Oronde Gadsden II","LAC","TE",7,2],["Brock Purdy","SF","QB",7,3],["KC Concepcion","CLE","WR",7,4],
+    ["Alec Pierce","IND","WR",7,5],["Michael Wilson","ARI","WR",7,6],["Omar Cooper Jr.","NYJ","WR",7,7],["Bhayshul Tuten","JAX","RB",7,8],
+    ["Jordan Addison","MIN","WR",7,9],["Christian Watson","GB","WR",7,10],["Wan'Dale Robinson","TEN","WR",7,11],["D'Andre Swift","CHI","RB",7,12],
+    ["Dalton Kincaid","BUF","TE",8,1],["Ricky Pearsall","SF","WR",8,2],["Kenyon Sadiq","NYJ","TE",8,3],["Kyle Monangai","CHI","RB",8,4],
+    ["D.J. Moore","BUF","WR",8,5],["Davante Adams","LAR","WR",8,6],["Terry McLaurin","WAS","WR",8,7],["Jake Ferguson","DAL","TE",8,8],
+    ["David Montgomery","HOU","RB",8,9],["Brenton Strange","JAX","TE",8,10],["Baker Mayfield","TB","QB",8,11],["Parker Washington","JAX","WR",8,12],
+    ["Travis Hunter","JAX","WR",9,1],["Denzel Boston","CLE","WR",9,2],["Fernando Mendoza","LV","QB",9,3],["George Kittle","SF","TE",9,4],
+    ["Zach Charbonnet","SEA","RB",9,5],["Jayden Higgins","HOU","WR",9,6],["D.K. Metcalf","PIT","WR",9,7],["Jaylen Warren","PIT","RB",9,8],
+    ["Michael Pittman Jr.","PIT","WR",9,9],["Mike Evans","SF","WR",9,10],["Chuba Hubbard","CAR","RB",9,11],["Tyler Allgeier","ARI","RB",9,12],
+    ["Quentin Johnston","LAC","WR",10,1],["Courtland Sutton","DEN","WR",10,2],["Matthew Golden","GB","WR",10,3],["Blake Corum","LAR","RB",10,4],
+    ["Dak Prescott","DAL","QB",10,5],["Isaiah Likely","NYG","TE",10,6],["Jakobi Meyers","JAX","WR",10,7],["Xavier Worthy","KC","WR",10,8],
+    ["Rico Dowdle","PIT","RB",10,9],["Eli Stowers","PHI","TE",10,10],["Chris Bell","MIA","WR",10,11],["Romeo Doubs","NE","WR",10,12],
+    ["Rhamondre Stevenson","NE","RB",11,1],["Germie Bernard","PIT","WR",11,2],["C.J. Stroud","HOU","QB",11,3],["Jayden Reed","GB","WR",11,4],
+    ["Mason Taylor","NYJ","TE",11,5],["Jalen Coker","CAR","WR",11,6],["Josh Downs","IND","WR",11,7],["Jonah Coleman","DEN","RB",11,8],
+    ["Chris Brazzell II","CAR","WR",11,9],["Chris Godwin","TB","WR",11,10],["Juwan Johnson","NO","TE",11,11],["Woody Marks","HOU","RB",11,12],
+    ["J.K. Dobbins","DEN","RB",12,1],["AJ Barner","SEA","TE",12,2],["Khalil Shakir","BUF","WR",12,3],["Kenneth Gainwell","TB","RB",12,4],
+    ["Jacory Croskey-Merritt","WAS","RB",12,5],["Jalen McMillan","TB","WR",12,6],["Elijah Sarratt","BAL","WR",12,7],["Mark Andrews","BAL","TE",12,8],
+    ["Jonathon Brooks","CAR","RB",12,9],["Brandon Aiyuk","FA","WR",12,10],["Trey Benson","ARI","RB",12,11],["Zachariah Branch","ATL","WR",12,12],
+    ["Jauan Jennings","MIN","WR",13,1],["Dallas Goedert","PHI","TE",13,2],["T.J. Hockenson","MIN","TE",13,3],["Terrance Ferguson","LAR","TE",13,4],
+    ["Emmett Johnson","KC","RB",13,5],["Tre Harris","LAC","WR",13,6],["Gunnar Helm","TEN","TE",13,7],["Michael Penix Jr.","ATL","QB",13,8],
+    ["Tony Pollard","TEN","RB",13,9],["Jordan Mason","MIN","RB",13,10],["Travis Kelce","KC","TE",13,11],["Rashid Shaheed","SEA","WR",13,12],
+    ["Jordan Love","GB","QB",14,1],["Jared Goff","DET","QB",14,2],["Pat Bryant","DEN","WR",14,3],["Troy Franklin","DEN","WR",14,4],
+    ["Daniel Jones","IND","QB",14,5],["Matthew Stafford","LAR","QB",14,6],["Theo Johnson","NYG","TE",14,7],["Dalton Schultz","HOU","TE",14,8],
+    ["Hunter Henry","NE","TE",14,9],["Tyrone Tracy Jr.","NYG","RB",14,10],["Rachaad White","WAS","RB",14,11],["Kayshon Boutte","NE","WR",14,12],
+    ["Chigoziem Okonkwo","WAS","TE",15,1],["Braelon Allen","NYJ","RB",15,2],["Nicholas Singleton","TEN","RB",15,3],["Chimere Dike","TEN","WR",15,4],
+    ["Ty Simpson","LAR","QB",15,5],["David Njoku","LAC","TE",15,6],["Antonio Williams","WAS","WR",15,7],["Jerry Jeudy","CLE","WR",15,8],
+    ["Isaac TeSlaa","DET","WR",15,9],["Sam Darnold","SEA","QB",15,10],["Tyjae Spears","TEN","RB",15,11],["Dylan Sampson","CLE","RB",15,12],
+    ["Malachi Fields","NYG","WR",16,1],["Elic Ayomanor","TEN","WR",16,2],["Deebo Samuel","FA","WR",16,3],["De'Zhaun Stribling","SF","WR",16,4],
+    ["Adonai Mitchell","NYJ","WR",16,5],["Tyreek Hill","FA","WR",16,6],["Kaleb Johnson","PIT","RB",16,7],["Tank Bigsby","PHI","RB",16,8],
+    ["Ted Hurst","TB","WR",16,9],["Stefon Diggs","FA","WR",16,10],["Isiah Pacheco","DET","RB",16,11],["Jake Tonges","SF","TE",16,12]
+  ];
+  function keyOf(n){return n.toLowerCase().replace(/[.'’]/g,"").split(/\s+/).filter(function(w){return ["jr","sr","ii","iii","iv","v"].indexOf(w)<0;}).join("");}
+  var adpList=[], adpPos="ALL", adpQ="", adpLoaded=false;
+  function setAdpStatus(s){var e=document.getElementById("adpStatus");if(!e)return;e.innerHTML='<span class="dot" style="width:8px;height:8px;border-radius:50%;background:'+(s==="loading"?"var(--research)":s==="offline"?"var(--ink-faint)":"var(--redraft)")+'"></span>'+(s==="loading"?"Loading…":s==="offline"?"Offline — reopen tab":"Live · Sleeper + FantasyCalc");}
+  function adpPhoto(p){return p.espnId?("https://a.espncdn.com/i/headshots/nfl/players/full/"+p.espnId+".png"):(p.sleeperId?"https://sleepercdn.com/content/nfl/players/"+p.sleeperId+".jpg":"");}
+  function loadADP(){
+    setAdpStatus("loading");
+    fetch("https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=1&numTeams=12&ppr=1").then(function(r){return r.json();}).then(function(data){
+      var fc={};
+      (data||[]).forEach(function(r){var p=r.player||{};if(!p.name)return;fc[keyOf(p.name)]={val:r.value,rank:r.overallRank,espnId:p.espnId,sleeperId:p.sleeperId,trend:r.trend30Day};});
+      adpList=ADP.map(function(a){var m=fc[keyOf(a[0])]||{};return{name:a[0],team:a[1],pos:a[2],round:a[3],pick:a[4],
+        overall:(a[3]-1)*12+a[4],val:m.val||null,fcRank:m.rank||null,espnId:m.espnId,sleeperId:m.sleeperId,trend:m.trend};});
+      var pc={}; adpList.forEach(function(p){pc[p.pos]=(pc[p.pos]||0)+1;p.posRank=pc[p.pos];});
+      var tier=1,top=null; adpList.forEach(function(p){if(p.val){if(top==null)top=p.val;else if(p.val<top*0.85){tier++;top=p.val;}}p.tier=tier;});
+      setAdpStatus("live"); renderADP();
+    }).catch(function(){setAdpStatus("offline");document.getElementById("adpRows").innerHTML='<tr><td colspan="7"><div class="skel">Couldn\'t reach FantasyCalc — reopen the tab to retry.</div></td></tr>';});
+  }
+  function renderADP(){
+    document.getElementById("adpHead").innerHTML='<th>ADP</th><th>Player</th><th>Pos</th><th>Team</th><th>Tier</th><th>Dyn Value</th><th>Value</th>';
+    var list=adpList.filter(function(p){if(adpPos!=="ALL"&&p.pos!==adpPos)return false;if(adpQ&&p.name.toLowerCase().indexOf(adpQ)<0)return false;return true;});
+    var body=document.getElementById("adpRows");
+    if(!list.length){body.innerHTML='<tr><td colspan="7"><div class="skel">No players match.</div></td></tr>';return;}
+    var html="", lastTier=null, showTiers=(adpPos==="ALL"&&!adpQ);
+    list.forEach(function(p){
+      if(showTiers&&p.tier!==lastTier){lastTier=p.tier;
+        html+='<tr><td colspan="7" style="background:var(--surface-2);font-family:var(--cond);text-transform:uppercase;letter-spacing:.08em;font-weight:800;font-size:11px;color:var(--gold);padding:6px 12px">Tier '+p.tier+'</td></tr>';}
+      var adp=p.round+"."+(p.pick<10?"0":"")+p.pick;
+      var delta=(p.fcRank!=null)?(p.overall-p.fcRank):null;
+      var vcell=(delta==null)?'<span style="color:var(--ink-faint)">—</span>':
+        (delta>=8?'<span style="color:var(--redraft);font-weight:700">▲ '+delta+'</span>':delta<=-8?'<span style="color:var(--lose);font-weight:700">▼ '+delta+'</span>':'<span style="color:var(--ink-faint)">'+(delta>0?"+":"")+delta+'</span>');
+      var tr=(p.trend!=null&&p.trend!==0)?' <span style="font-size:10px;color:'+(p.trend>0?"var(--redraft)":"var(--lose)")+'">'+(p.trend>0?"▲":"▼")+'</span>':'';
+      html+='<tr style="border-bottom:1px solid var(--line-soft)">'+
+        '<td style="padding:8px 12px;font-weight:800;font-variant-numeric:tabular-nums">'+adp+' <small style="color:var(--ink-faint);font-weight:600">#'+p.overall+'</small></td>'+
+        '<td style="padding:8px 12px"><span style="display:flex;align-items:center;gap:9px;min-width:160px"><img src="'+esc(adpPhoto(p))+'" style="width:30px;height:30px;border-radius:7px;object-fit:cover;object-position:top;background:var(--surface-2)" onerror="this.style.visibility=\'hidden\'"><b>'+esc(p.name)+'</b></span></td>'+
+        '<td style="padding:8px 12px"><span class="pill pos-'+p.pos+'">'+p.pos+p.posRank+'</span></td>'+
+        '<td style="padding:8px 12px">'+esc(p.team)+'</td>'+
+        '<td style="padding:8px 12px;color:var(--ink-faint);font-weight:700">T'+p.tier+'</td>'+
+        '<td style="padding:8px 12px;font-weight:800;font-variant-numeric:tabular-nums">'+(p.val!=null?p.val.toLocaleString():"—")+tr+'</td>'+
+        '<td style="padding:8px 12px;font-variant-numeric:tabular-nums">'+vcell+'</td></tr>';
+    });
+    body.innerHTML=html;
+  }
+  document.getElementById("segAdpPos").addEventListener("click",function(ev){var b=ev.target.closest("button");if(!b)return;
+    this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});adpPos=b.getAttribute("data-v");renderADP();});
+  document.getElementById("adpSearch").addEventListener("input",function(){adpQ=this.value.trim().toLowerCase();renderADP();});
+
   /* tabs */
   $("#tabs").addEventListener("click",function(ev){var b=ev.target.closest(".tab");if(!b)return;var name=b.getAttribute("data-tab");
     document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("on",t===b);});
     document.querySelectorAll(".panel").forEach(function(p){p.classList.toggle("on",p.getAttribute("data-panel")===name);});
     if(name==="depth"&&!depthLoaded){depthLoaded=true;sel.value="12";loadDepth("12");}
+    if(name==="adp"&&!adpLoaded){adpLoaded=true;loadADP();}
   });
+  adpLoaded=true; loadADP();
 })();
 </script>
 </body>
