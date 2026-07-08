@@ -273,7 +273,8 @@
     fetch("https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=1&numTeams=12&ppr=1").then(function(r){return r.json();}).then(function(data){
       var fc={};
       (data||[]).forEach(function(r){var p=r.player||{};if(!p.name)return;fc[keyOf(p.name)]={val:r.value,rank:r.overallRank,espnId:p.espnId,sleeperId:p.sleeperId,trend:r.trend30Day};});
-      adpList=ADP.map(function(a){var m=fc[keyOf(a[0])]||{};return{name:a[0],team:a[1],pos:a[2],round:a[3],pick:a[4],
+      var ALIAS={"cameronskattebo":"camskattebo","chigoziemokonkwo":"chigokonkwo"};
+      adpList=ADP.map(function(a){var k=keyOf(a[0]);var m=fc[k]||fc[ALIAS[k]]||{};return{name:a[0],team:a[1],pos:a[2],round:a[3],pick:a[4],
         overall:(a[3]-1)*12+a[4],val:m.val||null,fcRank:m.rank||null,espnId:m.espnId,sleeperId:m.sleeperId,trend:m.trend};});
       var pc={}; adpList.forEach(function(p){pc[p.pos]=(pc[p.pos]||0)+1;p.posRank=pc[p.pos];});
       var tier=1,top=null; adpList.forEach(function(p){if(p.val){if(top==null)top=p.val;else if(p.val<top*0.85){tier++;top=p.val;}}p.tier=tier;});
