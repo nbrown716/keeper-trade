@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Draft Kit · GRIDIRON</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#090D14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧠%3C/text%3E%3C/svg%3E">
+<script>(function(){try{var t=localStorage.getItem('gi-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+  :root{--bg:#090D14;--panel:#10151F;--panel2:#161D2A;--raise:#1C2534;--ink:#ECF1F9;--ink-soft:#9BA8BF;--ink-faint:#5E6B84;
+    --line:#202939;--line-soft:#1A2230;--gold:#F0B429;--good:#2DD4A7;--bad:#F0596B;--info:#4C9AFF;--warn:#FF8A5B;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 14px 40px rgba(0,0,0,.4);
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--cond:"Arial Narrow","Helvetica Neue",var(--sans);}
+  :root[data-theme="light"]{--bg:#EEF1F6;--panel:#FFFFFF;--panel2:#F5F7FB;--raise:#EBEFF6;--ink:#0E1626;--ink-soft:#48546C;--ink-faint:#8792A8;
+    --line:#DEE4EE;--line-soft:#EAEEF5;--gold:#C98A00;--good:#0FA37F;--bad:#C9372C;--info:#2F6FE0;--warn:#D96B2B;
+    --shadow:0 1px 2px rgba(18,22,28,.05),0 10px 30px rgba(18,22,28,.08);}
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none} .num{font-variant-numeric:tabular-nums}
+
+  .app{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+  @media (max-width:860px){.app{grid-template-columns:1fr}.rail{position:fixed;inset:auto 0 0 0;z-index:60;flex-direction:row!important;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom))!important;border-right:0!important;border-top:1px solid var(--line);
+    background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(14px);overflow-x:auto}
+    .rail .brand,.rail .railfoot{display:none!important}
+    .rail .nav{flex-direction:row!important;gap:4px!important;width:100%;justify-content:space-around}
+    .rail .nav button{flex-direction:column;gap:3px!important;font-size:9.5px!important;padding:7px 9px!important}
+    .main{padding-bottom:86px!important}}
+  .rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:8px;font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:19px;padding:2px 8px 14px}
+  .brand .lg{color:var(--gold)}
+  .nav{display:flex;flex-direction:column;gap:3px}
+  .nav button{display:flex;align-items:center;gap:10px;border:0;background:transparent;color:var(--ink-soft);font-family:var(--sans);
+    font-size:13px;font-weight:700;padding:10px 12px;border-radius:10px;cursor:pointer;text-align:left;letter-spacing:.01em}
+  .nav button:hover{background:var(--panel2);color:var(--ink)}
+  .nav button.on{background:linear-gradient(90deg,color-mix(in srgb,var(--gold) 16%,transparent),transparent 85%);color:var(--ink);
+    box-shadow:inset 2.5px 0 0 var(--gold)}
+  .railfoot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:8px}
+  .railfoot a,.railfoot button{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink-soft);
+    border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:8px 11px;cursor:pointer}
+  .railfoot a:hover,.railfoot button:hover{color:var(--ink);border-color:var(--gold)}
+  .fresh{font-size:10px;color:var(--ink-faint);font-weight:600;padding:0 8px;line-height:1.5}
+  .fresh b{color:var(--good)}
+
+  .main{padding:18px clamp(12px,2.4vw,28px) 48px;min-width:0}
+  .topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .vtitle{font-family:var(--cond);text-transform:uppercase;font-weight:800;font-size:clamp(22px,3.4vw,32px);line-height:1;margin-right:auto}
+  .vtitle small{display:block;font-family:var(--sans);font-size:11px;font-weight:600;color:var(--ink-faint);letter-spacing:.02em;text-transform:none;margin-top:3px}
+  .search{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:9px 13px;font-size:13px;font-weight:600;min-width:190px}
+  .search:focus{outline:none;border-color:var(--gold)}
+  .pills{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+  .pills button{border:0;background:transparent;color:var(--ink-soft);font-size:12px;font-weight:800;padding:7px 12px;border-radius:7px;cursor:pointer}
+  .pills button:hover{color:var(--ink)} .pills button.on{background:var(--gold);color:#1A1204}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:11px 14px;box-shadow:var(--shadow)}
+  .kpi .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-faint);font-weight:800}
+  .kpi .v{font-family:var(--cond);font-weight:800;font-size:21px;margin-top:2px;line-height:1.1}
+  .kpi .s{font-size:10.5px;color:var(--ink-faint);font-weight:600}
+  .kpi .v .hl{color:var(--gold)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  .card-h{padding:11px 15px;border-bottom:1px solid var(--line-soft);font-family:var(--cond);text-transform:uppercase;
+    letter-spacing:.08em;font-weight:800;font-size:12.5px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .tblwrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{text-align:left;font-family:var(--cond);text-transform:uppercase;letter-spacing:.06em;font-size:9.5px;color:var(--ink-faint);
+    font-weight:800;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--panel);z-index:2}
+  tbody td{padding:6px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap;font-variant-numeric:tabular-nums}
+  tbody tr:hover{background:var(--panel2)}
+  .tierband td{background:var(--panel2);font-family:var(--cond);text-transform:uppercase;letter-spacing:.09em;font-weight:800;
+    font-size:10px;color:var(--gold);padding:4px 12px;border-bottom:1px solid var(--line)}
+  .rk{font-family:var(--cond);font-weight:800;font-size:14px;color:var(--ink-faint);width:30px}
+  .pl{display:flex;align-items:center;gap:9px;min-width:180px}
+  .pl img{width:29px;height:29px;border-radius:7px;object-fit:cover;object-position:top;background:var(--panel2);flex:none}
+  .pl .nm{font-weight:700;font-size:13px;line-height:1.1}
+  .pl .mt{font-size:9.5px;color:var(--ink-faint)}
+  .pill{display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);font-weight:700;font-size:9.5px;padding:1px 6px;border-radius:4px}
+  .pos-QB{background:#3A2247;color:#D9AEEC}.pos-RB{background:#173025;color:#7FD6A0}.pos-WR{background:#17263F;color:#9CBEF5}.pos-TE{background:#332512;color:#EEB483}
+  .vbar{width:64px;height:6px;background:var(--raise);border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle}
+  .vbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--warn));border-radius:4px}
+  .chip{display:inline-flex;align-items:center;font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.02em}
+  .c-good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+  .c-bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+  .c-mid{background:var(--raise);color:var(--ink-faint)}
+  .c-warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+  .srcmini{font-size:9.5px;color:var(--ink-faint);font-weight:700;letter-spacing:.02em}
+  .srcmini b{color:var(--ink-soft)}
+  .delta-up{color:var(--good);font-weight:800;font-size:11px} .delta-dn{color:var(--bad);font-weight:800;font-size:11px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:1080px){.grid2{grid-template-columns:1fr}}
+  .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:14px}
+  .hs-list{list-style:none;margin:0;padding:6px 0}
+  .hs-list li{display:flex;align-items:center;gap:10px;padding:7px 15px;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+  .hs-list li:last-child{border-bottom:0}
+  .hs-list img{width:28px;height:28px;border-radius:7px;object-fit:cover;object-position:top;background:var(--panel2);flex:none}
+  .hs-list .nm{font-weight:700} .hs-list .mt{font-size:10px;color:var(--ink-faint)}
+  .hs-list .val{margin-left:auto;font-weight:800;font-size:12px}
+
+  .sos-cell{font-weight:800;font-size:11px;text-align:center;border-radius:6px;padding:3px 0;min-width:52px;display:inline-block}
+  .view{display:none} .view.on{display:block}
+  .skel{padding:48px;text-align:center;color:var(--ink-faint)}
+  .spin{width:24px;height:24px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}} @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  .method{font-size:11px;color:var(--ink-faint);line-height:1.6;padding:12px 15px}
+  .method b{color:var(--ink-soft)}
+  .gobtn{border:0;background:var(--gold);color:#1A1204;font-weight:800;font-size:12px;padding:8px 14px;border-radius:9px;cursor:pointer;white-space:nowrap}
+  .gobtn:hover{filter:brightness(1.08)}
+  .method select,.method label{font-weight:700;color:var(--ink-soft)}
+  .method select{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:7px;padding:4px 7px;font-size:11px;margin:0 8px 0 4px}
+  .method input[type=checkbox]{accent-color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand">🧠 <span>DRAFT<span class="lg">KIT</span></span></div>
+    <nav class="nav" id="nav">
+      <button data-v="board" class="on">🏆 Big Board</button>
+      <button data-v="g26">🏈 GRIDIRON 2026</button>
+      <button data-v="sources">📊 Rankings</button>
+      <button data-v="proj">📈 Projections</button>
+      <button data-v="hot">🔥 Hot Spots</button>
+      <button data-v="sos">🗓 Schedule</button>
+      <button data-v="league">🔗 League Sync</button>
+    </nav>
+    <div class="railfoot">
+      <div class="fresh" id="fresh">Loading data…</div>
+      <a href="draft.html">🎯 War Room</a>
+      <a href="index.html">🏈 Main site</a>
+      <button id="themeBtn">🌙 Theme</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="vtitle" id="vtitle">Big Board<small id="vsub">Combined consensus · FantasyPros × Market × GRIDIRON model</small></div>
+      <input class="search" id="q" type="text" placeholder="Search player…" autocomplete="off">
+      <div class="pills" id="posPills"><button data-v="ALL" class="on">All</button><button data-v="QB">QB</button><button data-v="RB">RB</button><button data-v="WR">WR</button><button data-v="TE">TE</button></div>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <section class="view on" data-view="board">
+      <div class="card"><div class="tblwrap"><table>
+        <thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Proj</th><th>VORP</th><th>ADP</th><th>Δ ADP</th><th>SOS</th><th>Injury</th><th>FP · Mkt · Grd</th></tr></thead>
+        <tbody id="boardRows"><tr><td colspan="10"><div class="skel"><span class="spin"></span></div></td></tr></tbody>
+      </table></div></div>
+    </section>
+
+    <section class="view" data-view="g26">
+      <div class="card">
+        <div class="card-h">GRIDIRON 2026 Rankings — custom analyst board <span class="srcmini">built from FantasyPros ECR + 4for4 + 3-yr trends, red zone, SOS &amp; coaching changes · Sep 6, 2026</span></div>
+        <div class="tblwrap"><table>
+          <thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Team</th><th>FP</th><th>4for4</th><th>Split</th></tr></thead>
+          <tbody id="g26Rows"></tbody>
+        </table></div>
+        <div class="method"><b>How it's built:</b> composite of FantasyPros ECR and 4for4 PPR rank, then GRIDIRON analyst adjustments from 2023–25 usage trends, 2025 red-zone data, 4for4 strength of schedule, and 2026 coaching / roster changes. <b>Split</b> = how far the two sources disagree (big splits = market inefficiency). Tags: <span style="color:#22c55e;font-weight:800">SLEEPER</span> · <span style="color:#eab308;font-weight:800">BREAKOUT / BOUNCE-BACK</span> · <span style="color:#3b82f6;font-weight:800">VALUE</span> · <span style="color:#ef4444;font-weight:800">FADE / CHECK NEWS</span> · <span style="color:#f97316;font-weight:800">RISK</span>.</div>
+      </div>
+    </section>
+
+    <section class="view" data-view="sources">
+      <div class="topbar" style="margin-bottom:12px">
+        <div class="pills" id="srcPills"><button data-v="compare" class="on">Compare</button><button data-v="fp">FantasyPros</button><button data-v="mkt">Market</button><button data-v="grd">GRIDIRON</button></div>
+      </div>
+      <div class="card">
+        <div class="tblwrap"><table>
+          <thead id="srcHead"></thead>
+          <tbody id="srcRows"></tbody>
+        </table></div>
+        <div class="method" id="srcMethod"></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="proj">
+      <div class="grid2" id="projGrid"></div>
+    </section>
+
+    <section class="view" data-view="hot">
+      <div class="grid4" id="hotGrid"></div>
+    </section>
+
+    <section class="view" data-view="sos">
+      <div class="card">
+        <div class="card-h">Strength of Schedule — impact on projected output <span class="srcmini">source: DraftSharks · <span class="chip c-good">green = favorable</span> <span class="chip c-bad">red = tough</span></span></div>
+        <div class="tblwrap"><table>
+          <thead><tr><th>Team</th><th>QB</th><th>RB</th><th>WR</th><th>TE</th><th>Avg</th></tr></thead>
+          <tbody id="sosRows"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="view" data-view="league">
+      <div id="leagueView"><div class="skel"><span class="spin"></span></div></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  function $(s){return document.querySelector(s);}
+  function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  var tb=$("#themeBtn");
+  function setTheme(t){document.documentElement.setAttribute("data-theme",t);try{localStorage.setItem("gi-theme",t);}catch(e){}}
+  tb.addEventListener("click",function(){setTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");});
+
+  // DraftSharks enrichment: name -> [SOS %, InjuryRisk %]
+  var DS={"Puka Nacua":[-3.1,51],"Ja'Marr Chase":[4,37],"Jahmyr Gibbs":[0.9,54],"Bijan Robinson":[-3.2,25],"Christian McCaffrey":[0.7,78],
+  "Jaxon Smith-Njigba":[-0.1,39],"Amon-Ra St. Brown":[-1,37],"CeeDee Lamb":[-0.7,44],"Justin Jefferson":[4.9,36],"Jonathan Taylor":[1.7,37],
+  "Ashton Jeanty":[-3.1,39],"James Cook":[-4.2,36],"Drake London":[0.4,73],"A.J. Brown":[-2.5,61],"Rashee Rice":[-2.6,74],
+  "Nico Collins":[4.4,49],"De'Von Achane":[0.8,68],"Saquon Barkley":[4.4,35],"George Pickens":[-0.7,36],"Kenneth Walker III":[0.6,34],
+  "Chase Brown":[-4,45],"Omarion Hampton":[0.6,73],"Josh Allen":[-3.4,33],"Brock Bowers":[-1,81],"Trey McBride":[-3.6,46],
+  "Derrick Henry":[-0.1,33],"Jeremiyah Love":[0.1,34],"Zay Flowers":[-0.3,36],"Chris Olave":[0.9,75],"Malik Nabers":[3.7,39],
+  "DeVonta Smith":[6.6,50],"Tee Higgins":[4,66],"Garrett Wilson":[-1,38],"Breece Hall":[-2.5,43],"Colston Loveland":[-3.6,60],
+  "Josh Jacobs":[-2.2,67],"Javonte Williams":[2.9,43],"Travis Etienne":[1.8,45],"Tyler Warren":[1.5,36],"Jaylen Waddle":[-2.5,37],
+  "Davante Adams":[-3.1,49],"Kyren Williams":[6.4,52],"Terry McLaurin":[-2.4,37],"Emeka Egbuka":[2.6,42],"Tetairoa McMillan":[-1.3,37],
+  "Christian Watson":[1.3,25],"Luther Burden III":[-2.5,54],"Ladd McConkey":[-2.6,42],"Lamar Jackson":[1.1,42],"Cameron Skattebo":[2.2,72],
+  "Drake Maye":[-2.8,35],"Tucker Kraft":[-3.3,39],"Joe Burrow":[3.2,34],"D'Andre Swift":[-3.6,42],"Jayden Daniels":[-0.4,41],
+  "Jalen Hurts":[8.8,33],"Jameson Williams":[-1,36],"Bucky Irving":[-2.2,63],"Mike Evans":[-3.2,65],"Harold Fannin Jr.":[3.4,57],
+  "David Montgomery":[2,85],"Sam LaPorta":[-2,60],"TreVeyon Henderson":[-1.9,64],"Quinshon Judkins":[0.6,48],"Trevor Lawrence":[4.5,34],
+  "Rome Odunze":[-2.5,36],"Justin Herbert":[-2.8,36],"Caleb Williams":[-3.5,20],"Brock Purdy":[-4,36],"D.K. Metcalf":[-2.6,36],
+  "Parker Washington":[4,0],"Jaylen Warren":[-2.1,66],"Dak Prescott":[0.5,34],"Jaxson Dart":[4.8,36],"Rhamondre Stevenson":[-1.9,64],
+  "D.J. Moore":[0.7,54],"Bhayshul Tuten":[0.9,43],"Bo Nix":[-3.7,28],"Patrick Mahomes":[-3.2,37],"Michael Pittman Jr.":[-2.6,60],
+  "Tony Pollard":[2.9,35],"Chuba Hubbard":[-6,36],"Kyler Murray":[4,33],"Marvin Harrison Jr.":[-0.8,55],"Courtland Sutton":[-2.5,43],
+  "Kyle Pitts":[4.8,53],"Jadarian Price":[5.6,29],"Carnell Tate":[5,40],"Jordyn Tyson":[0.9,45],"Jayden Reed":[1.3,36],
+  "Alec Pierce":[-0.8,67],"Rico Dowdle":[-2.1,27],"RJ Harvey":[0.1,36],"Jordan Addison":[4.9,37],"J.K. Dobbins":[0.1,39],
+  "Jakobi Meyers":[4,37],"Brian Thomas Jr.":[4,35],"George Kittle":[-3.6,44],"Jared Goff":[-0.9,23],"Matthew Stafford":[0,39],
+  "Jordan Love":[-0.3,82],"Baker Mayfield":[-0.8,37],"C.J. Stroud":[4.4,29],"Xavier Worthy":[-2.6,35],"Travis Kelce":[1.9,42],
+  "Chris Godwin":[2.6,40],"Josh Downs":[-0.8,61],"Kyle Monangai":[-3.6,0],"Dalton Kincaid":[-1.4,62],"Mark Andrews":[3.6,36],
+  "T.J. Hockenson":[2,51],"Isiah Pacheco":[0.9,36],"Aaron Jones":[-0.1,65],"Tyjae Spears":[2.9,37],"Jonathon Brooks":[-6,35],
+  "Wan'Dale Robinson":[5,36],"Ricky Pearsall":[-3.2,43],"Quentin Johnston":[-2.6,56],"Rachaad White":[4.2,39],"Blake Corum":[6.4,33],
+  "Jauan Jennings":[4.9,33],"Dallas Goedert":[7.1,83],"Jake Ferguson":[-2.5,55],"Zach Charbonnet":[5.6,37],"Jaylen Wright":[-2,0],
+  "Khalil Shakir":[0.7,35],"Jerry Jeudy":[4.3,32],"Romeo Doubs":[-2.5,37],"Keon Coleman":[0.4,0],"Jordan Mason":[-0.1,39]};
+
+  var P=[], S={pos:"ALL",q:"",view:"board",src:"compare"};
+  function keyOf(n){return n.toLowerCase().replace(/[.'’]/g,"").split(/\s+/).filter(function(w){return ["jr","sr","ii","iii","iv","v"].indexOf(w)<0;}).join("");}
+  function photo(p){return p.espnId?("https://a.espncdn.com/i/headshots/nfl/players/full/"+p.espnId+".png"):(p.sleeperId?"https://sleepercdn.com/content/nfl/players/"+p.sleeperId+".jpg":"");}
+
+  Promise.all([
+    fetch("fp-data.json").then(function(r){if(!r.ok)throw 0;return r.json();}),
+    fetch("https://api.fantasycalc.com/values/current?isDynasty=false&numQbs=1&numTeams=12&ppr=1").then(function(r){return r.json();}).catch(function(){return [];})
+  ]).then(function(res){
+    var fp=res[0], fcMap={};
+    (res[1]||[]).forEach(function(r){var pl=r.player||{};if(pl.name)fcMap[keyOf(pl.name)]={espnId:pl.espnId,sleeperId:pl.sleeperId,val:r.value,trend:r.trend30Day};});
+    var dsMap={}; Object.keys(DS).forEach(function(n){dsMap[keyOf(n)]=DS[n];});
+    P=(fp.players||[]).map(function(p){
+      var m=fcMap[keyOf(p.n)]||{}, d=dsMap[keyOf(p.n)]||[null,null];
+      return {id:p.id,n:p.n,pos:p.pos,t:p.t,bye:p.bye,ecr:p.ecr,fpTier:p.tier,pr:p.pr,rng:p.rng,own:p.own,adp:p.adp||null,
+        proj:p.proj||0,slug:p.slug,espnId:m.espnId,sleeperId:m.sleeperId,val:m.val||null,trend:m.trend,sos:d[0],inj:d[1]};
+    });
+    buildModel();
+    $("#fresh").innerHTML='FP data <b>upd '+esc(fp.updated)+'</b><br>Market: live · Model: GRIDIRON v1';
+    renderAll();
+  }).catch(function(){
+    $("#boardRows").innerHTML='<tr><td colspan="10"><div class="skel"><b>fp-data.json missing</b> — upload it to the repo.</div></td></tr>';
+  });
+
+  /* ---- GRIDIRON model ---- */
+  var BASE={QB:13,RB:26,WR:38,TE:13};
+  function buildModel(){
+    ["QB","RB","WR","TE"].forEach(function(pos){
+      var lst=P.filter(function(p){return p.pos===pos;}).sort(function(a,b){return b.proj-a.proj;});
+      var idx=Math.min(BASE[pos]-1,lst.length-1), base=lst[idx]?lst[idx].proj:0;
+      lst.forEach(function(p){p.vorp=Math.max(0,Math.round((p.proj-base)*10)/10);p.posBase=base;});
+    });
+    var maxV=Math.max.apply(null,P.map(function(p){return p.vorp||0;}))||1;
+    var maxVal=Math.max.apply(null,P.map(function(p){return p.val||0;}))||1;
+    P.forEach(function(p){
+      var vorpN=(p.vorp||0)/maxV*100, valN=(p.val||0)/maxVal*100, ecrN=(301-p.ecr)/300*100;
+      var s=0.45*vorpN+0.30*valN+0.25*ecrN;
+      if(p.inj!=null){ if(p.inj>=75)s*=0.94; else if(p.inj>=60)s*=0.97; }
+      if(p.sos!=null){ s*=(1+Math.max(-3,Math.min(3,p.sos))*0.004); }
+      p.score=s;
+    });
+    var byScore=P.slice().sort(function(a,b){return b.score-a.score;});
+    byScore.forEach(function(p,i){p.grd=i+1;});
+    var byVal=P.filter(function(p){return p.val!=null;}).sort(function(a,b){return b.val-a.val;});
+    byVal.forEach(function(p,i){p.mkt=i+1;});
+    P.forEach(function(p){if(p.mkt==null)p.mkt=p.ecr;});
+    P.forEach(function(p){p.comb=(p.ecr+p.mkt+p.grd)/3;});
+    P.sort(function(a,b){return a.comb-b.comb;});
+    P.forEach(function(p,i){p.rank=i+1;});
+    var tier=1, top=null;
+    P.forEach(function(p){ if(top==null)top=p.score; else if(p.score<top*0.90){tier++;top=p.score;} p.tier=Math.min(tier,12); });
+    var pc={}; P.forEach(function(p){pc[p.pos]=(pc[p.pos]||0)+1;p.posRank=pc[p.pos];});
+  }
+
+  function filt(list){
+    return list.filter(function(p){
+      if(S.pos!=="ALL"&&p.pos!==S.pos)return false;
+      if(S.q&&p.n.toLowerCase().indexOf(S.q)<0)return false;
+      return true;
+    });
+  }
+  function sosChip(v){ if(v==null)return'<span class="chip c-mid">—</span>';
+    var c=v>=1.5?"c-good":v<=-1.5?"c-bad":"c-mid"; return '<span class="chip '+c+'">'+(v>0?"+":"")+v+'%</span>'; }
+  function injChip(v){ if(v==null)return'<span class="chip c-mid">—</span>';
+    var c=v>=65?"c-bad":v>=45?"c-warn":"c-good"; return '<span class="chip '+c+'">'+v+'%</span>'; }
+
+  /* ---- KPIs ---- */
+  function renderKpis(){
+    var avail=P.length;
+    var bestVal=P.filter(function(p){return p.adp!=null&&(p.adp-p.ecr)>=6;}).sort(function(a,b){return (b.adp-b.ecr)-(a.adp-a.ecr);})[0];
+    var hot=P.filter(function(p){return p.trend;}).sort(function(a,b){return b.trend-a.trend;})[0];
+    var risky=P.filter(function(p){return p.inj!=null&&p.inj>=70&&p.ecr<=60;}).length;
+    $("#kpis").innerHTML=
+      '<div class="kpi"><div class="k">Player pool</div><div class="v num">'+avail+'</div><div class="s">FP top 300 · 3 sources</div></div>'+
+      '<div class="kpi"><div class="k">Best value at ADP</div><div class="v">'+(bestVal?esc(bestVal.n):"—")+'</div><div class="s">'+(bestVal?("falls "+(bestVal.adp-bestVal.ecr)+" past ECR"):"")+'</div></div>'+
+      '<div class="kpi"><div class="k">Heating up</div><div class="v">'+(hot?esc(hot.n):"—")+'</div><div class="s">'+(hot?("▲"+Math.round(hot.trend).toLocaleString()+" mkt / 30d"):"")+'</div></div>'+
+      '<div class="kpi"><div class="k">Injury flags (top 60)</div><div class="v num '+(risky>5?"hl":"")+'">'+risky+'</div><div class="s">risk ≥70% — see Hot Spots</div></div>';
+  }
+
+  /* ---- Big Board ---- */
+  function renderBoard(){
+    var body=$("#boardRows"), html="", lastTier=null;
+    var list=filt(P), showTiers=(S.pos==="ALL"&&!S.q);
+    if(!list.length){body.innerHTML='<tr><td colspan="10"><div class="skel">No match.</div></td></tr>';return;}
+    var maxV=Math.max.apply(null,P.map(function(p){return p.vorp||0;}))||1;
+    list.slice(0,220).forEach(function(p){
+      if(showTiers&&p.tier!==lastTier){lastTier=p.tier;html+='<tr class="tierband"><td colspan="10">Tier '+p.tier+'</td></tr>';}
+      var delta=(p.adp!=null)?(p.adp-p.ecr):null;
+      var dc=(delta==null)?'—':(delta>=6?'<span class="delta-up">+'+delta+' falls</span>':delta<=-6?'<span class="delta-dn">'+delta+' reach</span>':'<span style="color:var(--ink-faint)">'+(delta>0?"+":"")+delta+'</span>');
+      html+='<tr><td class="rk">'+p.rank+'</td>'+
+        '<td><span class="pl"><img src="'+esc(photo(p))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">'+
+        '<span><span class="nm">'+esc(p.n)+'</span><br><span class="mt">'+esc(p.t)+' · Bye '+esc(p.bye||"—")+'</span></span></span></td>'+
+        '<td><span class="pill pos-'+p.pos+'">'+p.pos+p.posRank+'</span></td>'+
+        '<td class="num" style="font-weight:700">'+(p.proj||"—")+'</td>'+
+        '<td><span class="vbar"><i style="width:'+Math.round((p.vorp||0)/maxV*100)+'%"></i></span> <span class="num" style="font-size:10.5px;color:var(--ink-faint)">'+(p.vorp||0)+'</span></td>'+
+        '<td class="num">'+(p.adp!=null?p.adp:"—")+'</td>'+
+        '<td>'+dc+'</td>'+
+        '<td>'+sosChip(p.sos)+'</td>'+
+        '<td>'+injChip(p.inj)+'</td>'+
+        '<td class="srcmini">FP <b>'+p.ecr+'</b> · M <b>'+p.mkt+'</b> · G <b>'+p.grd+'</b></td></tr>';
+    });
+    body.innerHTML=html;
+  }
+
+  /* ---- Sources ---- */
+  var SRC_META={
+    fp:{title:"FantasyPros ECR",method:"<b>FantasyPros:</b> expert consensus draft rankings (PPR) with FP's own tiers — straight from their API snapshot."},
+    mkt:{title:"Market (FantasyCalc)",method:"<b>Market:</b> live crowd values derived from real trades in thousands of leagues (FantasyCalc redraft 1QB PPR). What people actually pay."},
+    grd:{title:"GRIDIRON Model",method:"<b>GRIDIRON model:</b> 45% projected points over positional replacement (VORP) + 30% market value + 25% expert consensus, docked for injury risk (≥60%/≥75%) and nudged ±1.2% for schedule. Our house rankings."},
+    compare:{title:"Side-by-side",method:"<b>Compare:</b> all three sources at once, sorted by the combined board. Big spreads = the sources disagree — those are the players to research."}
+  };
+  function renderSources(){
+    var head=$("#srcHead"), body=$("#srcRows");
+    $("#srcMethod").innerHTML=SRC_META[S.src].method;
+    var list=filt(P);
+    if(S.src==="compare"){
+      head.innerHTML='<tr><th>#</th><th>Player</th><th>Pos</th><th>FP</th><th>Market</th><th>GRIDIRON</th><th>Spread</th></tr>';
+      body.innerHTML=list.slice(0,150).map(function(p){
+        var spread=Math.max(p.ecr,p.mkt,p.grd)-Math.min(p.ecr,p.mkt,p.grd);
+        return '<tr><td class="rk">'+p.rank+'</td>'+
+          '<td><span class="pl"><img src="'+esc(photo(p))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span class="nm">'+esc(p.n)+'</span></span></td>'+
+          '<td><span class="pill pos-'+p.pos+'">'+p.pos+'</span></td>'+
+          '<td class="num">'+p.ecr+'</td><td class="num">'+p.mkt+'</td><td class="num">'+p.grd+'</td>'+
+          '<td>'+(spread>=15?'<span class="chip c-warn">±'+spread+'</span>':'<span class="chip c-mid">±'+spread+'</span>')+'</td></tr>';
+      }).join("");
+    } else {
+      var key=S.src==="fp"?"ecr":S.src==="mkt"?"mkt":"grd";
+      var sorted=list.slice().sort(function(a,b){return a[key]-b[key];});
+      head.innerHTML='<tr><th>#</th><th>Player</th><th>Pos</th><th>Team</th><th>'+(S.src==="fp"?"FP Tier":"Proj")+'</th><th>vs Combined</th></tr>';
+      body.innerHTML=sorted.slice(0,150).map(function(p){
+        var d=p.rank-p[key];
+        return '<tr><td class="rk">'+p[key]+'</td>'+
+          '<td><span class="pl"><img src="'+esc(photo(p))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span class="nm">'+esc(p.n)+'</span></span></td>'+
+          '<td><span class="pill pos-'+p.pos+'">'+p.pos+p.posRank+'</span></td><td>'+esc(p.t)+'</td>'+
+          '<td class="num">'+(S.src==="fp"?("T"+(p.fpTier||"—")):(p.proj||"—"))+'</td>'+
+          '<td>'+(d>=6?'<span class="delta-up">+'+d+' higher here</span>':d<=-6?'<span class="delta-dn">'+d+' lower here</span>':'<span style="color:var(--ink-faint)">≈</span>')+'</td></tr>';
+      }).join("");
+    }
+  }
+
+  /* ---- Projections ---- */
+  function renderProj(){
+    var grid=$("#projGrid"); grid.innerHTML="";
+    ["QB","RB","WR","TE"].forEach(function(pos){
+      if(S.pos!=="ALL"&&S.pos!==pos)return;
+      var lst=P.filter(function(p){return p.pos===pos&&(!S.q||p.n.toLowerCase().indexOf(S.q)>=0);}).sort(function(a,b){return b.proj-a.proj;}).slice(0,24);
+      if(!lst.length)return;
+      var maxP=lst[0].proj||1;
+      var rows=lst.map(function(p,i){
+        var isBase=(i===BASE[pos]-1);
+        return '<li'+(isBase?' style="border-top:2px dashed var(--line);"':'')+'><img src="'+esc(photo(p))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">'+
+          '<span><span class="nm">'+esc(p.n)+'</span> <span class="mt">'+esc(p.t)+(isBase?' · replacement level':'')+'</span></span>'+
+          '<span class="val num"><span class="vbar" style="width:80px;margin-right:8px"><i style="width:'+Math.round(p.proj/maxP*100)+'%"></i></span>'+p.proj+'</span></li>';
+      }).join("");
+      var card=document.createElement("div"); card.className="card";
+      card.innerHTML='<div class="card-h"><span><span class="pill pos-'+pos+'">'+pos+'</span> Projected PPR points</span><span class="srcmini">baseline: '+pos+BASE[pos]+'</span></div><ul class="hs-list">'+rows+'</ul>';
+      grid.appendChild(card);
+    });
+  }
+
+  /* ---- Hot Spots ---- */
+  function renderHot(){
+    var grid=$("#hotGrid"); grid.innerHTML="";
+    function card(title,items,fmt){
+      var c=document.createElement("div"); c.className="card";
+      c.innerHTML='<div class="card-h">'+title+'</div><ul class="hs-list">'+
+        (items.length?items.map(fmt).join(""):'<li class="mt" style="color:var(--ink-faint)">Nothing flagged.</li>')+'</ul>';
+      grid.appendChild(c);
+    }
+    var vals=P.filter(function(p){return p.adp!=null&&(p.adp-p.ecr)>=6;}).sort(function(a,b){return (b.adp-b.ecr)-(a.adp-a.ecr);}).slice(0,10);
+    card('💎 Draft-Day Values <span class="srcmini">going later than experts rank them</span>',vals,function(p){
+      return '<li><img src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'"><span><span class="nm">'+esc(p.n)+'</span> <span class="mt">'+p.pos+' · ECR '+p.ecr+' / ADP '+p.adp+'</span></span><span class="val" style="color:var(--good)">+'+(p.adp-p.ecr)+'</span></li>';});
+    var reaches=P.filter(function(p){return p.adp!=null&&(p.ecr-p.adp)>=6&&p.ecr<=120;}).sort(function(a,b){return (b.ecr-b.adp)-(a.ecr-a.adp);}).slice(0,10);
+    card('🚫 Reaches <span class="srcmini">market drafts them above expert rank</span>',reaches,function(p){
+      return '<li><img src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'"><span><span class="nm">'+esc(p.n)+'</span> <span class="mt">'+p.pos+' · ADP '+p.adp+' / ECR '+p.ecr+'</span></span><span class="val" style="color:var(--bad)">−'+(p.ecr-p.adp)+'</span></li>';});
+    var hotm=P.filter(function(p){return p.trend&&p.trend>0;}).sort(function(a,b){return b.trend-a.trend;}).slice(0,10);
+    card('📈 Heating Up <span class="srcmini">30-day market risers</span>',hotm,function(p){
+      return '<li><img src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'"><span><span class="nm">'+esc(p.n)+'</span> <span class="mt">'+p.pos+' · '+esc(p.t)+'</span></span><span class="val" style="color:var(--good)">▲'+Math.round(p.trend).toLocaleString()+'</span></li>';});
+    var risk=P.filter(function(p){return p.inj!=null&&p.inj>=65&&p.ecr<=100;}).sort(function(a,b){return b.inj-a.inj;}).slice(0,10);
+    card('🏥 Injury Watch <span class="srcmini">DraftSharks risk ≥65%, top-100</span>',risk,function(p){
+      return '<li><img src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'"><span><span class="nm">'+esc(p.n)+'</span> <span class="mt">'+p.pos+' · ECR '+p.ecr+'</span></span><span class="val" style="color:var(--warn)">'+p.inj+'%</span></li>';});
+  }
+
+  /* ---- SOS matrix ---- */
+  function renderSos(){
+    var teams={};
+    P.forEach(function(p){
+      if(p.sos==null||!p.t||p.t==="FA")return;
+      teams[p.t]=teams[p.t]||{QB:[],RB:[],WR:[],TE:[]};
+      teams[p.t][p.pos].push(p.sos);
+    });
+    function avg(a){if(!a.length)return null;return Math.round(a.reduce(function(x,y){return x+y;},0)/a.length*10)/10;}
+    var rows=Object.keys(teams).map(function(t){
+      var g=teams[t], cells=["QB","RB","WR","TE"].map(function(pos){return avg(g[pos]);});
+      var all=[].concat(g.QB,g.RB,g.WR,g.TE);
+      return {t:t,cells:cells,avg:avg(all)};
+    }).sort(function(a,b){return (b.avg||-99)-(a.avg||-99);});
+    function cell(v){ if(v==null)return '<span class="sos-cell" style="color:var(--ink-faint)">—</span>';
+      var bg=v>=1.5?"color-mix(in srgb,var(--good) 22%,transparent)":v<=-1.5?"color-mix(in srgb,var(--bad) 22%,transparent)":"var(--raise)";
+      var col=v>=1.5?"var(--good)":v<=-1.5?"var(--bad)":"var(--ink-soft)";
+      return '<span class="sos-cell" style="background:'+bg+';color:'+col+'">'+(v>0?"+":"")+v+'%</span>'; }
+    $("#sosRows").innerHTML=rows.map(function(r){
+      return '<tr><td style="font-weight:800">'+esc(r.t)+'</td>'+r.cells.map(function(c){return '<td>'+cell(c)+'</td>';}).join("")+'<td>'+cell(r.avg)+'</td></tr>';
+    }).join("");
+  }
+
+  /* ---- League Sync (Sleeper) ---- */
+  var LG={}; try{LG=JSON.parse(localStorage.getItem("gi-sleeper")||"{}");}catch(e){}
+  function saveLG(){try{localStorage.setItem("gi-sleeper",JSON.stringify(LG));}catch(e){}}
+  var pollTimer=null;
+  function jget2(u){return fetch(u).then(function(r){if(!r.ok)throw 0;return r.json();});}
+  function renderLeague(){
+    var box=$("#leagueView");
+    if(!LG.league_id){renderLgSetup(box,"");return;}
+    renderLgHome(box);
+  }
+  function renderLgSetup(box,msg){
+    box.innerHTML='<div class="card" style="max-width:600px">'+
+      '<div class="card-h">Connect your Sleeper league</div>'+
+      '<div class="method">Enter your Sleeper username — read-only, no password, no key. Rules, rosters &amp; live draft picks sync automatically.'+(msg?'<br><b style="color:var(--bad)">'+esc(msg)+'</b>':'')+'</div>'+
+      '<div style="display:flex;gap:8px;padding:0 15px 16px">'+
+        '<input class="search" id="slpUser" placeholder="Sleeper username…" style="flex:1;min-width:120px" value="'+esc(LG.username||"")+'">'+
+        '<button class="gobtn" id="slpFind">Find leagues</button></div>'+
+      '<div id="slpList"></div>'+
+      '<div class="method">⚠️ <b>Yahoo leagues:</b> Yahoo locks its fantasy API behind OAuth with no browser access, so free live sync isn\'t possible from this site. Ask me for a paste-in Yahoo roster importer, or a Cloudflare Worker bridge (bigger setup, still $0).</div></div>';
+    $("#slpFind").addEventListener("click",findLeagues);
+    $("#slpUser").addEventListener("keydown",function(e){if(e.key==="Enter")findLeagues();});
+  }
+  function findLeagues(){
+    var u=$("#slpUser").value.trim(); if(!u)return;
+    $("#slpList").innerHTML='<div class="skel"><span class="spin"></span></div>';
+    jget2("https://api.sleeper.app/v1/user/"+encodeURIComponent(u)).then(function(usr){
+      if(!usr||!usr.user_id)throw 0;
+      LG.username=usr.username||u; LG.user_id=usr.user_id; saveLG();
+      return jget2("https://api.sleeper.app/v1/user/"+usr.user_id+"/leagues/nfl/2026");
+    }).then(function(ls){
+      if(!ls||!ls.length){$("#slpList").innerHTML='<div class="method">No 2026 NFL leagues on that account.</div>';return;}
+      $("#slpList").innerHTML='<ul class="hs-list">'+ls.map(function(l){
+        return '<li><span><span class="nm">'+esc(l.name)+'</span> <span class="mt">'+l.total_rosters+' teams · '+esc(l.status)+'</span></span>'+
+          '<button class="gobtn" style="margin-left:auto" data-lid="'+esc(l.league_id)+'" data-lname="'+esc(l.name)+'">Connect</button></li>';
+      }).join("")+'</ul>';
+      $("#slpList").querySelectorAll("button[data-lid]").forEach(function(b){
+        b.addEventListener("click",function(){LG.league_id=b.getAttribute("data-lid");LG.league_name=b.getAttribute("data-lname");saveLG();renderLeague();});
+      });
+    }).catch(function(){$("#slpList").innerHTML='<div class="method" style="color:var(--bad)">Couldn\'t find that username — check the spelling.</div>';});
+  }
+  function renderLgHome(box){
+    box.innerHTML='<div class="skel"><span class="spin"></span></div>';
+    Promise.all([
+      jget2("https://api.sleeper.app/v1/league/"+LG.league_id),
+      jget2("https://api.sleeper.app/v1/league/"+LG.league_id+"/users"),
+      jget2("https://api.sleeper.app/v1/league/"+LG.league_id+"/rosters"),
+      jget2("https://api.sleeper.app/v1/league/"+LG.league_id+"/drafts").catch(function(){return [];})
+    ]).then(function(res){buildLgHome(box,res[0],res[1]||[],res[2]||[],res[3]||[]);})
+     .catch(function(){LG.league_id=null;saveLG();renderLgSetup(box,"Couldn't load that league — reconnect.");});
+  }
+  function buildLgHome(box,lg,users,rosters,drafts){
+    var uById={}; users.forEach(function(u){uById[u.user_id]=u;});
+    var sc=lg.scoring_settings||{}, st=lg.settings||{};
+    var ppr=sc.rec!=null?sc.rec:0;
+    var rp=(lg.roster_positions||[]).reduce(function(m,x){m[x]=(m[x]||0)+1;return m;},{});
+    var rpStr=Object.keys(rp).filter(function(k){return k!=="BN";}).map(function(k){return k+(rp[k]>1?"×"+rp[k]:"");}).join(" · ")+(rp.BN?" · "+rp.BN+" BN":"");
+    var poolBySlp={}; P.forEach(function(p){if(p.sleeperId)poolBySlp[String(p.sleeperId)]=p;});
+    var rows=rosters.map(function(r){
+      var u=uById[r.owner_id]||{};
+      var tn=(u.metadata&&u.metadata.team_name)||u.display_name||("Roster "+r.roster_id);
+      var tops=(r.players||[]).map(function(id){return poolBySlp[String(id)];}).filter(Boolean)
+        .sort(function(a,b){return a.rank-b.rank;}).slice(0,6).map(function(p){return esc(p.n);}).join(", ");
+      return {rid:r.roster_id,tn:tn,owner:u.display_name||"—",tops:tops,count:(r.players||[]).length,
+        w:(r.settings&&r.settings.wins)||0,l:(r.settings&&r.settings.losses)||0};
+    });
+    var draftHtml=drafts.length?drafts.map(function(d){
+      return '<li><span><span class="nm">'+esc((d.type||"snake"))+' draft</span> <span class="mt">status: <b>'+esc(d.status)+'</b>'+(d.start_time?' · '+new Date(d.start_time).toLocaleString():'')+'</span></span>'+
+        '<button class="gobtn" style="margin-left:auto" data-did="'+esc(d.draft_id)+'">'+(d.status==="complete"?"View picks":"⚡ Live sync")+'</button></li>';
+    }).join(""):'<li class="method" style="padding:12px 15px">No drafts created yet in Sleeper.</li>';
+    box.innerHTML=
+      '<div class="kpis">'+
+        '<div class="kpi"><div class="k">League</div><div class="v" style="font-size:16px">'+esc(lg.name)+'</div><div class="s">'+lg.total_rosters+' teams · '+esc(lg.status||"")+'</div></div>'+
+        '<div class="kpi"><div class="k">Scoring</div><div class="v">'+(ppr>=1?"Full PPR":ppr===0.5?"Half PPR":ppr===0?"Standard":ppr+" / rec")+'</div><div class="s">pass TD '+(sc.pass_td!=null?sc.pass_td:4)+' · sack '+(sc.pass_sack||0)+'</div></div>'+
+        '<div class="kpi"><div class="k">Lineup</div><div class="v" style="font-size:12px;font-family:var(--sans);font-weight:700;line-height:1.4">'+esc(rpStr)+'</div><div class="s">playoff teams: '+(st.playoff_teams||"—")+'</div></div>'+
+        '<div class="kpi"><div class="k">Connected as</div><div class="v" style="font-size:16px">'+esc(LG.username||"")+'</div><div class="s"><a href="#" id="lgDisc" style="color:var(--bad);font-weight:800">disconnect</a></div></div>'+
+      '</div>'+
+      '<div class="grid2">'+
+        '<div class="card"><div class="card-h">Teams &amp; Rosters</div><ul class="hs-list">'+
+          rows.map(function(r){return '<li style="align-items:flex-start"><span><span class="nm">'+esc(r.tn)+'</span> <span class="mt">'+esc(r.owner)+' · '+r.count+' players'+((r.w+r.l)>0?(' · '+r.w+'-'+r.l):'')+'</span><br><span class="mt">'+(r.tops||"—")+'</span></span></li>';}).join("")+
+        '</ul></div>'+
+        '<div><div class="card"><div class="card-h">Drafts</div><ul class="hs-list" id="lgDrafts">'+draftHtml+'</ul></div>'+
+        '<div class="card" style="margin-top:14px"><div class="card-h">Live Draft Feed <span class="srcmini" id="liveStat">idle</span></div>'+
+        '<div class="method" id="liveOpts"></div><ul class="hs-list" id="liveFeed"><li class="method" style="padding:10px 15px">Hit ⚡ Live sync on a draft — picks stream in every 5s and can auto-feed the <b>War Room</b> board.</li></ul></div></div>'+
+      '</div>';
+    $("#lgDisc").addEventListener("click",function(e){e.preventDefault();if(pollTimer)clearInterval(pollTimer);LG={username:LG.username,user_id:LG.user_id};saveLG();renderLeague();});
+    box.querySelectorAll("button[data-did]").forEach(function(b){
+      b.addEventListener("click",function(){startLive(b.getAttribute("data-did"),rows);});
+    });
+  }
+  function startLive(did,rows){
+    if(pollTimer)clearInterval(pollTimer);
+    var opts=$("#liveOpts");
+    opts.innerHTML='Feed the War Room: <label>me<select id="selMe"><option value="">—</option>'+
+      rows.map(function(r){return '<option value="'+r.rid+'"'+(String(LG.myRid)===String(r.rid)?" selected":"")+'>'+esc(r.tn)+'</option>';}).join("")+'</select></label>'+
+      '<label>bro<select id="selBro"><option value="">—</option>'+
+      rows.map(function(r){return '<option value="'+r.rid+'"'+(String(LG.broRid)===String(r.rid)?" selected":"")+'>'+esc(r.tn)+'</option>';}).join("")+'</select></label>'+
+      '<label><input type="checkbox" id="feedWR"'+(LG.feed?" checked":"")+'> write picks to War Room</label>'+
+      ' <span style="color:var(--ink-faint)">(refresh the War Room tab to see them)</span>';
+    ["selMe","selBro","feedWR"].forEach(function(id){$("#"+id).addEventListener("change",function(){
+      LG.myRid=$("#selMe").value;LG.broRid=$("#selBro").value;LG.feed=$("#feedWR").checked;saveLG();});});
+    function poll(){
+      jget2("https://api.sleeper.app/v1/draft/"+did+"/picks").then(function(picks){
+        $("#liveStat").textContent="⚡ live · "+picks.length+" picks · "+new Date().toLocaleTimeString();
+        $("#liveFeed").innerHTML=picks.slice(-14).reverse().map(function(pk){
+          var md=pk.metadata||{};
+          return '<li><span class="rk" style="width:44px">'+pk.round+"."+(pk.draft_slot||"")+'</span>'+
+            '<span><span class="nm">'+esc(((md.first_name||"")+" "+(md.last_name||"")).trim()||("#"+pk.player_id))+'</span> <span class="mt">'+esc(md.position||"")+' · '+esc(md.team||"")+'</span></span></li>';
+        }).join("")||'<li class="method" style="padding:10px 15px">No picks yet — waiting for the draft to start…</li>';
+        if(LG.feed){
+          var poolBySlp={}; P.forEach(function(p){if(p.sleeperId)poolBySlp[String(p.sleeperId)]=p;});
+          var out=[];
+          picks.slice().sort(function(a,b){return a.pick_no-b.pick_no;}).forEach(function(pk,i){
+            var p=poolBySlp[String(pk.player_id)]; if(!p)return;
+            var o=(String(pk.roster_id)===String(LG.myRid))?"me":(String(pk.roster_id)===String(LG.broRid))?"bro":"gone";
+            out.push({id:p.id,o:o,at:i});
+          });
+          try{var cur=JSON.parse(localStorage.getItem("gi-draft-2026")||"{}");cur.picks=out;localStorage.setItem("gi-draft-2026",JSON.stringify(cur));}catch(e){}
+        }
+      }).catch(function(){$("#liveStat").textContent="connection hiccup — retrying…";});
+    }
+    poll(); pollTimer=setInterval(poll,5000);
+  }
+
+  /* ---- view switching ---- */
+  /* ---- GRIDIRON 2026 custom rankings (static analyst board) ---- */
+  var GR=[
+["Jahmyr Gibbs","DET","RB",1,1,2,1,""],
+["Ja'Marr Chase","CIN","WR",2,1,1,3,""],
+["Bijan Robinson","ATL","RB",3,1,4,2,""],
+["Puka Nacua","LAR","WR",4,1,3,5,""],
+["Jaxon Smith-Njigba","SEA","WR",5,1,5,7,""],
+["Amon-Ra St. Brown","DET","WR",6,2,6,8,""],
+["Justin Jefferson","MIN","WR",7,2,9,12,"breakout-bounce"],
+["Jonathan Taylor","IND","RB",8,2,11,6,""],
+["Christian McCaffrey","SF","RB",9,2,7,4,"risk"],
+["CeeDee Lamb","DAL","WR",10,2,8,16,""],
+["James Cook III","BUF","RB",11,2,14,9,""],
+["Chase Brown","CIN","RB",12,2,16,10,""],
+["Drake London","ATL","WR",13,2,10,17,""],
+["Saquon Barkley","PHI","RB",14,2,23,13,"value"],
+["A.J. Brown","NE","WR",15,2,12,18,""],
+["De'Von Achane","MIA","RB",16,3,19,11,""],
+["Kenneth Walker III","KC","RB",17,3,25,15,""],
+["Omarion Hampton","LAC","RB",18,3,26,14,""],
+["Brock Bowers","LV","TE",19,3,20,21,""],
+["Nico Collins","HOU","WR",20,3,13,28,""],
+["Malik Nabers","NYG","WR",21,3,21,30,"value"],
+["George Pickens","DAL","WR",22,3,18,26,""],
+["Trey McBride","ARI","TE",23,3,17,29,""],
+["Ashton Jeanty","LV","RB",24,3,28,19,""],
+["Josh Allen","BUF","QB",25,3,24,25,""],
+["Chris Olave","NO","WR",26,3,15,27,""],
+["Rashee Rice","KC","WR",27,3,27,36,"value"],
+["DeVonta Smith","PHI","WR",28,4,22,33,""],
+["Tee Higgins","CIN","WR",29,4,35,40,"value"],
+["Jeremiyah Love","ARI","RB",30,4,40,24,""],
+["Kyren Williams","LAR","RB",31,4,42,23,""],
+["Garrett Wilson","NYJ","WR",32,4,31,35,""],
+["Derrick Henry","BAL","RB",33,4,38,20,"fade"],
+["Breece Hall","NYJ","RB",34,4,39,31,""],
+["Zay Flowers","BAL","WR",35,4,29,42,""],
+["Ladd McConkey","LAC","WR",36,4,34,39,""],
+["Jaylen Waddle","DEN","WR",37,4,33,38,""],
+["Javonte Williams","DAL","RB",38,4,44,22,"fade"],
+["Tetairoa McMillan","CAR","WR",39,4,37,43,""],
+["Travis Etienne Jr.","NO","RB",40,4,46,34,""],
+["Colston Loveland","CHI","TE",41,4,36,45,""],
+["Lamar Jackson","BAL","QB",42,4,30,51,""],
+["Bucky Irving","TB","RB",43,4,52,41,"value"],
+["Emeka Egbuka","TB","WR",44,4,41,50,"breakout"],
+["Drake Maye","NE","QB",45,4,32,63,"value"],
+["Cam Skattebo","NYG","RB",46,5,55,32,"value"],
+["Quinshon Judkins","CLE","RB",47,5,59,44,"breakout"],
+["Luther Burden III","CHI","WR",48,5,43,53,""],
+["D'Andre Swift","CHI","RB",49,5,51,37,"fade"],
+["Jameson Williams","DET","WR",50,5,47,59,"value"],
+["Bhayshul Tuten","JAC","RB",51,5,65,46,"sleeper"],
+["Tyler Warren","IND","TE",52,5,54,55,"value"],
+["DJ Moore","BUF","WR",53,5,56,48,""],
+["Terry McLaurin","WAS","WR",54,5,48,58,""],
+["TreVeyon Henderson","NE","RB",55,5,66,57,"breakout"],
+["David Montgomery","HOU","RB",56,5,62,47,""],
+["Joe Burrow","CIN","QB",57,5,45,66,""],
+["Christian Watson","GB","WR",58,5,53,60,"value"],
+["Davante Adams","LAR","WR",59,5,49,52,"fade"],
+["Jayden Daniels","WAS","QB",60,5,50,67,""],
+["Jadarian Price","SEA","RB",61,5,73,49,""],
+["Parker Washington","JAC","WR",62,5,60,62,""],
+["Rome Odunze","CHI","WR",63,6,61,61,""],
+["Chris Godwin Jr.","TB","WR",64,6,68,73,"value"],
+["Jaylen Warren","PIT","RB",65,6,71,56,""],
+["Rhamondre Stevenson","NE","RB",66,6,74,54,""],
+["Jalen Hurts","PHI","QB",67,6,57,71,""],
+["Brian Thomas Jr.","JAC","WR",68,6,78,76,"breakout-bounce"],
+["Mike Evans","SF","WR",69,6,58,69,"fade"],
+["Caleb Williams","CHI","QB",70,6,63,78,""],
+["Carnell Tate","TEN","WR",71,6,64,80,""],
+["Rico Dowdle","PIT","RB",72,6,82,64,""],
+["Tucker Kraft","GB","TE",73,6,81,65,"value"],
+["RJ Harvey","DEN","RB",74,6,92,79,"breakout"],
+["Harold Fannin Jr.","CLE","TE",75,6,70,89,"breakout"],
+["DK Metcalf","PIT","WR",76,6,72,77,""],
+["Kyle Pitts Sr.","ATL","TE",77,6,75,74,""],
+["Justin Herbert","LAC","QB",78,6,69,82,""],
+["Tony Pollard","TEN","RB",79,6,84,68,""],
+["Sam LaPorta","DET","TE",80,6,83,72,""],
+["Josh Downs","IND","WR",81,6,87,93,"sleeper"],
+["Dak Prescott","DAL","QB",82,6,77,81,""],
+["Trevor Lawrence","JAC","QB",83,6,76,85,""],
+["Michael Pittman Jr.","PIT","WR",84,6,80,97,"value"],
+["Courtland Sutton","DEN","WR",85,7,79,90,""],
+["Michael Wilson","ARI","WR",86,7,86,87,""],
+["Jayden Reed","GB","WR",87,7,102,91,"sleeper"],
+["Kenny Gainwell","TB","RB",88,7,100,75,""],
+["Marvin Harrison Jr.","ARI","WR",89,7,67,94,"fade"],
+["Quentin Johnston","LAC","WR",90,7,89,88,""],
+["Brock Purdy","SF","QB",91,7,88,101,"value"],
+["George Kittle","SF","TE",92,7,94,86,""],
+["Wan'Dale Robinson","TEN","WR",93,7,85,96,""],
+["Jaxson Dart","NYG","QB",94,7,93,109,"sleeper"],
+["Jonathon Brooks","CAR","RB",95,7,90,70,"fade"],
+["Stefon Diggs","WAS","WR",96,7,91,100,""],
+["Chuba Hubbard","CAR","RB",97,7,96,83,"fade"],
+["Jordan Addison","MIN","WR",98,7,104,108,"value"],
+["Jacory Croskey-Merritt","WAS","RB",99,7,113,92,"sleeper"],
+["MarShawn Lloyd","GB","RB",100,7,97,105,""],
+["Alec Pierce","IND","WR",101,7,99,103,""],
+["J.K. Dobbins","DEN","RB",102,7,103,99,""],
+["Jordan Mason","MIN","RB",103,7,119,84,""],
+["Patrick Mahomes II","KC","QB",104,7,98,106,""],
+["Bo Nix","DEN","QB",105,7,101,114,"value"],
+["Blake Corum","LAR","RB",106,7,109,98,""],
+["Travis Kelce","KC","TE",107,7,95,102,"fade"],
+["Makai Lemon","PHI","WR",108,7,107,110,""],
+["Khalil Shakir","BUF","WR",109,7,120,129,"sleeper"],
+["Woody Marks","HOU","RB",110,7,132,119,"sleeper"],
+["Jared Goff","DET","QB",111,8,106,118,""],
+["Dalton Kincaid","BUF","TE",112,8,108,117,""],
+["Matthew Stafford","LAR","QB",113,8,110,115,""],
+["Aaron Jones Sr.","MIN","RB",114,8,112,113,""],
+["Kyler Murray","MIN","QB",115,8,111,130,"value"],
+["Dallas Goedert","PHI","TE",116,8,118,111,""],
+["Jordan Love","GB","QB",117,8,115,127,"value"],
+["Jakobi Meyers","JAC","WR",118,8,105,125,""],
+["Isaiah Likely","NYG","TE",119,8,126,104,""],
+["Jake Ferguson","DAL","TE",120,8,122,112,""],
+["Josh Jacobs","GB","RB",121,8,141,95,"avoid-news"],
+["Matthew Golden","GB","WR",122,8,124,116,""],
+["KC Concepcion","CLE","WR",123,8,117,123,""],
+["De'Zhaun Stribling","SF","WR",124,8,135,107,""],
+["Rachaad White","WAS","RB",125,8,116,128,""],
+["Kyle Monangai","CHI","RB",126,8,114,134,""],
+["Romeo Doubs","NE","WR",127,8,130,122,""],
+["Baker Mayfield","TB","QB",128,8,121,132,""],
+["Juwan Johnson","NO","TE",129,8,127,126,""],
+["Mark Andrews","BAL","TE",130,8,134,120,"value"],
+["Tyjae Spears","TEN","RB",131,8,133,121,""],
+["Tyler Shough","NO","QB",132,8,123,137,""],
+["Jalen Coker","CAR","WR",133,8,128,133,""],
+["Chris Rodriguez Jr.","JAC","RB",134,8,140,124,""],
+["Xavier Worthy","KC","WR",135,8,125,140,""],
+["Dylan Sampson","CLE","RB",136,8,142,154,"sleeper"],
+["Deebo Samuel Sr.","SF","WR",137,8,137,131,""],
+["Malik Willis","MIA","QB",138,8,129,143,""],
+["Jordyn Tyson","NO","WR",139,8,131,164,"sleeper"],
+["Tyler Allgeier","ARI","RB",140,8,136,142,""],
+["Rashid Shaheed","SEA","WR",141,9,143,138,""],
+["Brenton Strange","JAC","TE",142,9,150,136,""],
+["Mike Washington Jr.","LV","RB",143,9,152,135,""],
+["Sam Darnold","SEA","QB",144,9,138,151,""],
+["C.J. Stroud","HOU","QB",145,9,139,150,""],
+["Dalton Schultz","HOU","TE",146,9,154,139,"sleeper"],
+["Daniel Jones","IND","QB",147,9,147,149,""],
+["Keaton Mitchell","LAC","RB",148,9,145,152,""],
+["Hunter Henry","NE","TE",149,9,156,141,"sleeper"],
+["Tre Tucker","LV","WR",150,9,153,147,""],
+["Jonah Coleman","DEN","RB",151,9,146,158,""],
+["Denzel Boston","CLE","WR",152,9,148,157,""],
+["Chig Okonkwo","WAS","TE",153,9,163,144,""],
+["Alvin Kamara","NO","RB",154,9,155,159,""],
+["Brian Robinson Jr.","ATL","RB",155,9,171,155,""],
+["Cam Ward","TEN","QB",156,9,151,175,""],
+["Kayshon Boutte","HOU","WR",157,9,166,161,""],
+["T.J. Hockenson","MIN","TE",158,9,180,148,""],
+["Adonai Mitchell","NYJ","WR",159,9,159,169,""],
+["Emmett Johnson","KC","RB",160,9,175,156,""],
+["Tank Bigsby","PHI","RB",161,9,164,168,""],
+["Bryce Young","CAR","QB",162,9,161,172,""],
+["Jerry Jeudy","CLE","WR",163,9,157,180,""],
+["Braelon Allen","NYJ","RB",164,9,172,167,""],
+["Zach Charbonnet","SEA","RB",165,9,144,166,"fade"],
+["Jalen McMillan","TB","WR",166,9,169,178,""],
+["Terrance Ferguson","LAR","TE",167,9,203,145,""],
+["Ryan Flournoy","DAL","WR",168,9,174,179,""],
+["AJ Barner","SEA","TE",169,9,202,153,""],
+["Keenan Allen","IND","WR",170,9,196,163,""],
+["Kenyon Sadiq","NYJ","TE",171,9,214,146,""],
+["Jauan Jennings","MIN","WR",172,9,165,196,""],
+["Isiah Pacheco","DET","RB",173,9,189,173,""],
+["Tyrone Tracy Jr.","NYG","RB",174,9,167,198,""],
+["Ray Davis","BUF","RB",175,9,183,183,""],
+["Tre' Harris","LAC","WR",176,9,170,197,""],
+["Pat Bryant","DEN","WR",177,9,178,193,""],
+["Malik Washington","MIA","WR",178,9,191,181,""],
+["Jalen Nailor","LV","WR",179,9,190,184,""],
+["Jacoby Brissett","ARI","QB",180,9,197,182,""]
+];
+  var TAGC={sleeper:["SLEEPER","#22c55e"],breakout:["BREAKOUT","#eab308"],"breakout-bounce":["BOUNCE-BACK","#eab308"],value:["VALUE","#3b82f6"],fade:["FADE","#ef4444"],risk:["RISK","#f97316"],"avoid-news":["CHECK NEWS","#ef4444"]};
+  var TIERN={1:"League Winners",2:"Anchors",3:"Core Starters",4:"Strong Starters",5:"Upside Zone",6:"Value Belt",7:"Depth & Darts",8:"Late Fliers",9:"Watchlist"};
+  function renderG26(){
+    var rows="",lastTier=0,pc={};
+    GR.forEach(function(r){
+      var name=r[0],team=r[1],pos=r[2],gr=r[3],tier=r[4],fp=r[5],ff=r[6],tag=r[7];
+      pc[pos]=(pc[pos]||0)+1; var posrank=pc[pos];
+      if(S.pos!=="ALL"&&pos!==S.pos)return;
+      if(S.q&&name.toLowerCase().indexOf(S.q)<0)return;
+      if(tier!==lastTier){rows+='<tr><td colspan="7" style="background:var(--panel2);font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)">Tier '+tier+' — '+TIERN[tier]+'</td></tr>';lastTier=tier;}
+      var spread=(fp!=null&&ff!=null)?Math.abs(fp-ff):null;
+      var t=TAGC[tag]||null;
+      rows+='<tr><td style="font-weight:800">'+gr+'</td>'+
+        '<td style="font-weight:700">'+esc(name)+(t?' <span style="font-size:9px;font-weight:800;color:'+t[1]+';border:1px solid '+t[1]+';border-radius:5px;padding:1px 5px;white-space:nowrap">'+t[0]+'</span>':'')+'</td>'+
+        '<td>'+pos+posrank+'</td><td>'+esc(team)+'</td>'+
+        '<td>'+(fp!=null?fp:"—")+'</td><td>'+(ff!=null?ff:"—")+'</td>'+
+        '<td>'+(spread==null?"—":(spread>=15?'<span class="chip c-bad">±'+spread+'</span>':spread>=8?'<span class="chip c-mid">±'+spread+'</span>':'<span class="chip c-good">±'+spread+'</span>'))+'</td></tr>';
+    });
+    $("#g26Rows").innerHTML=rows||'<tr><td colspan="7"><div class="skel">No matches</div></td></tr>';
+  }
+
+  var TITLES={board:["Big Board","Combined consensus · FantasyPros × Market × GRIDIRON model"],
+    g26:["GRIDIRON 2026","Custom analyst rankings · FP + 4for4 + trends, red zone, SOS & coaching changes"],
+    sources:["Rankings","Each source on its own — then compare where they disagree"],
+    proj:["Projections","FantasyPros projected PPR points · dashed line = replacement level"],
+    hot:["Hot Spots","Values, reaches, risers, and injury landmines — at a glance"],
+    sos:["Schedule","Strength of schedule by team & position (DraftSharks)"],
+    league:["League Sync","Sleeper league — rules, rosters & live draft feed"]};
+  function renderAll(){renderKpis();
+    if(S.view==="board")renderBoard(); else if(S.view==="g26")renderG26(); else if(S.view==="sources")renderSources();
+    else if(S.view==="proj")renderProj(); else if(S.view==="hot")renderHot();
+    else if(S.view==="league")renderLeague(); else renderSos();}
+  $("#nav").addEventListener("click",function(ev){
+    var b=ev.target.closest("button[data-v]"); if(!b)return;
+    S.view=b.getAttribute("data-v");
+    document.querySelectorAll("#nav button").forEach(function(x){x.classList.toggle("on",x===b);});
+    document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("on",v.getAttribute("data-view")===S.view);});
+    $("#vtitle").childNodes[0].nodeValue=TITLES[S.view][0];
+    $("#vsub").textContent=TITLES[S.view][1];
+    renderAll();
+  });
+  $("#srcPills").addEventListener("click",function(ev){
+    var b=ev.target.closest("button"); if(!b)return;
+    this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
+    S.src=b.getAttribute("data-v"); renderSources();
+  });
+  $("#posPills").addEventListener("click",function(ev){
+    var b=ev.target.closest("button"); if(!b)return;
+    this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
+    S.pos=b.getAttribute("data-v"); renderAll();
+  });
+  $("#q").addEventListener("input",function(){S.q=this.value.trim().toLowerCase();renderAll();});
+})();
+</script>
+</body>
+</html>

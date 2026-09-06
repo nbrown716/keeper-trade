@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Draft War Room · GRIDIRON</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0A0E16">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎯%3C/text%3E%3C/svg%3E">
+<script>(function(){try{var t=localStorage.getItem('gi-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+  :root{--bg:#0A0E16;--surface:#121826;--surface-2:#1A2234;--ink:#EAF0F8;--ink-soft:#9DAAC0;--ink-faint:#63708A;
+    --line:#232B3D;--line-soft:#1B2231;--gold:#F0B429;--me:#2DD4A7;--bro:#4C9AFF;--gone:#63708A;--lose:#F0596B;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.35);--radius:15px;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--cond:"Arial Narrow","Helvetica Neue",var(--sans);}
+  :root[data-theme="light"]{--bg:#F2F4F8;--surface:#FFFFFF;--surface-2:#F6F8FB;--ink:#0E1626;--ink-soft:#4A5468;--ink-faint:#8A94A8;
+    --line:#E1E6EE;--line-soft:#EDF0F5;--gold:#C98A00;--me:#0FA37F;--bro:#2F6FE0;--gone:#8A94A8;--lose:#C9372C;
+    --shadow:0 1px 2px rgba(18,22,28,.05),0 10px 30px rgba(18,22,28,.08);}
+  *{box-sizing:border-box} html,body{margin:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none} .num{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 clamp(12px,2.5vw,24px)}
+  .site-header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .site-header .wrap{display:flex;align-items:center;gap:12px;height:58px}
+  .logo{display:flex;align-items:center;gap:8px;font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:21px}
+  .logo .lg{color:var(--gold)}
+  .privtag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);
+    background:color-mix(in srgb,var(--gold) 14%,transparent);padding:3px 9px;border-radius:6px}
+  .hspill{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .tglbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
+  .tglbtn:hover{color:var(--ink);border-color:var(--gold)}
+  .backlink{font-size:12.5px;font-weight:700;color:var(--ink-soft);border:1px solid var(--line);border-radius:9px;padding:8px 12px}
+  .backlink:hover{color:var(--ink);border-color:var(--gold)}
+
+  .head{padding:20px 0 4px;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  h1{font-family:var(--cond);text-transform:uppercase;font-weight:800;font-size:clamp(26px,4.5vw,40px);line-height:.95;margin:0}
+  .kick{font-family:var(--cond);text-transform:uppercase;letter-spacing:.24em;font-size:10.5px;font-weight:700;color:var(--gold)}
+  .fresh{font-size:11.5px;font-weight:700;color:var(--ink-faint)}
+  .fresh b{color:var(--me)}
+
+  .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  .seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+  .seg button{border:0;background:transparent;color:var(--ink-soft);font-size:12px;font-weight:700;padding:7px 11px;border-radius:6px;cursor:pointer;white-space:nowrap}
+  .seg button:hover{color:var(--ink)} .seg button[aria-pressed="true"]{background:var(--gold);color:#1A1204}
+  .controls input[type=text]{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:9px;padding:8px 12px;font-size:13px;font-weight:600;min-width:180px}
+  .controls input[type=text]:focus{outline:none;border-color:var(--gold)}
+  .ctlbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);font-size:12px;font-weight:700;padding:8px 13px;border-radius:9px;cursor:pointer}
+  .ctlbtn:hover{color:var(--ink);border-color:var(--gold)}
+  .ctlbtn.danger:hover{border-color:var(--lose);color:var(--lose)}
+
+  .layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;margin-bottom:44px}
+  @media (max-width:940px){.layout{grid-template-columns:1fr}.warroom{position:static!important;order:-1}}
+
+  .boardcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .tblwrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{text-align:left;font-family:var(--cond);text-transform:uppercase;letter-spacing:.05em;font-size:10px;color:var(--ink-faint);font-weight:700;padding:10px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--surface);z-index:2}
+  tbody td{padding:7px 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap;font-variant-numeric:tabular-nums}
+  tbody tr:hover{background:var(--surface-2)}
+  .tierrow td{background:var(--surface-2);font-family:var(--cond);text-transform:uppercase;letter-spacing:.08em;font-weight:800;font-size:10.5px;color:var(--gold);padding:5px 10px}
+  .rk{font-family:var(--cond);font-weight:800;font-size:14px;color:var(--ink-faint)}
+  .pl{display:flex;align-items:center;gap:9px;min-width:185px}
+  .pl img{width:30px;height:30px;border-radius:7px;object-fit:cover;object-position:top;background:var(--surface-2);flex:none}
+  .pl .nm{font-weight:700;font-size:13.5px;line-height:1.1}
+  .pl .mt{font-size:10px;color:var(--ink-faint)}
+  .pill{display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);font-weight:700;font-size:10px;padding:1px 6px;border-radius:4px}
+  .pos-QB{background:#3A2247;color:#D9AEEC}.pos-RB{background:#173025;color:#7FD6A0}.pos-WR{background:#17263F;color:#9CBEF5}.pos-TE{background:#332512;color:#EEB483}
+  .fall{color:var(--me);font-weight:700;font-size:11px} .reach{color:var(--lose);font-weight:700;font-size:11px}
+  .acts{display:flex;gap:4px}
+  .acts button{border:1px solid var(--line);background:var(--surface-2);color:var(--ink-soft);font-size:10.5px;font-weight:800;padding:5px 9px;border-radius:7px;cursor:pointer;letter-spacing:.03em}
+  .acts .bMe:hover{background:var(--me);border-color:var(--me);color:#04140F}
+  .acts .bBro:hover{background:var(--bro);border-color:var(--bro);color:#06121F}
+  .acts .bGone:hover{background:var(--gone);border-color:var(--gone);color:#fff}
+  tr.taken .pl .nm{text-decoration:line-through;color:var(--ink-faint)}
+  tr.taken{opacity:.62}
+  .ownerbadge{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.05em}
+  .ob-me{background:color-mix(in srgb,var(--me) 20%,transparent);color:var(--me)}
+  .ob-bro{background:color-mix(in srgb,var(--bro) 20%,transparent);color:var(--bro)}
+  .ob-gone{background:var(--surface-2);color:var(--ink-faint)}
+
+  .warroom{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
+  .wcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .wcard .wh{padding:10px 14px;border-bottom:1px solid var(--line-soft);font-family:var(--cond);text-transform:uppercase;letter-spacing:.08em;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:space-between}
+  .onclock{padding:14px;text-align:center}
+  .onclock .pickno{font-family:var(--cond);font-weight:800;font-size:34px;line-height:1}
+  .onclock .sub{font-size:11px;color:var(--ink-faint);font-weight:600;margin-top:3px}
+  .sizewrap{display:flex;align-items:center;justify-content:center;gap:8px;padding:0 14px 12px;font-size:11px;color:var(--ink-faint);font-weight:700}
+  .sizewrap select{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:7px;padding:4px 8px;font-size:12px;font-weight:700}
+  .bestpos{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px}
+  .bp{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:10px;padding:8px 10px}
+  .bp .k{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);font-weight:800}
+  .bp .v{font-weight:700;font-size:12px;line-height:1.2;margin-top:2px}
+  .bp .e{font-size:10px;color:var(--ink-faint)}
+  .rosterlist{list-style:none;margin:0;padding:8px 14px 12px}
+  .rosterlist li{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0;font-weight:600}
+  .rosterlist .rpk{color:var(--ink-faint);font-size:10.5px;width:30px;font-variant-numeric:tabular-nums}
+  .rosterlist .emptymsg{color:var(--ink-faint);font-weight:500;font-size:12px}
+  .wh input{background:transparent;border:0;color:var(--ink);font-family:var(--cond);text-transform:uppercase;letter-spacing:.08em;font-weight:800;font-size:12px;width:110px}
+  .wh input:focus{outline:none;border-bottom:1.5px solid var(--gold)}
+  .wh .cnt{font-size:10.5px;color:var(--ink-faint);font-weight:700}
+  .skel{padding:40px;text-align:center;color:var(--ink-faint)}
+  .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}} @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  .foot-note{max-width:900px;margin:0 auto 40px;color:var(--ink-faint);font-size:11px;line-height:1.6;text-align:center}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html">🏈 <span>GRID<span class="lg">IRON</span></span></a>
+    <span class="privtag">🎯 War Room · Private</span>
+    <div class="hspill">
+      <a class="backlink" href="kit.html">🧠 Draft Kit</a>
+      <a class="backlink" href="index.html">← Site</a>
+      <button class="tglbtn" id="themeBtn" aria-label="Toggle theme">🌙</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="head">
+    <div>
+      <div class="kick">Live Draft Assistant</div>
+      <h1>Draft War Room</h1>
+    </div>
+    <div class="fresh" id="fresh">Loading data…</div>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="q" placeholder="Search player…" autocomplete="off">
+    <div class="seg" id="segPos"><button data-v="ALL" aria-pressed="true">All</button><button data-v="QB">QB</button><button data-v="RB">RB</button><button data-v="WR">WR</button><button data-v="TE">TE</button></div>
+    <div class="seg" id="segView"><button data-v="avail" aria-pressed="true">Available</button><button data-v="all">Full board</button></div>
+    <button class="ctlbtn" id="undoBtn">↩ Undo</button>
+    <button class="ctlbtn danger" id="resetBtn">Reset draft</button>
+  </div>
+
+  <div class="layout">
+    <div class="boardcard">
+      <div class="tblwrap"><table>
+        <thead><tr><th>ECR</th><th>Player</th><th>Pos</th><th>ADP</th><th>+/−</th><th>Proj</th><th>Range</th><th></th></tr></thead>
+        <tbody id="rows"><tr><td colspan="8"><div class="skel"><span class="spin"></span></div></td></tr></tbody>
+      </table></div>
+    </div>
+
+    <aside class="warroom">
+      <div class="wcard">
+        <div class="onclock"><div class="pickno" id="pickNo">1.01</div><div class="sub" id="pickSub">Pick 1 overall · 0 drafted</div></div>
+        <div class="sizewrap">League size <select id="lgSize"><option>8</option><option>10</option><option selected>12</option><option>14</option></select></div>
+      </div>
+      <div class="wcard">
+        <div class="wh">Best Available</div>
+        <div class="bestpos" id="bestpos"></div>
+      </div>
+      <div class="wcard">
+        <div class="wh"><input id="nameMe" value="MY TEAM" spellcheck="false"><span class="cnt" id="cntMe">0 picks</span></div>
+        <ul class="rosterlist" id="rosterMe"><li class="emptymsg">No picks yet.</li></ul>
+      </div>
+      <div class="wcard">
+        <div class="wh"><input id="nameBro" value="BRO" spellcheck="false"><span class="cnt" id="cntBro">0 picks</span></div>
+        <ul class="rosterlist" id="rosterBro"><li class="emptymsg">No picks yet.</li></ul>
+      </div>
+    </aside>
+  </div>
+
+  <p class="foot-note">Rankings, tiers, ADP &amp; projections: FantasyPros expert consensus (snapshot — rerun the refresh script before draft day). Photos via ESPN. Draft state saves automatically on this device. <b>+/−</b> = ADP minus ECR: green means the market drafts them later than the experts rank them.</p>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  function $(s){return document.querySelector(s);}
+  function esc(s){return (s==null?"":String(s)).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  var tb=$("#themeBtn");
+  function setTheme(t){document.documentElement.setAttribute("data-theme",t);try{localStorage.setItem("gi-theme",t);}catch(e){}tb.textContent=t==="dark"?"🌙":"☀️";}
+  setTheme(document.documentElement.getAttribute("data-theme")||"dark");
+  tb.addEventListener("click",function(){setTheme(document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark");});
+
+  var players=[], byId={}, picks=[], S={pos:"ALL",view:"avail",q:"",size:12};
+  var LS="gi-draft-2026";
+  function saveState(){try{localStorage.setItem(LS,JSON.stringify({picks:picks,size:S.size,me:$("#nameMe").value,bro:$("#nameBro").value}));}catch(e){}}
+  function loadState(){try{var d=JSON.parse(localStorage.getItem(LS)||"{}");picks=d.picks||[];if(d.size)S.size=d.size;if(d.me)$("#nameMe").value=d.me;if(d.bro)$("#nameBro").value=d.bro;$("#lgSize").value=S.size;}catch(e){}}
+  function ownerOf(id){for(var i=0;i<picks.length;i++)if(picks[i].id===id)return picks[i].o;return null;}
+  function keyOf(n){return n.toLowerCase().replace(/[.'’]/g,"").split(/\s+/).filter(function(w){return ["jr","sr","ii","iii","iv","v"].indexOf(w)<0;}).join("");}
+
+  // load snapshot + FantasyCalc (photos/values)
+  Promise.all([
+    fetch("fp-data.json").then(function(r){if(!r.ok)throw 0;return r.json();}),
+    fetch("https://api.fantasycalc.com/values/current?isDynasty=false&numQbs=1&numTeams=12&ppr=1").then(function(r){return r.json();}).catch(function(){return [];})
+  ]).then(function(res){
+    var fp=res[0], fcMap={};
+    (res[1]||[]).forEach(function(r){var p=r.player||{};if(p.name)fcMap[keyOf(p.name)]={espnId:p.espnId,sleeperId:p.sleeperId,val:r.value};});
+    players=(fp.players||[]).map(function(p){
+      var m=fcMap[keyOf(p.n)]||{};
+      return {id:p.id,n:p.n,pos:p.pos,t:p.t,bye:p.bye,ecr:p.ecr,tier:p.tier,pr:p.pr,rng:p.rng,own:p.own,
+        adp:p.adp||null,proj:p.proj||null,slug:p.slug,espnId:m.espnId,sleeperId:m.sleeperId,val:m.val};
+    });
+    players.forEach(function(p){byId[p.id]=p;});
+    $("#fresh").innerHTML='FantasyPros data: <b>updated '+esc(fp.updated)+'</b> · pulled '+esc(fp.generated||"");
+    loadState(); renderAll();
+  }).catch(function(){
+    $("#rows").innerHTML='<tr><td colspan="8"><div class="skel"><b>fp-data.json not found.</b><br>Upload fp-data.json to the repo (run refresh-draft-data.ps1 to generate it).</div></td></tr>';
+    $("#fresh").textContent="No data file";
+  });
+
+  function photo(p){return p.espnId?("https://a.espncdn.com/i/headshots/nfl/players/full/"+p.espnId+".png"):(p.sleeperId?"https://sleepercdn.com/content/nfl/players/"+p.sleeperId+".jpg":"");}
+
+  function renderBoard(){
+    var body=$("#rows"), html="", lastTier=null;
+    var showTiers=(S.pos==="ALL"&&!S.q&&S.view==="avail");
+    var list=players.filter(function(p){
+      var o=ownerOf(p.id);
+      if(S.view==="avail"&&o)return false;
+      if(S.pos!=="ALL"&&p.pos!==S.pos)return false;
+      if(S.q&&p.n.toLowerCase().indexOf(S.q)<0)return false;
+      return true;
+    });
+    if(!list.length){body.innerHTML='<tr><td colspan="8"><div class="skel">Nobody left here — adjust filters.</div></td></tr>';return;}
+    list.forEach(function(p){
+      var o=ownerOf(p.id);
+      if(showTiers&&p.tier!==lastTier){lastTier=p.tier;html+='<tr class="tierrow"><td colspan="8">Tier '+p.tier+'</td></tr>';}
+      var delta=(p.adp!=null)?(p.adp-p.ecr):null;
+      var dcell=(delta==null)?'<span style="color:var(--ink-faint)">—</span>':
+        (delta>=6?'<span class="fall">▼falls +'+delta+'</span>':delta<=-6?'<span class="reach">▲reach '+delta+'</span>':'<span style="color:var(--ink-faint)">'+(delta>0?"+":"")+delta+'</span>');
+      var act = o
+        ? '<span class="ownerbadge '+(o==="me"?"ob-me":o==="bro"?"ob-bro":"ob-gone")+'">'+(o==="me"?esc($("#nameMe").value):o==="bro"?esc($("#nameBro").value):"GONE")+'</span>'
+        : '<span class="acts"><button class="bMe" data-o="me" data-id="'+p.id+'">ME</button><button class="bBro" data-o="bro" data-id="'+p.id+'">BRO</button><button class="bGone" data-o="gone" data-id="'+p.id+'">✕</button></span>';
+      html+='<tr class="'+(o?"taken":"")+'">'+
+        '<td class="rk">'+p.ecr+'</td>'+
+        '<td><span class="pl"><img src="'+esc(photo(p))+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">'+
+          '<span><span class="nm">'+esc(p.n)+'</span><br><span class="mt">'+esc(p.t)+' · Bye '+esc(p.bye||"—")+'</span></span></span></td>'+
+        '<td><span class="pill pos-'+p.pos+'">'+esc(p.pr||p.pos)+'</span></td>'+
+        '<td>'+(p.adp!=null?p.adp:"—")+'</td>'+
+        '<td>'+dcell+'</td>'+
+        '<td>'+(p.proj!=null?p.proj:"—")+'</td>'+
+        '<td style="color:var(--ink-faint);font-size:11px">'+esc(p.rng||"")+'</td>'+
+        '<td>'+act+'</td></tr>';
+    });
+    body.innerHTML=html;
+  }
+  function renderClock(){
+    var n=picks.length, overall=n+1, rd=Math.floor(n/S.size)+1, pk=(n%S.size)+1;
+    $("#pickNo").textContent=rd+"."+(pk<10?"0":"")+pk;
+    $("#pickSub").textContent="Pick "+overall+" overall · "+n+" drafted";
+  }
+  function renderBest(){
+    var box=$("#bestpos"), html="";
+    ["QB","RB","WR","TE"].forEach(function(pos){
+      var p=players.filter(function(x){return x.pos===pos&&!ownerOf(x.id);})[0];
+      html+='<div class="bp"><div class="k"><span class="pill pos-'+pos+'">'+pos+'</span></div>'+
+        (p?'<div class="v">'+esc(p.n)+'</div><div class="e">ECR '+p.ecr+(p.adp?' · ADP '+p.adp:'')+'</div>':'<div class="e">None left</div>')+'</div>';
+    });
+    box.innerHTML=html;
+  }
+  function renderRosters(){
+    [["me","#rosterMe","#cntMe"],["bro","#rosterBro","#cntBro"]].forEach(function(cfg){
+      var mine=picks.filter(function(x){return x.o===cfg[0];});
+      var ul=$(cfg[1]);
+      $(cfg[2]).textContent=mine.length+" pick"+(mine.length===1?"":"s");
+      if(!mine.length){ul.innerHTML='<li class="emptymsg">No picks yet.</li>';return;}
+      ul.innerHTML=mine.map(function(x){
+        var p=byId[x.id]; if(!p)return"";
+        var rd=Math.floor(x.at/S.size)+1, pk=(x.at%S.size)+1;
+        return '<li><span class="rpk">'+rd+"."+(pk<10?"0":"")+pk+'</span><span class="pill pos-'+p.pos+'">'+p.pos+'</span> '+esc(p.n)+'</li>';
+      }).join("");
+    });
+  }
+  function renderAll(){renderBoard();renderClock();renderBest();renderRosters();}
+
+  $("#rows").addEventListener("click",function(ev){
+    var b=ev.target.closest("button[data-id]"); if(!b)return;
+    var id=+b.getAttribute("data-id");
+    if(ownerOf(id))return;
+    picks.push({id:id,o:b.getAttribute("data-o"),at:picks.length});
+    saveState(); renderAll();
+  });
+  $("#undoBtn").addEventListener("click",function(){ if(picks.length){picks.pop();saveState();renderAll();} });
+  $("#resetBtn").addEventListener("click",function(){ if(confirm("Clear the whole draft board? This can't be undone.")){picks=[];saveState();renderAll();} });
+  $("#q").addEventListener("input",function(){S.q=this.value.trim().toLowerCase();renderBoard();});
+  $("#segPos").addEventListener("click",function(ev){var b=ev.target.closest("button");if(!b)return;
+    this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});S.pos=b.getAttribute("data-v");renderBoard();});
+  $("#segView").addEventListener("click",function(ev){var b=ev.target.closest("button");if(!b)return;
+    this.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});S.view=b.getAttribute("data-v");renderBoard();});
+  $("#lgSize").addEventListener("change",function(){S.size=+this.value;saveState();renderAll();});
+  $("#nameMe").addEventListener("input",function(){saveState();renderBoard();});
+  $("#nameBro").addEventListener("input",function(){saveState();renderBoard();});
+})();
+</script>
+</body>
+</html>
