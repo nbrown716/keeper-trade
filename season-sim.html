@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="kt-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="description" content="Monte Carlo playoff odds, seed distributions, championship probabilities, and what-if scenarios from your real Sleeper league.">
+  <title>Season Sim — Keeper Trade</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/season-sim.css">
+  <script>window.setTimeout(()=>document.body?.classList.add('kt-page-ready'),1200);</script>
+</head>
+<body>
+  <main class="kt-season-shell">
+    <header class="kt-season-heading"><div><span class="kt-eyebrow">Monte Carlo · 10,000 futures</span><h1>SEASON SIM</h1><p>Every remaining game, every possible path, zero AI calls.</p></div><div class="kt-season-selects"><label>Manager<select id="season-manager" aria-label="Manager"></select></label><label>Rival<select id="season-rival" aria-label="Rival"></select></label></div></header>
+    <div class="kt-season-league" id="season-league">Loading your league…</div>
+    <section class="kt-season-scenarios" aria-label="What-if machine"><div><span class="kt-eyebrow">The what-if machine</span><strong>Change one thing. Watch every future move.</strong></div><div class="kt-season-scenario-buttons"><button type="button" data-scenario="winOut" aria-pressed="false">If I win out</button><button type="button" data-scenario="loseWeek" aria-pressed="false">If I lose this week</button><button type="button" data-scenario="rivalTwice" aria-pressed="false">If rival loses twice</button><button type="button" data-scenario="reset" aria-pressed="true">Reset futures</button></div></section>
+    <div class="kt-season-meta" id="season-meta" role="status" aria-live="polite">Preparing 10,000 simulations…</div>
+    <section class="kt-season-board" id="season-board" aria-label="Playoff odds" aria-busy="true"><div class="kt-season-skeleton kt-skeleton"></div><div class="kt-season-skeleton kt-skeleton"></div><div class="kt-season-skeleton kt-skeleton"></div></section>
+    <footer class="kt-season-footnote"><strong>Variance is real.</strong><span>Bands show the 5th–95th percentile of simulated final records. Seed circles show playoff seeds with at least a 1% chance. Magic number is the first extra-win total reaching a 90% playoff path across 200 deterministic scenarios, not a guarantee. Team strength is 50% season scoring, 30% last-three scoring, and 20% roster value; roster values are priors, not promises.</span></footer>
+  </main>
+  <script type="module" src="js/features/season-sim.js"></script>
+  <script type="module" src="js/pwa.js"></script>
+</body>
+</html>

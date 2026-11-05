@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="description" content="The Keeper Trade design constitution: tokens, components, and motion in one interactive reference.">
+  <title>Design Constitution — Keeper Trade</title>
+  <script>
+    (() => {
+      try {
+        const theme = localStorage.getItem('gi-theme');
+        document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+      } catch (_) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;650;700;750&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <style>
+    .demo-header { position: sticky; z-index: 50; top: 0; border-bottom: 1px solid var(--kt-border-subtle); background: rgb(var(--kt-bg-rgb) / 88%); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+    .demo-header-inner { display: flex; min-height: 4.5rem; align-items: center; justify-content: space-between; gap: var(--kt-space-4); }
+    .demo-brand { display: flex; align-items: center; gap: var(--kt-space-3); color: var(--kt-text-primary); font-family: var(--kt-font-display); font-size: 1.5rem; font-weight: 800; letter-spacing: 0.03em; text-decoration: none; text-transform: uppercase; }
+    .demo-mark { display: grid; width: 2.25rem; height: 2.25rem; place-items: center; border-radius: 0.65rem; background: var(--kt-accent); color: var(--kt-on-accent); font-size: 1.25rem; transform: rotate(-4deg); }
+    .demo-hero { position: relative; padding-block: clamp(3rem, 9vw, 7rem) var(--kt-space-7); overflow: hidden; }
+    .demo-hero::after { position: absolute; z-index: -1; top: -8rem; right: -8rem; width: 28rem; height: 28rem; border-radius: 50%; background: var(--kt-accent); content: ""; filter: blur(10rem); opacity: 0.07; }
+    .demo-hero-grid { display: grid; align-items: center; gap: var(--kt-space-6); }
+    .demo-title { max-width: 12ch; margin-bottom: var(--kt-space-4); font-family: var(--kt-font-display); font-size: clamp(3.75rem, 12vw, 7.5rem); font-weight: 800; letter-spacing: -0.025em; line-height: 0.82; text-transform: uppercase; }
+    .demo-title span { color: var(--kt-accent); }
+    .demo-lede { max-width: 38rem; margin-bottom: var(--kt-space-5); color: var(--kt-text-secondary); font-size: clamp(1rem, 2vw, 1.125rem); }
+    .demo-actions { display: flex; flex-wrap: wrap; gap: var(--kt-space-3); }
+    .demo-score-card { padding: var(--kt-space-5); background: linear-gradient(145deg, var(--kt-surface-2), var(--kt-surface-1)); }
+    .demo-score-top { display: flex; align-items: center; justify-content: space-between; gap: var(--kt-space-3); }
+    .demo-score-number { margin-block: var(--kt-space-5) var(--kt-space-2); font-size: clamp(5rem, 20vw, 8rem); }
+    .demo-score-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--kt-space-3); color: var(--kt-text-secondary); font-size: var(--kt-text-sm); }
+    .demo-swatches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--kt-space-3); }
+    .demo-swatch { min-height: 6rem; padding: var(--kt-space-3); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-md); background: var(--swatch); color: var(--swatch-text, var(--kt-text-primary)); }
+    .demo-swatch-code { display: block; margin-top: var(--kt-space-5); font-family: var(--kt-font-display); font-size: var(--kt-text-lg); font-variant-numeric: tabular-nums; font-weight: 700; }
+    .demo-swatch-name { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .demo-type-display { margin-bottom: var(--kt-space-2); font-family: var(--kt-font-display); font-size: clamp(3rem, 9vw, 5.5rem); font-weight: 700; line-height: 0.95; text-transform: uppercase; }
+    .demo-button-row, .demo-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--kt-space-3); }
+    .demo-component-stack { display: grid; gap: var(--kt-space-4); }
+    .demo-loading-content { display: flex; align-items: center; gap: var(--kt-space-4); min-height: 6.5rem; }
+    .demo-player-copy { flex: 1; }
+    .demo-player-copy h3 { margin-bottom: var(--kt-space-1); }
+    .demo-player-copy p { margin-bottom: 0; color: var(--kt-text-secondary); font-size: var(--kt-text-sm); }
+    .demo-avatar { display: grid; width: 3.5rem; height: 3.5rem; flex: none; place-items: center; border-radius: 50%; background: var(--kt-secondary-soft); color: var(--kt-secondary); font-family: var(--kt-font-display); font-size: 1.5rem; font-weight: 700; }
+    .demo-rules { display: grid; gap: var(--kt-space-4); margin: 0; padding: 0; list-style: none; counter-reset: rules; }
+    .demo-rules li { position: relative; padding-left: 3rem; color: var(--kt-text-secondary); counter-increment: rules; }
+    .demo-rules li::before { position: absolute; left: 0; top: -0.15rem; color: var(--kt-accent); content: "0" counter(rules); font-family: var(--kt-font-display); font-size: 1.5rem; font-weight: 700; }
+    .demo-rules strong { display: block; margin-bottom: var(--kt-space-1); color: var(--kt-text-primary); }
+    .demo-motion-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--kt-space-2); }
+    .demo-motion-item { padding: var(--kt-space-3); border-radius: var(--kt-radius-md); background: var(--kt-surface-2); text-align: center; }
+    .demo-motion-item strong { display: block; font-family: var(--kt-font-display); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+    .demo-motion-item span { color: var(--kt-text-muted); font-size: 0.625rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .demo-footer { padding-block: var(--kt-space-7); border-top: 1px solid var(--kt-border-subtle); color: var(--kt-text-secondary); font-size: var(--kt-text-sm); text-align: center; }
+    @media (min-width: 48rem) { .demo-hero-grid { grid-template-columns: 1.2fr 0.8fr; } .demo-swatches { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;overflow:hidden">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-trade" viewBox="0 0 24 24"><path d="M4 7h14m-4-4 4 4-4 4M20 17H6m4 4-4-4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 16 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24"><path d="M14 6a4 4 0 0 0-5-3l2.5 2.5-3 3L6 6a4 4 0 0 0 5 5l8 8a2 2 0 0 0 3-3l-8-8Zm-8 8-3 3a2 2 0 0 0 3 3l3-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </svg>
+
+  <header class="demo-header">
+    <div class="kt-container demo-header-inner">
+      <a class="demo-brand" href="#top" aria-label="Keeper Trade design system home"><span class="demo-mark" aria-hidden="true">KT</span> Keeper Trade</a>
+      <button class="kt-btn kt-btn-ghost kt-icon-btn" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Switch theme">
+        <svg aria-hidden="true"><use href="#i-sun"></use></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="demo-hero">
+      <div class="kt-container demo-hero-grid">
+        <div>
+          <span class="kt-eyebrow kt-animate-in">Design constitution · v1.0</span>
+          <h1 class="demo-title kt-animate-in" style="--kt-delay:40ms">Built for the <span>win.</span></h1>
+          <p class="demo-lede kt-animate-in" style="--kt-delay:80ms">A dark-first, numbers-obsessed design language for the decisions that make a dynasty. Bold when it matters. Quiet everywhere else.</p>
+          <div class="demo-actions kt-animate-in" style="--kt-delay:120ms">
+            <a class="kt-btn kt-btn-primary" href="#components">Explore the system <svg aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+            <button class="kt-btn kt-btn-secondary" type="button" id="hero-toast">Feel the feedback</button>
+          </div>
+        </div>
+        <article class="kt-card kt-card-elevated kt-glass kt-interactive demo-score-card kt-animate-in" data-tilt style="--kt-delay:160ms">
+          <div class="demo-score-top">
+            <span class="kt-eyebrow" style="margin:0">Trade threshold</span>
+            <span class="kt-badge kt-badge-success">Auto-approved</span>
+          </div>
+          <p class="kt-stat kt-score demo-score-number" id="trade-value">1,000</p>
+          <div class="demo-score-meta"><span>Point differential</span><span class="kt-delta kt-delta-up">↑ 12.4%</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="kt-section" aria-labelledby="identity-title">
+      <div class="kt-container">
+        <div class="kt-section-header"><div><span class="kt-eyebrow">01 · Foundation</span><h2 class="kt-display" id="identity-title">Visual identity</h2></div></div>
+        <div class="kt-grid kt-grid-3">
+          <article class="kt-card kt-interactive kt-animate-in" data-tilt style="--kt-delay:0ms">
+            <h3 class="kt-card-title">Color with intent</h3>
+            <p class="kt-muted">Volt wins. Blue informs. Red goes live.</p>
+            <div class="demo-swatches">
+              <div class="demo-swatch" style="--swatch:var(--kt-accent);--swatch-text:var(--kt-on-accent)"><span class="demo-swatch-name">Accent</span><span class="demo-swatch-code">Volt</span></div>
+              <div class="demo-swatch" style="--swatch:var(--kt-secondary);--swatch-text:var(--kt-on-secondary)"><span class="demo-swatch-name">Secondary</span><span class="demo-swatch-code">Blue</span></div>
+              <div class="demo-swatch" style="--swatch:var(--kt-surface-2)"><span class="demo-swatch-name">Surface</span><span class="demo-swatch-code">02</span></div>
+              <div class="demo-swatch" style="--swatch:var(--kt-success);--swatch-text:#08271b"><span class="demo-swatch-name">Success</span><span class="demo-swatch-code">Win</span></div>
+              <div class="demo-swatch" style="--swatch:var(--kt-danger);--swatch-text:#300810"><span class="demo-swatch-name">Danger</span><span class="demo-swatch-code">Loss</span></div>
+              <div class="demo-swatch" style="--swatch:var(--kt-live);--swatch-text:#300810"><span class="demo-swatch-name">Live</span><span class="demo-swatch-code">Now</span></div>
+            </div>
+          </article>
+          <article class="kt-card kt-interactive kt-animate-in" data-tilt style="--kt-delay:40ms">
+            <h3 class="kt-card-title">A voice built for Sundays</h3>
+            <p class="kt-muted">Condensed, confident display type meets a highly legible UI sans.</p>
+            <div class="demo-type-display">Fourth &amp; goal.</div>
+            <p><strong>Inter</strong> keeps every decision clear, from player notes to trade terms.</p>
+            <div class="kt-num" style="font-size:2rem;font-weight:700">12:34 <span class="kt-muted">·</span> 98.6 <span class="kt-muted">·</span> 1,000</div>
+            <p class="kt-subtle" style="margin:var(--kt-space-2) 0 0;font-size:var(--kt-text-xs)">Tabular figures keep every digit locked in place.</p>
+          </article>
+          <article class="kt-card kt-interactive kt-animate-in" data-tilt style="--kt-delay:80ms">
+            <h3 class="kt-card-title">Spacing &amp; elevation</h3>
+            <p class="kt-muted">An 8px rhythm creates room to think. Three surfaces establish depth.</p>
+            <div style="display:grid;gap:var(--kt-space-3)">
+              <div class="kt-card" style="background:var(--kt-surface-1)"><span class="kt-eyebrow" style="margin:0">Surface 01</span><div class="kt-num" style="font-size:1.75rem">Base card</div></div>
+              <div class="kt-card" style="background:var(--kt-surface-2)"><span class="kt-eyebrow" style="margin:0">Surface 02</span><div class="kt-num" style="font-size:1.75rem">Raised content</div></div>
+              <div class="kt-card kt-glass" style="background:var(--kt-surface-3)"><span class="kt-eyebrow" style="margin:0">Surface 03 · Glass</span><div class="kt-num" style="font-size:1.75rem">Elevated only</div></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="kt-section" id="components" aria-labelledby="components-title">
+      <div class="kt-container">
+        <div class="kt-section-header"><div><span class="kt-eyebrow">02 · Components</span><h2 class="kt-display" id="components-title">Every play, covered</h2></div><span class="kt-badge kt-badge-blue">44px targets</span></div>
+        <div class="kt-grid kt-grid-2">
+          <article class="kt-card kt-animate-in">
+            <div class="kt-card-header"><h3 class="kt-card-title">Buttons</h3><span class="kt-badge">One primary / view</span></div>
+            <div class="demo-component-stack">
+              <div class="demo-button-row">
+                <button class="kt-btn kt-btn-primary" type="button" data-toast="Trade submitted. You're built to win." data-haptic="submit"><svg aria-hidden="true"><use href="#i-check"></use></svg>Submit trade</button>
+                <button class="kt-btn kt-btn-secondary" type="button" data-toast="Trade saved to your desk.">Save for later</button>
+              </div>
+              <div class="demo-button-row">
+                <button class="kt-btn" type="button" data-toast="Values refreshed.">Default</button>
+                <button class="kt-btn kt-btn-ghost" type="button" data-toast="No distractions. Just feedback.">Ghost</button>
+                <button class="kt-btn kt-btn-danger" type="button" data-toast="Trade removed." data-toast-type="danger">Remove</button>
+                <button class="kt-btn" type="button" disabled>Disabled</button>
+              </div>
+              <label class="kt-label" for="team-name">Team name</label>
+              <input class="kt-control" id="team-name" value="The Keeper Faithful" autocomplete="off">
+            </div>
+          </article>
+
+          <article class="kt-card kt-animate-in" style="--kt-delay:40ms">
+            <div class="kt-card-header"><h3 class="kt-card-title">Chips &amp; badges</h3><span class="kt-badge kt-badge-accent">Context first</span></div>
+            <p class="kt-muted">Press a chip to change its state.</p>
+            <div class="demo-chip-row" aria-label="League format filters">
+              <button class="kt-chip" type="button" aria-pressed="true">All players</button>
+              <button class="kt-chip" type="button" aria-pressed="false">Keepers</button>
+              <button class="kt-chip" type="button" aria-pressed="false">Draft picks</button>
+            </div>
+            <hr style="width:100%;border:0;border-top:1px solid var(--kt-border-subtle);margin:var(--kt-space-5) 0">
+            <div class="demo-chip-row">
+              <span class="kt-badge kt-badge-success">Value gained</span>
+              <span class="kt-badge kt-badge-blue">PPR</span>
+              <span class="kt-badge kt-badge-danger">Value lost</span>
+              <span class="kt-badge kt-badge-accent"><span class="kt-live-dot" aria-hidden="true"></span>Live</span>
+              <span class="kt-badge">2027 1st</span>
+            </div>
+          </article>
+
+          <article class="kt-card kt-card-elevated kt-animate-in">
+            <div class="kt-card-header"><h3 class="kt-card-title">Live score ticker</h3><span class="kt-badge kt-badge-danger"><span class="kt-live-dot" aria-hidden="true"></span>Live</span></div>
+            <p class="kt-muted">Horizontal, snap-aligned, and screen-reader friendly.</p>
+            <div class="kt-ticker" aria-label="NFL live scores">
+              <div class="kt-ticker-item">
+                <div class="kt-ticker-status"><span style="color:var(--kt-live)">Q4 · 02:14</span><span>FOX</span></div>
+                <div class="kt-ticker-team"><span>BUF</span><span class="kt-ticker-score" id="home-score">24</span></div>
+                <div class="kt-ticker-team"><span>KC</span><span class="kt-ticker-score">21</span></div>
+              </div>
+              <div class="kt-ticker-item">
+                <div class="kt-ticker-status"><span style="color:var(--kt-live)">Q3 · 08:42</span><span>CBS</span></div>
+                <div class="kt-ticker-team"><span>DET</span><span class="kt-ticker-score">17</span></div>
+                <div class="kt-ticker-team"><span>GB</span><span class="kt-ticker-score">20</span></div>
+              </div>
+              <div class="kt-ticker-item">
+                <div class="kt-ticker-status"><span>Final</span><span>ESPN</span></div>
+                <div class="kt-ticker-team"><span>PHI</span><span class="kt-ticker-score">31</span></div>
+                <div class="kt-ticker-team"><span>DAL</span><span class="kt-ticker-score">28</span></div>
+              </div>
+            </div>
+            <div class="demo-button-row" style="margin-top:var(--kt-space-4)">
+              <button class="kt-btn kt-btn-primary" type="button" id="score-good">Simulate touchdown</button>
+              <button class="kt-btn kt-btn-ghost" type="button" id="score-bad">Simulate turnover</button>
+            </div>
+            <p class="kt-sr-only" id="score-announcement" aria-live="polite"></p>
+          </article>
+
+          <article class="kt-card kt-animate-in" style="--kt-delay:40ms">
+            <div class="kt-card-header"><h3 class="kt-card-title">Skeleton loading</h3><span class="kt-badge kt-badge-blue">No spinners</span></div>
+            <p class="kt-muted">Content-shaped placeholders make every wait feel intentional.</p>
+            <div class="demo-loading-content" id="async-card" aria-live="polite" aria-busy="true">
+              <span class="kt-skeleton kt-skeleton-circle" aria-hidden="true"></span>
+              <div class="demo-player-copy" aria-hidden="true"><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span></div>
+              <span class="kt-sr-only">Loading player value</span>
+            </div>
+            <button class="kt-btn kt-btn-secondary kt-btn-block" type="button" id="reload-demo">Replay loading state</button>
+          </article>
+
+          <article class="kt-card kt-animate-in">
+            <div class="kt-card-header"><h3 class="kt-card-title">Instant feedback</h3><span class="kt-badge kt-badge-success">Within 100ms</span></div>
+            <p class="kt-muted">Toasts acknowledge the action without blocking the next one. Mobile haptics add a subtle physical response.</p>
+            <div class="demo-button-row">
+              <button class="kt-btn kt-btn-primary" type="button" data-toast="Keeper added. Championship odds just improved." data-toast-type="success" data-haptic="submit">Add keeper</button>
+              <button class="kt-btn" type="button" data-toast="Rankings are up to date.">Show toast</button>
+            </div>
+          </article>
+
+          <article class="kt-card kt-animate-in" style="--kt-delay:40ms">
+            <div class="kt-card-header"><h3 class="kt-card-title">Motion with meaning</h3><span class="kt-badge">60fps</span></div>
+            <p class="kt-muted">Staggered entrances, spring releases, and eased count-ups. Reduced-motion preferences replace movement with immediate state.</p>
+            <div class="demo-motion-row">
+              <div class="demo-motion-item"><strong class="kt-num">160</strong><span>Micro · ms</span></div>
+              <div class="demo-motion-item"><strong class="kt-num">320</strong><span>Standard · ms</span></div>
+              <div class="demo-motion-item"><strong class="kt-num">640</strong><span>Hero · ms</span></div>
+            </div>
+            <button class="kt-btn kt-btn-secondary kt-btn-block" style="margin-top:var(--kt-space-4)" type="button" id="replay-motion">Replay entrances</button>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="kt-section" aria-labelledby="navigation-title">
+      <div class="kt-container">
+        <div class="kt-section-header"><div><span class="kt-eyebrow">03 · Navigation</span><h2 class="kt-display" id="navigation-title">Everything within reach</h2></div></div>
+        <p class="kt-muted" style="max-width:42rem">Five destinations, one thumb, no hunting. Fixed to the bottom on small screens and presented as a dock here on larger screens.</p>
+      </div>
+      <nav class="kt-bottom-nav" aria-label="Demo navigation">
+        <a href="#top" aria-current="page"><svg aria-hidden="true"><use href="#i-home"></use></svg>Home</a>
+        <a href="#components"><svg aria-hidden="true"><use href="#i-trade"></use></svg>Trades</a>
+        <a href="#identity-title"><svg aria-hidden="true"><use href="#i-chart"></use></svg>Rankings</a>
+        <a href="#components-title"><svg aria-hidden="true"><use href="#i-search"></use></svg>Research</a>
+        <a href="#principles-title"><svg aria-hidden="true"><use href="#i-tools"></use></svg>Tools</a>
+      </nav>
+    </section>
+
+    <section class="kt-section" aria-labelledby="principles-title">
+      <div class="kt-container">
+        <div class="kt-section-header"><div><span class="kt-eyebrow">The short spec</span><h2 class="kt-display" id="principles-title">Rules of the league</h2></div></div>
+        <div class="kt-card kt-card-elevated">
+          <ol class="demo-rules kt-grid kt-grid-2">
+            <li><strong>One winning move</strong>Every screen gets one obvious primary action and feedback within 100ms.</li>
+            <li><strong>Color carries meaning</strong>Volt is for winning actions, blue for information, and team colors stay below 20% of a view.</li>
+            <li><strong>Numbers never jitter</strong>Use condensed display type and tabular figures; animate changed values with a count-up.</li>
+            <li><strong>Motion earns its place</strong>160ms micro, 320ms standard, 640ms hero. Stagger lists by 30–50ms and honor reduced motion.</li>
+            <li><strong>Build for the thumb</strong>Mobile-first layouts, 44px minimum targets, and essential navigation at the bottom.</li>
+            <li><strong>Never leave a blank play</strong>Async content gets skeletons; failures degrade gracefully. No spinners, no dead ends.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="demo-footer"><div class="kt-container">Keeper Trade design system · Plain CSS + vanilla JavaScript · No build step</div></footer>
+  <div class="kt-toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module">
+    const root = document.documentElement;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const coarsePointer = window.matchMedia('(pointer: coarse)');
+    const themeToggle = document.querySelector('#theme-toggle');
+    const toastRegion = document.querySelector('#toast-region');
+
+    function updateThemeControl() {
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      themeToggle.setAttribute('aria-label', `Switch to ${next} theme`);
+      document.querySelector('meta[name="theme-color"]').content = root.dataset.theme === 'dark' ? '#0b0f1a' : '#f2f5f9';
+    }
+
+    function haptic(pattern = 8) {
+      if (coarsePointer.matches && !reducedMotion.matches && 'vibrate' in navigator) navigator.vibrate(pattern);
+    }
+
+    function showToast(message, type = '') {
+      const toast = document.createElement('div');
+      toast.className = `kt-toast${type ? ` kt-toast-${type}` : ''}`;
+      toast.setAttribute('role', 'status');
+      toast.textContent = message;
+      toastRegion.replaceChildren(toast);
+      window.setTimeout(() => {
+        toast.classList.add('is-leaving');
+        window.setTimeout(() => toast.remove(), reducedMotion.matches ? 0 : 170);
+      }, 6000);
+    }
+
+    function animateNumber(element, from, to, duration = 640) {
+      if (reducedMotion.matches || from === to) {
+        element.textContent = to.toLocaleString('en-US');
+        return;
+      }
+      const start = performance.now();
+      const frame = now => {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        element.textContent = Math.round(from + (to - from) * eased).toLocaleString('en-US');
+        if (progress < 1) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    }
+
+    themeToggle.addEventListener('click', () => {
+      root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('gi-theme', root.dataset.theme); } catch (_) {}
+      updateThemeControl();
+      haptic();
+    });
+
+    document.querySelectorAll('[data-toast]').forEach(button => {
+      button.addEventListener('click', () => {
+        showToast(button.dataset.toast, button.dataset.toastType || 'success');
+        haptic(button.dataset.haptic === 'submit' ? [30, 35, 55] : 8);
+      });
+    });
+
+    document.querySelector('#hero-toast').addEventListener('click', () => {
+      showToast('Design system ready. Let’s build a winner.', 'success');
+      haptic();
+    });
+
+    document.querySelectorAll('.kt-chip[aria-pressed]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const group = chip.parentElement;
+        group.querySelectorAll('.kt-chip[aria-pressed]').forEach(peer => peer.setAttribute('aria-pressed', String(peer === chip)));
+        haptic();
+      });
+    });
+
+    let score = 24;
+    function changeScore(delta) {
+      const element = document.querySelector('#home-score');
+      const previous = score;
+      score = Math.max(0, score + delta);
+      animateNumber(element, previous, score, 400);
+      element.classList.remove('kt-score-good', 'kt-score-bad');
+      void element.offsetWidth;
+      element.classList.add(delta > 0 ? 'kt-score-good' : 'kt-score-bad');
+      document.querySelector('#score-announcement').textContent = delta > 0 ? `Buffalo touchdown. Score ${score} to 21.` : `Buffalo turnover. Score adjusted to ${score} to 21.`;
+      haptic(delta > 0 ? [25, 45, 25] : 35);
+    }
+    document.querySelector('#score-good').addEventListener('click', () => changeScore(7));
+    document.querySelector('#score-bad').addEventListener('click', () => changeScore(-3));
+
+    const asyncCard = document.querySelector('#async-card');
+    let loadTimer;
+    function loadPlayer() {
+      window.clearTimeout(loadTimer);
+      asyncCard.setAttribute('aria-busy', 'true');
+      asyncCard.innerHTML = `<span class="kt-skeleton kt-skeleton-circle" aria-hidden="true"></span><div class="demo-player-copy" aria-hidden="true"><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span></div><span class="kt-sr-only">Loading player value</span>`;
+      loadTimer = window.setTimeout(() => {
+        asyncCard.innerHTML = `<div class="demo-avatar" aria-hidden="true">JJ</div><div class="demo-player-copy"><h3>Justin Jefferson</h3><p>WR · MIN · Dynasty value <strong class="kt-num kt-delta-up">9,850</strong></p></div><span class="kt-badge kt-badge-success">Elite</span>`;
+        asyncCard.setAttribute('aria-busy', 'false');
+      }, reducedMotion.matches ? 150 : 1400);
+    }
+    document.querySelector('#reload-demo').addEventListener('click', () => { loadPlayer(); haptic(); });
+
+    document.querySelector('#replay-motion').addEventListener('click', () => {
+      document.querySelectorAll('.kt-animate-in').forEach((element, index) => {
+        element.classList.remove('kt-animate-in');
+        void element.offsetWidth;
+        element.style.setProperty('--kt-delay', `${Math.min(index * 40, 320)}ms`);
+        element.classList.add('kt-animate-in');
+      });
+      haptic();
+    });
+
+    document.querySelectorAll('[data-tilt]').forEach(card => {
+      card.addEventListener('pointermove', event => {
+        if (!finePointer.matches || reducedMotion.matches) return;
+        const rect = card.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width - 0.5;
+        const y = (event.clientY - rect.top) / rect.height - 0.5;
+        card.style.setProperty('--kt-tilt-x', `${y * -2.5}deg`);
+        card.style.setProperty('--kt-tilt-y', `${x * 2.5}deg`);
+      }, { passive: true });
+      card.addEventListener('pointerleave', () => {
+        card.style.setProperty('--kt-tilt-x', '0deg');
+        card.style.setProperty('--kt-tilt-y', '0deg');
+      }, { passive: true });
+    });
+
+    document.querySelectorAll('button, .kt-chip').forEach(control => {
+      control.addEventListener('pointerup', () => {
+        control.classList.add('is-pressed');
+        window.setTimeout(() => control.classList.remove('is-pressed'), 100);
+      }, { passive: true });
+    });
+
+    updateThemeControl();
+    loadPlayer();
+  </script>
+</body>
+</html>

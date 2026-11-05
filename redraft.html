@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Redraft Trade Calculator — GRIDIRON</title>
+<title>Redraft Trade Calculator — Keeper Trade</title>
 <meta name="theme-color" content="#0A0E16">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +12,7 @@
 <style>
   :root{
     --bg:#0A0E16;--surface:#121826;--surface-2:#1A2234;--raise:#212B41;
-    --ink:#EAF0F8;--ink-soft:#9DAAC0;--ink-faint:#63708A;--line:#232B3D;--line-soft:#1B2231;
+    --ink:#EAF0F8;--ink-soft:#9DAAC0;--ink-faint:#8190A8;--line:#232B3D;--line-soft:#1B2231;
     --gold:#F0B429;--redraft:#2DD4A7;--research:#4C9AFF;--keeper:#F0B429;
     --win:#2DD4A7;--win-wash:#12312A;--lose:#F0596B;--lose-wash:#321820;--market:#4C9AFF;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.35);--radius:15px;
@@ -21,7 +21,7 @@
   }
   :root[data-theme="light"]{
     --bg:#F2F4F8;--surface:#FFFFFF;--surface-2:#F6F8FB;--raise:#EDF1F7;
-    --ink:#0E1626;--ink-soft:#4A5468;--ink-faint:#8A94A8;--line:#E1E6EE;--line-soft:#EDF0F5;
+    --ink:#0E1626;--ink-soft:#4A5468;--ink-faint:#5F6B7A;--line:#E1E6EE;--line-soft:#EDF0F5;
     --gold:#C98A00;--redraft:#0FA37F;--research:#2F6FE0;--keeper:#C98A00;
     --win:#0E7A47;--win-wash:#DCF0E6;--lose:#C9372C;--lose-wash:#FAE3E1;--market:#2F6FE0;
     --shadow:0 1px 2px rgba(18,22,28,.05),0 10px 30px rgba(18,22,28,.08);
@@ -56,7 +56,7 @@
   .seg button{flex:1;border:0;background:transparent;color:var(--ink-soft);font-family:var(--sans);font-size:12px;font-weight:700;padding:7px 4px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:.12s}
   .seg button:hover{color:var(--ink)}
   .seg button[aria-pressed="true"]{background:var(--redraft);color:#04140F}
-  :root[data-theme="light"] .seg button[aria-pressed="true"]{color:#fff}
+  :root[data-theme="light"] .seg button[aria-pressed="true"]{color:#04140F}
   .seg.gold button[aria-pressed="true"]{background:var(--gold);color:#1A1204}
   .status-chip{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--ink-faint);margin-top:2px}
   .status-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--ink-faint)}
@@ -71,7 +71,9 @@
   .team-name:focus{outline:none;border-bottom:2px solid var(--redraft)}
   .tag{font-family:var(--cond);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#04140F;background:var(--market);padding:3px 8px;border-radius:5px;flex:none}
   .team.a .tag{background:var(--market)} .team.b .tag{background:var(--redraft)}
-  :root[data-theme="light"] .tag{color:#fff}
+  :root[data-theme="light"] .tag{color:#04140F}
+  :root[data-theme="light"] .team.a .tag{color:#fff}
+  :root[data-theme="light"] .pos-RB{color:#176B38}
   .adder{position:relative;padding:10px 12px;border-bottom:1px solid var(--line-soft)}
   .adder input{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:9px 11px;font-family:var(--sans);font-size:13.5px;color:var(--ink)}
   .adder input:focus{outline:none;border-color:var(--redraft)}
@@ -92,7 +94,7 @@
   .pcard .x:hover{background:var(--lose-wash);color:var(--lose)}
   .pill{display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);font-weight:700;font-size:10px;letter-spacing:.03em;padding:1px 6px;border-radius:4px}
   .pos-QB{background:#3A2247;color:#D9AEEC}.pos-RB{background:#173025;color:#7FD6A0}.pos-WR{background:#17263F;color:#9CBEF5}.pos-TE{background:#332512;color:#EEB483}
-  :root[data-theme="light"] .pos-QB{background:#EFE0F5;color:#7A2E9E}:root[data-theme="light"] .pos-RB{background:#DCEEE1;color:#1E7A44}:root[data-theme="light"] .pos-WR{background:#DCE7FB;color:#24509E}:root[data-theme="light"] .pos-TE{background:#FBE7D6;color:#9E5A1E}
+  :root[data-theme="light"] .pos-QB{background:#EFE0F5;color:#7A2E9E}:root[data-theme="light"] .pos-RB{background:#DCEEE1;color:#176B38}:root[data-theme="light"] .pos-WR{background:#DCE7FB;color:#24509E}:root[data-theme="light"] .pos-TE{background:#FBE7D6;color:#8A4A12}
   .team-foot{margin-top:auto;padding:11px 14px;border-top:1px solid var(--line-soft);background:var(--surface-2);display:flex;flex-direction:column;gap:4px}
   .frow{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
   .frow .k{color:var(--ink-faint);font-weight:600} .frow .v{font-weight:700}
@@ -116,9 +118,14 @@
   .reset:hover{background:var(--surface-2);color:var(--ink)}
   .foot-note{max-width:900px;margin:26px auto 40px;color:var(--ink-faint);font-size:11.5px;line-height:1.6;text-align:center}
   .foot-note b{color:var(--ink-soft)}
-  .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--redraft);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}} @media (prefers-reduced-motion:reduce){.spin,.dot{animation:none!important}}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;650;700;750;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="stylesheet" href="css/navigation.css?v=2">
+<link rel="stylesheet" href="css/trade-desk.css">
+<link rel="stylesheet" href="css/mascot.css">
 </head>
 <body>
 <header class="site-header">
@@ -241,7 +248,7 @@
     arr.forEach(function(e){
       var p=e.ref, v=valueOf(p);
       var li=el('<li class="pcard">'+
-        '<img src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'">'+
+        '<img alt="" src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'">'+
         '<div><div class="nm">'+esc(p.name)+'</div><div class="mt"><span class="pill pos-'+p.pos+'">'+p.pos+(p.posRank||"")+'</span> '+esc(p.team)+(S.tePrem&&p.pos==="TE"?' · TE+':'')+'</div></div>'+
         '<span class="val">'+fmt(v)+'</span><button class="x" aria-label="Remove">×</button></li>');
       li.querySelector(".x").addEventListener("click",function(){S.sides[side]=S.sides[side].filter(function(x){return x.uid!==e.uid;});renderSide(side);renderVerdict();});
@@ -267,6 +274,7 @@
     else{st.textContent=win+" wins";st.className="stamp win";u.textContent="points to "+win;
       var deg=pct<0.12?"a slight edge":pct<0.25?"a clear win":"a lopsided haul";
       m.innerHTML="<b>"+esc(win)+"</b> gets "+deg+" — <b>"+fmt(ad)+"</b> more in trade value ("+(pct*100).toFixed(0)+"%).";}
+    window.dispatchEvent(new CustomEvent('kt:trade-graded',{detail:{signature:A.eff+'|'+B.eff+'|'+A.count+'|'+B.count,sides:S.sides,totals:{A:A.eff,B:B.eff},market:{A:A.market,B:B.market}}}));
   }
 
   function setupSearch(side){
@@ -279,7 +287,7 @@
         .sort(function(a,b){return b.val-a.val;}).slice(0,9);
       if(!matches.length){box.innerHTML='<div class="res" style="cursor:default;color:var(--ink-faint)">No match</div>';box.classList.add("open");return;}
       box.innerHTML=matches.map(function(p,i){return '<div class="res'+(i===hi?" hi":"")+'" data-i="'+i+'">'+
-        '<img src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'">'+
+        '<img alt="" src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'">'+
         '<div><div class="nm">'+esc(p.name)+'</div><div class="mt">'+p.pos+(p.posRank||"")+' · '+esc(p.team)+'</div></div>'+
         '<span class="vv">'+fmt(valueOf(p))+'</span></div>';}).join("");
       box.classList.add("open");
@@ -296,6 +304,14 @@
       else if(ev.key==="Escape")close();});
   }
 
+  window.TradeEngine={
+    state:S,
+    players:function(){return players;},
+    moveAsset:function(uid,from,to){var index=S.sides[from].findIndex(function(e){return e.uid===uid;});if(index<0||from===to)return;var item=S.sides[from].splice(index,1)[0];S.sides[to].push(item);renderSide(from);renderSide(to);renderVerdict();},
+    setMarketValue:function(entry,value){entry.ref.val=value;},
+    adjustedValue:function(entry){return valueOf(entry.ref);},
+    render:function(side){renderSide(side);renderVerdict();}
+  };
   function seg(id,fn){var g=$("#"+id);g.addEventListener("click",function(ev){var b=ev.target.closest("button");if(!b)return;
     g.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});fn(b.getAttribute("data-v"));});}
   seg("segFormat",function(v){S.format=v;loadValues();});
@@ -318,5 +334,8 @@
   },120);
 })();
 </script>
+<script type="module" src="js/features/trade-desk.js"></script>
+<script type="module" src="js/features/trade-tracking.js"></script>
+<script type="module" src="js/pwa.js"></script>
 </body>
 </html>

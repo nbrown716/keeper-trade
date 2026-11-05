@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏈%3C/text%3E%3C/svg%3E">
 <script>(function(){try{var t=localStorage.getItem('gi-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-<title>The Wire · NFL Research — GRIDIRON</title>
+<title>The Wire · NFL Research — Keeper Trade</title>
 <style>
   :root{
     --bg:#EEF0F4; --surface:#FFFFFF; --surface-2:#F6F7FA; --ink:#12161C;
@@ -29,10 +29,11 @@
     --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);}}
   :root[data-theme="light"]{
     --bg:#EEF0F4; --surface:#FFFFFF; --surface-2:#F6F7FA; --ink:#12161C;
-    --ink-soft:#4A5261; --ink-faint:#828B9C; --line:#D7DCE5; --line-soft:#E6EAF1;
+    --ink-soft:#4A5261; --ink-faint:#5F6B7A; --line:#D7DCE5; --line-soft:#E6EAF1;
     --gold:#C98A00; --gold-bright:#E8A400; --gold-wash:#FBF1DA; --market:#2F63C8;
     --market-wash:#E7EEFA; --win:#0E7A47; --win-wash:#DCF0E6; --lose:#BE3A31; --lose-wash:#FAE3E1;
     --shadow:0 1px 2px rgba(18,22,28,.06),0 8px 24px rgba(18,22,28,.06);}
+  :root[data-theme="light"] .kicker{color:#8A5A00}
   :root[data-theme="dark"]{
     --bg:#0D1016; --surface:#161B23; --surface-2:#1C222C; --ink:#E9EDF3;
     --ink-soft:#A6B0C0; --ink-faint:#727C8D; --line:#2A313D; --line-soft:#222834;
@@ -52,8 +53,9 @@
   .kicker{font-family:var(--cond);text-transform:uppercase;letter-spacing:.26em;font-size:11px;font-weight:700;color:var(--gold)}
   h1{font-family:var(--cond);font-weight:800;text-transform:uppercase;letter-spacing:.01em;
     font-size:clamp(26px,4.4vw,40px);line-height:.95;margin:0}
-  .pagenav{display:flex;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;box-shadow:var(--shadow)}
-  .pagenav a{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-size:13px;font-weight:700;
+  .pagenav{display:flex;max-width:100%;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:4px;box-shadow:var(--shadow);overflow-x:auto;scrollbar-width:none}
+  .pagenav::-webkit-scrollbar{display:none}
+  .pagenav a{display:inline-flex;min-height:44px;align-items:center;gap:7px;text-decoration:none;font-size:13px;font-weight:700;
     color:var(--ink-soft);padding:8px 14px;border-radius:8px;white-space:nowrap}
   .pagenav a:hover{color:var(--ink);background:var(--surface-2)}
   .pagenav a.on{background:var(--ink);color:#fff}
@@ -63,7 +65,7 @@
   /* tabs */
   .tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:20px;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
-  .tab{border:0;background:transparent;font-family:var(--sans);font-size:14px;font-weight:700;color:var(--ink-faint);
+  .tab{border:0;background:transparent;font-family:var(--sans);font-size:14px;font-weight:700;color:var(--ink-faint);min-height:44px;
     padding:11px 15px;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;align-items:center;gap:7px}
   .tab:hover{color:var(--ink)}
   .tab.on{color:var(--ink);border-bottom-color:var(--gold)}
@@ -75,12 +77,12 @@
     color:var(--ink-faint);margin:0 0 12px}
   .loading,.errbox{padding:40px 16px;text-align:center;color:var(--ink-faint);font-size:14px}
   .errbox b{color:var(--ink);display:block;margin-bottom:6px}
-  .retry{margin-top:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);
+  .retry{margin-top:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);min-height:44px;
     font-weight:600;font-size:13px;padding:8px 16px;border-radius:8px;cursor:pointer}
   .retry:hover{background:var(--surface-2);color:var(--ink)}
-  .spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;
-    display:inline-block;animation:sp .7s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}}
+  .spin{display:block;width:min(100%,32rem);height:3rem;margin:auto;border-radius:8px;
+    background:linear-gradient(90deg,var(--surface-2),var(--surface),var(--surface-2));background-size:200% 100%;animation:sp 1.4s ease-in-out infinite}
+  @keyframes sp{0%{background-position:100% 0}100%{background-position:-100% 0}}
   @media (prefers-reduced-motion:reduce){.spin,.tab .dot{animation:none}}
 
   /* NEWS grid */
@@ -546,3 +548,7 @@
   loaded.news=1; loadNews();
 })();
 </script>
+<script type="module" src="js/features/research-tracking.js"></script>
+<script type="module" src="js/pwa.js"></script>
+</body>
+</html>

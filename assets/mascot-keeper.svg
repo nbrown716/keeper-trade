@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+  <title id="title">The Keeper mascot</title>
+  <desc id="desc">A confident volt-green fantasy football character holding a commissioner clipboard.</desc>
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="38%" r="62%"><stop offset="0" stop-color="#c6ff4a" stop-opacity=".32"/><stop offset="1" stop-color="#c6ff4a" stop-opacity="0"/></radialGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c6ff4a"/><stop offset="1" stop-color="#7ec92f"/></linearGradient>
+    <linearGradient id="jersey" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#223451"/><stop offset="1" stop-color="#101a2c"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".3"/></filter>
+  </defs>
+  <ellipse cx="160" cy="285" rx="92" ry="18" fill="#050912" opacity=".45"/>
+  <circle cx="160" cy="148" r="136" fill="url(#glow)"/>
+  <g filter="url(#shadow)">
+    <path d="M82 117 62 70l48 22m128 25 20-47-48 22" fill="url(#body)" stroke="#152000" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M89 130c0-51 32-83 71-83s71 32 71 83v70c0 49-30 79-71 79s-71-30-71-79z" fill="url(#body)" stroke="#152000" stroke-width="6"/>
+    <path d="M92 177c17 19 42 27 68 27s51-8 68-27v48c0 35-30 58-68 58s-68-23-68-58z" fill="url(#jersey)"/>
+    <path d="M123 211h74l-7 54h-60z" fill="#f4f7fb" opacity=".96"/>
+    <path d="m146 211 14 18 14-18" fill="none" stroke="#8190a8" stroke-width="4"/>
+    <text x="160" y="254" text-anchor="middle" font-family="Arial Narrow,Arial,sans-serif" font-size="31" font-weight="900" fill="#152000">KT</text>
+    <path d="M102 124c10-16 28-20 43-8m30 0c15-12 33-8 43 8" fill="none" stroke="#152000" stroke-width="8" stroke-linecap="round"/>
+    <ellipse cx="125" cy="140" rx="17" ry="21" fill="#f4f7fb"/>
+    <ellipse cx="195" cy="140" rx="17" ry="21" fill="#f4f7fb"/>
+    <ellipse cx="130" cy="144" rx="7" ry="10" fill="#0b0f1a"/>
+    <ellipse cx="190" cy="144" rx="7" ry="10" fill="#0b0f1a"/>
+    <circle cx="132" cy="140" r="2.5" fill="#c6ff4a"/>
+    <circle cx="192" cy="140" r="2.5" fill="#c6ff4a"/>
+    <path d="m160 148-17 17 17 8 17-8z" fill="#ffb612" stroke="#152000" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M143 180c10 8 24 8 34 0" fill="none" stroke="#152000" stroke-width="5" stroke-linecap="round"/>
+    <path d="M94 189c-25 8-35 27-27 44 6 12 18 8 30-4m129-40c25 8 35 27 27 44-6 12-18 8-30-4" fill="url(#body)" stroke="#152000" stroke-width="6" stroke-linecap="round"/>
+    <g transform="rotate(-8 213 220)">
+      <rect x="184" y="185" width="67" height="86" rx="9" fill="#59a8ff" stroke="#152000" stroke-width="5"/>
+      <rect x="202" y="177" width="31" height="17" rx="6" fill="#8190a8" stroke="#152000" stroke-width="4"/>
+      <path d="M196 207h43m-43 14h43m-43 14h29m-29 14h35" stroke="#f4f7fb" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+      <path d="m196 251 6 6 12-15" fill="none" stroke="#c6ff4a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <path d="M114 280v14m92-14v14" stroke="#152000" stroke-width="12" stroke-linecap="round"/>
+    <path d="M96 296h36m56 0h36" stroke="#59a8ff" stroke-width="13" stroke-linecap="round"/>
+  </g>
+</svg>

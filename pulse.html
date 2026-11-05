@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="kt-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="description" content="Your league's storylines, weekly awards, Commissioner newsletter, trophy case, and all-time record book.">
+  <title>League Pulse — Keeper Trade</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/pulse.css">
+  <script>window.setTimeout(()=>document.body?.classList.add('kt-page-ready'),1200);</script>
+</head>
+<body>
+  <main class="kt-pulse-shell">
+    <header class="kt-pulse-heading">
+      <div><span class="kt-eyebrow">The social/narrative layer</span><h1>LEAGUE PULSE</h1><p>Every score becomes a storyline. Every storyline becomes lore.</p></div>
+      <label>Rewind the season<select id="pulse-week" aria-label="League Pulse week"><option>Loading…</option></select></label>
+    </header>
+    <div class="kt-pulse-meta"><span id="pulse-league">Reading the league office…</span><span id="pulse-status" role="status" aria-live="polite">Statistics are computed locally. AI only writes the prose.</span></div>
+    <div class="kt-pulse-celebration" id="pulse-celebration" role="status" hidden></div>
+    <nav class="kt-pulse-tabs" aria-label="League Pulse views" role="tablist">
+      <button type="button" role="tab" id="pulse-tab-feed" aria-controls="pulse-panel-feed" aria-selected="true" data-pulse-tab="feed">The Bottom Line</button>
+      <button type="button" role="tab" id="pulse-tab-newsletter" aria-controls="pulse-panel-newsletter" aria-selected="false" tabindex="-1" data-pulse-tab="newsletter">The Commissioner</button>
+      <button type="button" role="tab" id="pulse-tab-trophies" aria-controls="pulse-panel-trophies" aria-selected="false" tabindex="-1" data-pulse-tab="trophies">Trophy Case</button>
+      <button type="button" role="tab" id="pulse-tab-records" aria-controls="pulse-panel-records" aria-selected="false" tabindex="-1" data-pulse-tab="records">Record Book</button>
+    </nav>
+
+    <section class="kt-pulse-panel" id="pulse-panel-feed" role="tabpanel" aria-labelledby="pulse-tab-feed" data-pulse-panel="feed">
+      <div class="kt-pulse-section-heading"><div><span class="kt-eyebrow">Monday morning, in bold</span><h2>THE BOTTOM LINE</h2></div><span class="kt-badge kt-badge-blue">One batched Haiku</span></div>
+      <div class="kt-pulse-stories" id="pulse-stories" aria-busy="true"><div class="kt-pulse-story-skeleton kt-skeleton"></div><div class="kt-pulse-story-skeleton kt-skeleton"></div><div class="kt-pulse-story-skeleton kt-skeleton"></div></div>
+      <div class="kt-pulse-section-heading kt-pulse-awards-heading"><div><span class="kt-eyebrow">Computed first, narrated second</span><h2>WEEKLY AWARDS</h2></div><span class="kt-badge">5 citations</span></div>
+      <div class="kt-pulse-awards" id="pulse-awards" aria-busy="true"><div class="kt-pulse-award-skeleton kt-skeleton"></div><div class="kt-pulse-award-skeleton kt-skeleton"></div><div class="kt-pulse-award-skeleton kt-skeleton"></div></div>
+    </section>
+
+    <section class="kt-pulse-panel" id="pulse-panel-newsletter" role="tabpanel" aria-labelledby="pulse-tab-newsletter" data-pulse-panel="newsletter" hidden>
+      <div class="kt-pulse-section-heading"><div><span class="kt-eyebrow">A weekly letter from the league office</span><h2>THE COMMISSIONER</h2></div><button class="kt-btn kt-btn-primary" id="pulse-copy-newsletter" type="button" disabled>Copy as text</button></div>
+      <article class="kt-pulse-newsletter" id="pulse-newsletter" aria-busy="true"><div class="kt-pulse-article-loading"><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-card"></span></div></article>
+    </section>
+
+    <section class="kt-pulse-panel" id="pulse-panel-trophies" role="tabpanel" aria-labelledby="pulse-tab-trophies" data-pulse-panel="trophies" hidden>
+      <div class="kt-pulse-section-heading"><div><span class="kt-eyebrow">Season-long bragging rights</span><h2>TROPHY CASE</h2></div><span class="kt-badge">Every weekly award counts</span></div>
+      <div class="kt-pulse-trophies" id="pulse-trophies"><div class="kt-pulse-award-skeleton kt-skeleton"></div></div>
+    </section>
+
+    <section class="kt-pulse-panel" id="pulse-panel-records" role="tabpanel" aria-labelledby="pulse-tab-records" data-pulse-panel="records" hidden>
+      <div class="kt-pulse-section-heading"><div><span class="kt-eyebrow">Saved across seasons in IndexedDB</span><h2>ALL-TIME RECORD BOOK</h2></div><span class="kt-badge kt-badge-accent">Local league history</span></div>
+      <div class="kt-pulse-records" id="pulse-records"><div class="kt-pulse-award-skeleton kt-skeleton"></div></div>
+      <p class="kt-pulse-storage-note">Records accumulate as weeks are loaded on this device. Clearing site data clears this local history; Sleeper remains the source of truth.</p>
+    </section>
+    <footer class="kt-pulse-footer"><strong>Facts before flourishes.</strong><span>Scores, awards, streaks, trades, and records come from Sleeper. Storylines and award citations share one cached Haiku call; the Commissioner uses one cached Sonnet call per weekly snapshot.</span></footer>
+  </main>
+  <script type="module" src="js/features/pulse.js"></script>
+  <script type="module" src="js/pwa.js"></script>
+</body>
+</html>

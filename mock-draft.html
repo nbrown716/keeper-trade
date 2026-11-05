@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="kt-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="description" content="Snake draft against 11 AI GM personalities, with batched Claude picks, trash talk, and shareable grades.">
+  <title>Mock Draft Arena — Keeper Trade</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/mock-draft.css">
+  <script>window.setTimeout(()=>document.body?.classList.add('kt-page-ready'),1200);</script>
+</head>
+<body>
+  <main class="kt-mock-shell">
+    <header class="kt-mock-heading"><div><span class="kt-eyebrow">12 teams. 11 personalities. One room.</span><h1>MOCK DRAFT ARENA</h1><p>Every pick has a personality. Every personality has an agenda.</p></div><div class="kt-mock-controls"><label>Speed<select id="draft-speed" aria-label="Draft speed"><option value="1">1×</option><option value="4">4×</option><option value="12">12×</option></select></label><button class="kt-btn kt-btn-secondary" id="draft-pause" type="button" aria-pressed="false">Pause draft</button><button class="kt-btn kt-btn-ghost" id="draft-reset" type="button">New draft</button></div></header>
+    <div class="kt-mock-progress"><span id="draft-available-count">Loading draft pool…</span><div><i id="draft-progress-bar"></i></div></div>
+    <section class="kt-mock-stage" id="draft-stage" aria-live="polite"><div class="kt-draft-complete"><span class="kt-eyebrow">Draft room warming up</span><h2>Reading the room.</h2><div class="kt-widget-skeleton"><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span></div></div></section>
+    <div class="kt-mock-layout">
+      <section class="kt-mock-board-wrap" aria-label="Draft board"><div class="kt-draft-board" id="draft-board"></div></section>
+      <aside class="kt-mock-chat" aria-label="Draft room chat"><div class="kt-mock-chat-head"><span class="kt-eyebrow">Draft room trash talk</span><span class="kt-badge kt-badge-blue">Max 15 lines</span></div><div id="draft-chat"><p class="kt-muted">The draft room is quiet. For now.</p></div></aside>
+    </div>
+    <section class="kt-mock-grades" id="draft-grades" aria-label="Post-draft grades"></section>
+  </main>
+  <script type="module" src="js/features/mock-draft.js"></script>
+  <script type="module" src="js/pwa.js"></script>
+</body>
+</html>

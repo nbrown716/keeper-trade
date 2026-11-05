@@ -1,0 +1,22 @@
+.kt-roast-layout { display: grid; gap: var(--kt-space-4); }
+.kt-roast-form { display: grid; align-content: start; gap: var(--kt-space-3); padding: var(--kt-space-5); border: 1px solid var(--kt-border-subtle); border-radius: var(--kt-radius-xl); background: var(--kt-surface-1); }
+.kt-roast-form > label { font-size: var(--kt-text-sm); font-weight: 650; }
+.kt-roast-form select { min-height: var(--kt-tap); padding-inline: var(--kt-space-3); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-md); background: var(--kt-surface-2); color: var(--kt-text-primary); }
+.kt-roast-modes { display: flex; gap: var(--kt-space-2); }
+.kt-roast-modes .kt-chip { flex: 1; }
+.kt-roast-status { min-height: 2.5rem; margin: 0; color: var(--kt-text-secondary); font-size: var(--kt-text-xs); }
+.kt-roast-stage { position: relative; display: grid; min-height: 22rem; place-items: center; padding: var(--kt-space-4); overflow: hidden; border: 1px solid var(--kt-border); border-radius: var(--kt-radius-xl); background: radial-gradient(circle at 50% 0, var(--kt-accent-soft), transparent 50%), var(--kt-surface-1); }
+.kt-roast-empty { display: grid; justify-items: center; gap: var(--kt-space-3); color: var(--kt-text-muted); text-align: center; }
+.kt-roast-empty span { display: grid; width: 4rem; height: 4rem; place-items: center; border-radius: var(--kt-radius-lg); background: var(--kt-accent); color: var(--kt-on-accent); font-family: var(--kt-font-display); font-size: 2rem; font-weight: 800; transform: rotate(-5deg); }
+.kt-roast-preview { width: 100%; border: 1px solid var(--kt-border); border-radius: var(--kt-radius-md); box-shadow: var(--kt-shadow-lg); }
+.kt-roast-loading { position: absolute; inset: var(--kt-space-4); border-radius: var(--kt-radius-md); }
+.kt-roast-actions { position: absolute; right: var(--kt-space-3); bottom: var(--kt-space-3); display: flex; gap: var(--kt-space-2); }
+.kt-ai-setup { padding-top: var(--kt-space-3); border-top: 1px solid var(--kt-border-subtle); color: var(--kt-text-muted); font-size: var(--kt-text-xs); }
+.kt-ai-setup summary { min-height: var(--kt-tap); cursor: pointer; }
+.kt-ai-setup label { display: block; margin-block: var(--kt-space-2); }
+.kt-ai-setup button { margin-block: var(--kt-space-2); }
+.kt-ai-setup small { display: block; }
+
+@media (min-width: 48rem) {
+  .kt-roast-layout { grid-template-columns: minmax(17rem, 0.7fr) minmax(0, 1.3fr); }
+}

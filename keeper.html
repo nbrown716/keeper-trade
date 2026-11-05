@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏈%3C/text%3E%3C/svg%3E">
 <script>(function(){try{var t=localStorage.getItem('gi-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
-<title>Keeper Trade Desk — GRIDIRON</title>
+<title>Keeper Trade Desk — Keeper Trade</title>
 <style>
   :root{
     --bg:#EEF0F4; --surface:#FFFFFF; --surface-2:#F6F7FA; --ink:#12161C;
@@ -238,7 +238,15 @@
   .foot-explain code{background:var(--surface-2);border:1px solid var(--line-soft);padding:1px 5px;border-radius:4px;font-size:11px}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;650;700;750;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="stylesheet" href="css/navigation.css?v=2">
+<link rel="stylesheet" href="css/trade-desk.css">
+<link rel="stylesheet" href="css/mascot.css">
+</head>
+<body>
 <div class="wrap">
   <header class="mast">
     <div class="brand">
@@ -749,7 +757,7 @@
               '<div><div class="pname">'+e.ref.n+'</div><div class="pmeta">Draft pick · no keeper cost</div></div>'+
               '<button class="x" title="Remove" aria-label="Remove">×</button></div>'+
             '<div class="controls" style="grid-template-columns:1fr">'+
-              '<div class="ctl"><label>Value</label><input data-k="mv" type="number" step="50" min="0" value="'+fmt(mv)+'"></div></div>'+
+              '<div class="ctl"><label>Value</label><input aria-label="Trade value" data-k="mv" type="number" step="50" min="0" value="'+fmt(mv)+'"></div></div>'+
             '<div class="valrow"><span class="lab">Trade value</span><span class="adj">'+fmt(adj)+'</span></div>'+
           '</div>';
       } else {
@@ -759,8 +767,8 @@
               '<div><a class="pname plink" href="'+fpUrl(e.ref)+'" target="_blank" rel="noopener">'+e.ref.n+'</a><div class="pmeta">'+e.ref.t+' · market '+fmt(mv)+'</div></div>'+
               '<button class="x" title="Remove" aria-label="Remove '+e.ref.n+'">×</button></div>'+
             '<div class="controls">'+
-              '<div class="ctl"><label>Value</label><input data-k="mv" type="number" step="50" min="0" value="'+fmt(mv)+'"></div>'+
-              '<div class="ctl"><label>Keeper round (this yr)</label><input data-k="cost" type="number" step="1" min="1" max="16" value="'+Math.round(e.cost)+'"></div>'+
+              '<div class="ctl"><label>Value</label><input aria-label="Trade value" data-k="mv" type="number" step="50" min="0" value="'+fmt(mv)+'"></div>'+
+              '<div class="ctl"><label>Keeper round (this yr)</label><input aria-label="Keeper round this year" data-k="cost" type="number" step="1" min="1" max="16" value="'+Math.round(e.cost)+'"></div>'+
             '</div>'+
             '<div class="keepnote"><span class="tag" data-keeptag>'+costLabel(e.cost)+'</span>'+
               '<span data-keepyrs>controllable ~'+yearsKeepable(e.cost)+' yr'+(yearsKeepable(e.cost)>1?"s":"")+'</span></div>'+
@@ -849,6 +857,7 @@
     var md=(A.market-B.market)*DISP, mabs=Math.abs(md);
     if(mabs<=BAND) mktNote.innerHTML="Ignoring keeper cost, this is <b>within the band</b> on straight value too.";
     else mktNote.innerHTML="Ignoring keeper cost, <b>"+(md>0?nameA:nameB)+"</b> wins by "+Math.round(mabs).toLocaleString()+" on straight value.";
+    window.dispatchEvent(new CustomEvent('kt:trade-graded',{detail:{signature:A.adj+'|'+B.adj+'|'+A.count+'|'+B.count,sides:S.sides,totals:{A:A.adj,B:B.adj},market:{A:A.market,B:B.market}}}));
   }
 
   // ---- search ----
@@ -944,6 +953,16 @@
     ["A","B"].forEach(function(sd){ S.sides[sd].forEach(function(e){ if(e.ref.pick && !e.mvEdited) e.mv=marketOf(e.ref); }); });
     renderSide("A"); renderSide("B"); renderVerdict(); renderPickChart();
   });
+  window.TradeEngine={
+    state:S,
+    players:function(){return players;},
+    addAsset:function(side,item){addAsset(side,item);},
+    moveAsset:function(uid,from,to){var index=S.sides[from].findIndex(function(e){return e.uid===uid;});if(index<0||from===to)return;var item=S.sides[from].splice(index,1)[0];S.sides[to].push(item);renderSide(from);renderSide(to);renderVerdict();},
+    setMarketValue:function(entry,value){entry.mv=value;entry.cost=entry.ref.pick?0:impliedRound(value);entry.mvEdited=false;},
+    adjustedValue:function(entry){return adjustedOf(entry);},
+    assetValue:function(ref){return marketOf(ref);},
+    render:function(side){renderSide(side);renderVerdict();}
+  };
   document.querySelectorAll(".team-name").forEach(function(inp){ inp.addEventListener("input",renderVerdict); });
   document.getElementById("resetBtn").addEventListener("click",function(){
     S.sides.A=[]; S.sides.B=[]; renderSide("A"); renderSide("B"); renderVerdict();
@@ -1061,3 +1080,8 @@
   fetchLive();
 })();
 </script>
+<script type="module" src="js/features/trade-desk.js"></script>
+<script type="module" src="js/features/trade-tracking.js"></script>
+<script type="module" src="js/pwa.js"></script>
+</body>
+</html>

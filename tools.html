@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Tools — Draft Pick Values &amp; Depth Charts · GRIDIRON</title>
+<title>Tools — Draft Pick Values &amp; Depth Charts · Keeper Trade</title>
 <meta name="theme-color" content="#0A0E16">
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏈%3C/text%3E%3C/svg%3E">
 <script>(function(){try{var t=localStorage.getItem('gi-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <style>
-  :root{--bg:#0A0E16;--surface:#121826;--surface-2:#1A2234;--ink:#EAF0F8;--ink-soft:#9DAAC0;--ink-faint:#63708A;
+  :root{--bg:#0A0E16;--surface:#121826;--surface-2:#1A2234;--ink:#EAF0F8;--ink-soft:#9DAAC0;--ink-faint:#8190A8;
     --line:#232B3D;--line-soft:#1B2231;--gold:#F0B429;--redraft:#2DD4A7;--research:#4C9AFF;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.35);--radius:15px;
     --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;--cond:"Arial Narrow","Helvetica Neue",var(--sans);}
-  :root[data-theme="light"]{--bg:#F2F4F8;--surface:#FFFFFF;--surface-2:#F6F8FB;--ink:#0E1626;--ink-soft:#4A5468;--ink-faint:#8A94A8;
-    --line:#E1E6EE;--line-soft:#EDF0F5;--gold:#C98A00;--redraft:#0FA37F;--research:#2F6FE0;
+  :root[data-theme="light"]{--bg:#F2F4F8;--surface:#FFFFFF;--surface-2:#F6F8FB;--ink:#0E1626;--ink-soft:#4A5468;--ink-faint:#5F6B7A;
+    --line:#E1E6EE;--line-soft:#EDF0F5;--gold:#C98A00;--redraft:#08775D;--research:#2F6FE0;
     --shadow:0 1px 2px rgba(18,22,28,.05),0 10px 30px rgba(18,22,28,.08);}
   *{box-sizing:border-box} html,body{margin:0}
   body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -77,10 +77,14 @@
   .pill{display:inline-flex;align-items:center;justify-content:center;font-family:var(--cond);font-weight:700;font-size:10px;padding:1px 6px;border-radius:4px}
   .pos-QB{background:#3A2247;color:#D9AEEC}.pos-RB{background:#173025;color:#7FD6A0}.pos-WR{background:#17263F;color:#9CBEF5}.pos-TE{background:#332512;color:#EEB483}
   .skel{padding:40px;text-align:center;color:var(--ink-faint)}
-  .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}} @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  .spin{display:block;width:min(100%,32rem);height:3rem;margin:auto;border-radius:8px;background:linear-gradient(90deg,var(--surface-2),var(--surface),var(--surface-2));background-size:200% 100%;animation:sp 1.4s ease-in-out infinite}
+  @keyframes sp{0%{background-position:100% 0}100%{background-position:-100% 0}} @media (prefers-reduced-motion:reduce){.spin{animation:none}}
   .foot-note{max-width:900px;margin:26px auto 40px;color:var(--ink-faint);font-size:11.5px;line-height:1.6;text-align:center}
   .foot-note b{color:var(--ink-soft)}
+  :root[data-theme="light"] .logo .lg,:root[data-theme="light"] .kick,:root[data-theme="light"] td[colspan]{color:#8A5A00!important}
+  :root[data-theme="light"] .pos-RB{background:#DCEEE1;color:#176B38}
+  :root[data-theme="light"] .pos-TE{background:#FBE7D6;color:#8A4A12}
+  @media (max-width:48rem){.tglbtn{width:44px;height:44px}.seg button{min-width:44px;min-height:44px}.tab{min-height:44px}select,.search input{min-height:44px}.site-nav a{min-height:44px}}
 </style>
 </head>
 <body>
@@ -99,7 +103,7 @@
   <div class="head">
     <div class="kick">Toolbox</div>
     <h1>Fantasy Tools</h1>
-    <p class="sub">Reference tools for draft-day and in-season decisions. More coming — this is the toolbox we'll keep adding to.</p>
+    <p class="sub">ADP tiers, draft-pick values, and depth charts with live market context for draft-day and in-season decisions.</p>
   </div>
 
   <div class="tabs" id="tabs">
@@ -202,7 +206,7 @@
         groups[pos].forEach(function(p){
           var head=(p.headshot&&p.headshot.href)||"";
           var meta=[]; if(p.age)meta.push("Age "+p.age); if(p.experience&&p.experience.years!=null)meta.push((p.experience.years===0?"Rookie":p.experience.years+" yr"));
-          card.appendChild(el('<div class="plrow"><img src="'+esc(head)+'" onerror="this.style.visibility=\'hidden\'">'+
+          card.appendChild(el('<div class="plrow"><img alt="" src="'+esc(head)+'" onerror="this.style.visibility=\'hidden\'">'+
             '<div><div class="nm">'+esc(p.displayName||"")+'</div><div class="mt">'+esc(meta.join(" · "))+'</div></div>'+
             '<span class="jsy">'+(p.jersey?"#"+esc(p.jersey):"")+'</span></div>'));
         });
@@ -297,7 +301,7 @@
       var tr=(p.trend!=null&&p.trend!==0)?' <span style="font-size:10px;color:'+(p.trend>0?"var(--redraft)":"var(--lose)")+'">'+(p.trend>0?"▲":"▼")+'</span>':'';
       html+='<tr style="border-bottom:1px solid var(--line-soft)">'+
         '<td style="padding:8px 12px;font-weight:800;font-variant-numeric:tabular-nums">'+adp+' <small style="color:var(--ink-faint);font-weight:600">#'+p.overall+'</small></td>'+
-        '<td style="padding:8px 12px"><span style="display:flex;align-items:center;gap:9px;min-width:160px"><img src="'+esc(adpPhoto(p))+'" style="width:30px;height:30px;border-radius:7px;object-fit:cover;object-position:top;background:var(--surface-2)" onerror="this.style.visibility=\'hidden\'"><b>'+esc(p.name)+'</b></span></td>'+
+        '<td style="padding:8px 12px"><span style="display:flex;align-items:center;gap:9px;min-width:160px"><img alt="" src="'+esc(adpPhoto(p))+'" style="width:30px;height:30px;border-radius:7px;object-fit:cover;object-position:top;background:var(--surface-2)" onerror="this.style.visibility=\'hidden\'"><b>'+esc(p.name)+'</b></span></td>'+
         '<td style="padding:8px 12px"><span class="pill pos-'+p.pos+'">'+p.pos+p.posRank+'</span></td>'+
         '<td style="padding:8px 12px">'+esc(p.team)+'</td>'+
         '<td style="padding:8px 12px;color:var(--ink-faint);font-weight:700">T'+p.tier+'</td>'+
@@ -320,5 +324,6 @@
   adpLoaded=true; loadADP();
 })();
 </script>
+<script type="module" src="js/pwa.js"></script>
 </body>
 </html>

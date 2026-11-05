@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="kt-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="description" content="AI Start/Sit, personalized waiver targets, and engine-verified trade counter-offers.">
+  <title>The War Room — Keeper Trade</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/weather.css">
+  <link rel="stylesheet" href="css/mascot.css">
+  <link rel="stylesheet" href="css/war-room.css">
+  <script>window.setTimeout(()=>document.body?.classList.add('kt-page-ready'),1200);</script>
+</head>
+<body>
+  <main class="kt-war-shell">
+    <header class="kt-war-heading"><div><span class="kt-eyebrow">Decision intelligence</span><h1>THE WAR ROOM</h1><p>Your roster. Your league. Every angle covered.</p></div><label>Manager<select id="war-manager" aria-label="War Room manager"></select></label></header>
+    <div class="kt-war-tabs" role="tablist" aria-label="Decision tools"><button type="button" role="tab" data-war-tab="start" aria-selected="true">Start / Sit Oracle</button><button type="button" role="tab" data-war-tab="waiver" aria-selected="false">Waiver Wire Wednesday</button><button type="button" role="tab" data-war-tab="counter" aria-selected="false">Trade Counter-Builder</button></div>
+    <div class="kt-war-meta"><span id="war-freshness">Real roster data. Grounded AI. Original calculator math.</span><button class="kt-btn kt-btn-sm kt-btn-ghost" id="war-share" type="button">Share current cards</button></div>
+
+    <section class="kt-war-panel" data-war-panel="start" aria-label="Start and sit oracle">
+      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Haiku · lineup confidence</span><h2>Make the call.</h2><p>Pick two players for a dilemma, or analyze the full starting lineup.</p></div><div class="kt-war-actions"><button class="kt-btn kt-btn-secondary" id="war-lineup" type="button">Full lineup report</button><button class="kt-btn kt-btn-primary" id="war-oracle" type="button">Ask the Oracle</button></div></div>
+      <div class="kt-war-roster" id="war-roster"></div>
+      <div class="kt-war-results" id="war-start-results" aria-live="polite"></div>
+      <div class="kt-war-footer"><span id="war-start-freshness"></span><button class="kt-btn kt-btn-sm kt-btn-ghost" id="war-start-regenerate" type="button">Regenerate</button></div>
+    </section>
+
+    <section class="kt-war-panel" data-war-panel="waiver" aria-label="Waiver Wire Wednesday" hidden>
+      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Haiku · 24h cache</span><h2>Three adds. Actual fits.</h2><p id="war-waiver-note">Ranked by roster holes, value movement, and availability.</p></div><button class="kt-btn kt-btn-primary" id="war-waiver-run" type="button">Build my board</button></div>
+      <div class="kt-war-results" id="war-waiver-results" aria-live="polite"></div>
+      <div class="kt-war-footer"><span id="war-waiver-freshness"></span><button class="kt-btn kt-btn-sm kt-btn-ghost" id="war-waiver-regenerate" type="button">Regenerate</button></div>
+    </section>
+
+    <section class="kt-war-panel" data-war-panel="counter" aria-label="Trade counter-builder" hidden>
+      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Sonnet · original engine verdicts</span><h2>Never just say no.</h2><p>Get a verdict and two concrete counters, then check every counter with the real calculator.</p></div></div>
+      <div class="kt-war-offer"><label for="war-offer-text">Describe the offer</label><textarea id="war-offer-text" rows="4" placeholder="Example: Joe Burrow for Jaxon Smith-Njigba + a 2027 1st"></textarea><div class="kt-war-offer-row"><select id="war-offer-select" aria-label="Load a Sleeper trade"><option value="">Load a real trade from the activity feed…</option></select><button class="kt-btn kt-btn-primary" id="war-counter-run" type="button">Build counters</button></div></div>
+      <div class="kt-war-results" id="war-counter-results" aria-live="polite"></div>
+      <div class="kt-war-footer"><span id="war-counter-freshness"></span><button class="kt-btn kt-btn-sm kt-btn-ghost" id="war-counter-regenerate" type="button">Regenerate</button></div>
+    </section>
+    <div class="kt-war-loading kt-skeleton" id="war-loading" hidden><span>Loading your actual league…</span></div>
+    <div class="kt-war-error" id="war-error" hidden><h2>Your league comes first.</h2><p>Connect Sleeper to unlock the War Room.</p><a class="kt-btn kt-btn-primary" href="index.html#league">Connect league</a></div>
+  </main>
+  <script type="module" src="js/features/war-room.js"></script>
+  <script type="module" src="js/pwa.js"></script>
+</body>
+</html>

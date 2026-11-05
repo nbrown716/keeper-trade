@@ -1,0 +1,16 @@
+name = "keeper-trade-ai"
+main = "worker.js"
+compatibility_date = "2026-11-04"
+
+[vars]
+ALLOWED_ORIGIN = "https://keeper-trade.pages.dev"
+DAILY_SPEND_CAP = "1.00"
+ANTHROPIC_WORKSPACE_ID = "wrkspc_01QEuQaJDhrq7Zy31Z6UsMdB"
+
+[[kv_namespaces]]
+binding = "AI_USAGE"
+id = "f1942841723541c6a1876f201804a914"
+
+[[kv_namespaces]]
+binding = "AI_CACHE"
+id = "3bb8fbf3a6ec45e38d6ae1979be3eb9d"

@@ -1,0 +1,41 @@
+.kt-mascot { position: relative; width: 7rem; pointer-events: none; }
+.kt-mascot-dock { position: fixed; z-index: 75; right: var(--kt-space-3); bottom: var(--kt-space-4); width: 7.5rem; filter: drop-shadow(0 14px 24px rgb(0 0 0 / 35%)); }
+.kt-mascot-button { position: relative; display: block; width: 100%; min-width: var(--kt-tap); min-height: var(--kt-tap); padding: 0; border: 0; border-radius: 40%; background: transparent; cursor: pointer; pointer-events: auto; transition: transform var(--kt-duration-micro) var(--kt-ease-spring); }
+.kt-mascot-button:hover { transform: translateY(-3px) rotate(-2deg); }
+.kt-mascot-button:focus-visible { outline: 2px solid var(--kt-accent); outline-offset: 4px; }
+.kt-mascot-button img, .kt-mascot-button canvas { display: block; width: 100%; height: auto; }
+.kt-mascot-button img[hidden], .kt-mascot-button canvas[hidden] { display: none; }
+.kt-mascot-bubble { position: absolute; right: 75%; bottom: 82%; width: 13rem; padding: var(--kt-space-3); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-lg) var(--kt-radius-lg) 0 var(--kt-radius-lg); background: var(--kt-surface-3); box-shadow: var(--kt-shadow-lg); color: var(--kt-text-primary); font-size: var(--kt-text-xs); font-weight: 650; line-height: 1.4; pointer-events: none; animation: kt-mascot-bubble 240ms var(--kt-ease-spring) both; }
+.kt-mascot-bubble[hidden] { display: none; }
+.kt-mascot-zz, .kt-mascot-think { position: absolute; top: 10%; right: 0; color: var(--kt-secondary); font-family: var(--kt-font-display); font-size: 1.5rem; font-weight: 800; opacity: 0; }
+.kt-mascot-zz { text-shadow: 0 0 12px var(--kt-secondary); }
+.kt-mascot[data-state="happy"] .kt-mascot-button, .kt-mascot[data-state="celebrating"] .kt-mascot-button { animation: kt-mascot-happy 650ms var(--kt-ease-spring) both; }
+.kt-mascot[data-state="devastated"] .kt-mascot-button { filter: grayscale(0.85) brightness(0.75); animation: kt-mascot-devastated 600ms ease-out both; }
+.kt-mascot[data-state="judging"] .kt-mascot-button { transform: rotate(-7deg); }
+.kt-mascot[data-state="nervous"] .kt-mascot-button { animation: kt-mascot-nervous 180ms ease-in-out 5; }
+.kt-mascot[data-state="hype"] .kt-mascot-button { animation: kt-mascot-hype 550ms var(--kt-ease-spring) both; }
+.kt-mascot[data-state="sleeping"] .kt-mascot-button { filter: brightness(0.65) saturate(0.65); }
+.kt-mascot[data-state="sleeping"] .kt-mascot-zz { animation: kt-mascot-zz 2s ease-in-out infinite; }
+.kt-mascot[data-state="thinking"] .kt-mascot-think { animation: kt-mascot-think 1s ease-in-out infinite alternate; }
+.kt-mascot[data-state="celebrating"]::after { position: absolute; inset: 0; background: radial-gradient(circle at 10% 15%, #c6ff4a 0 3px, transparent 4px), radial-gradient(circle at 85% 15%, #59a8ff 0 3px, transparent 4px), radial-gradient(circle at 95% 55%, #c6ff4a 0 2px, transparent 3px), radial-gradient(circle at 5% 55%, #59a8ff 0 2px, transparent 3px); content: ""; pointer-events: none; animation: kt-mascot-confetti 900ms ease-out both; }
+.kt-mascot-inline { flex: none; }
+.verdict .kt-mascot { position: absolute; top: 0.5rem; right: 0.5rem; width: 5.5rem; }
+#drive-mascot { position: fixed; z-index: 75; right: var(--kt-space-3); bottom: var(--kt-space-4); width: 6rem; }
+@keyframes kt-mascot-bubble { from { opacity: 0; transform: translateY(8px) scale(0.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes kt-mascot-happy { 0% { transform: translateY(0) rotate(0); } 40% { transform: translateY(-14px) rotate(-5deg); } 75% { transform: translateY(2px) rotate(3deg); } 100% { transform: translateY(0) rotate(0); } }
+@keyframes kt-mascot-devastated { 0% { transform: translateY(0); } 35% { transform: translateY(4px) rotate(-4deg); } 100% { transform: translateY(12px) rotate(-8deg); } }
+@keyframes kt-mascot-nervous { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
+@keyframes kt-mascot-hype { 0% { transform: scale(0.88) rotate(-6deg); } 55% { transform: scale(1.13) rotate(5deg); } 100% { transform: scale(1) rotate(0); } }
+@keyframes kt-mascot-zz { 0% { opacity: 0; transform: translate(0, 8px) scale(0.8); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(10px, -15px) scale(1.1); } }
+@keyframes kt-mascot-think { from { opacity: 0.3; transform: translateY(0); } to { opacity: 1; transform: translateY(-4px); } }
+@keyframes kt-mascot-confetti { from { opacity: 0; transform: translateY(12px) scale(0.7); } 35% { opacity: 1; } to { opacity: 0; transform: translateY(-18px) scale(1.1); } }
+@media (max-width: 48rem) {
+  .kt-mascot-dock { right: var(--kt-space-2); bottom: calc(5.5rem + env(safe-area-inset-bottom)); width: 5rem; }
+  .kt-mascot-bubble { right: 50%; width: 11rem; }
+  #drive-mascot { bottom: var(--kt-space-3); width: 4.5rem; }
+  .verdict .kt-mascot { width: 4rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kt-mascot-button, .kt-mascot-button:hover, .kt-mascot[data-state] .kt-mascot-button, .kt-mascot-zz, .kt-mascot-think, .kt-mascot[data-state="celebrating"]::after { animation: none !important; transform: none; }
+  .kt-mascot-bubble { animation: none; }
+}
