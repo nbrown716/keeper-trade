@@ -17,6 +17,7 @@
 .kt-widget-controls button:hover { border-color: var(--kt-live); color: var(--kt-live); }
 .is-editing .kt-widget { animation: kt-widget-wiggle 360ms ease-in-out infinite alternate; }
 .is-editing .kt-widget:nth-child(2n) { animation-direction: alternate-reverse; }
+.is-editing .kt-widget:hover, .is-editing .kt-widget:focus-within, .is-editing .kt-widget.is-drop-target { animation-play-state: paused; }
 .is-editing .kt-widget-handle, .is-editing .kt-widget-controls { display: flex; }
 .kt-widget.is-dragging { position: fixed; z-index: 1000; margin: 0; box-shadow: var(--kt-shadow-lg); cursor: grabbing; opacity: 0.94; pointer-events: none; animation: none; will-change: transform; }
 .kt-widget-placeholder { border: 1px dashed var(--kt-border); background: var(--kt-surface-2); box-shadow: none; animation: none; }
