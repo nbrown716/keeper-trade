@@ -96,6 +96,8 @@
 }
 
 @media (max-width: 48rem) {
+  .kt-club-card-head { flex-wrap: wrap; }
+  .kt-club-card-head h3 { min-width: 0; overflow-wrap: anywhere; }
   .kt-reward-nav { padding-inline: 0.45rem; }
   .kt-reward-copy { width: 1.5rem; display: block; }
   .kt-reward-copy strong, .kt-reward-copy > span { display: none; }

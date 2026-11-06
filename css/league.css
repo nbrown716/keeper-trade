@@ -1,3 +1,4 @@
+.kt-league-section { scroll-margin-top: 9rem; }
 .kt-league-connect { display: grid; grid-template-columns: auto 1fr; gap: var(--kt-space-5); padding: clamp(1.25rem, 4vw, 2.5rem); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-xl); background: radial-gradient(circle at 0 0, var(--kt-accent-soft), transparent 50%), var(--kt-surface-1); box-shadow: var(--kt-shadow-md); }
 .kt-league-ball { display: grid; width: 4rem; height: 4rem; place-items: center; border-radius: var(--kt-radius-lg); background: var(--kt-accent); color: var(--kt-on-accent); font-family: var(--kt-font-display); font-size: 1.75rem; font-weight: 800; transform: rotate(-5deg); }
 .kt-league-connect h3 { margin-bottom: var(--kt-space-2); font-family: var(--kt-font-display); font-size: clamp(2rem, 5vw, 3.5rem); line-height: 0.95; text-transform: uppercase; }

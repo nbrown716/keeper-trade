@@ -1,4 +1,4 @@
-import { getSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner } from '../data/sleeper.js';
+import { getSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner, rosterPoints } from '../data/sleeper.js';
 import { dealerSource, normalizeDealerPlayers } from '../data/dynasty-dealer.js';
 import { liveData } from '../data/live-data.js';
 import { mountNavigation } from '../ui/navigation.js';
@@ -54,11 +54,11 @@ async function loadSeason() {
   const users = leagueUsers(bundle.users);
   const rosterValues = new Map(bundle.rosters.map(roster => [roster.roster_id, (roster.players || []).reduce((sum, id) => sum + (dealer.get(String(id)) || 0), 0)]));
   const averageRosterValue = average([...rosterValues.values()]);
-  const averagePPG = average(bundle.rosters.map(roster => Number(roster.settings?.fpts || 0) / Math.max(1, (roster.settings?.wins || 0) + (roster.settings?.losses || 0) + (roster.settings?.ties || 0))));
+  const averagePPG = average(bundle.rosters.map(roster => rosterPoints(roster.settings) / Math.max(1, (roster.settings?.wins || 0) + (roster.settings?.losses || 0) + (roster.settings?.ties || 0))));
   const teams = bundle.rosters.map(roster => {
     const recent = history.slice(-3).flatMap(weekData => weekData.matchups.filter(matchup => matchup.roster_id === roster.roster_id).map(matchup => Number(matchup.points || 0)));
     const played = (roster.settings?.wins || 0) + (roster.settings?.losses || 0) + (roster.settings?.ties || 0);
-    const ppg = Number(roster.settings?.fpts || 0) / Math.max(1, played);
+    const ppg = rosterPoints(roster.settings) / Math.max(1, played);
     const last3 = recent.length ? average(recent) : ppg;
     const rosterValue = rosterValues.get(roster.roster_id) || 0;
     const rosterPrior = averageRosterValue ? averagePPG * rosterValue / averageRosterValue : averagePPG;
@@ -68,7 +68,7 @@ async function loadSeason() {
       wins: Number(roster.settings?.wins || 0),
       losses: Number(roster.settings?.losses || 0),
       ties: Number(roster.settings?.ties || 0),
-      pointsFor: Number(roster.settings?.fpts || 0),
+      pointsFor: rosterPoints(roster.settings),
       // Strength blends season PPG (50%), last-three PPG (30%), and normalized roster value (20%).
       strength: 0.5 * ppg + 0.3 * last3 + 0.2 * rosterPrior,
       rosterValue
@@ -104,7 +104,10 @@ function storageKey() {
 }
 
 function previousResults() {
-  try { return JSON.parse(localStorage.getItem(storageKey()) || '{}'); } catch (_) { return {}; }
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey()) || '{}');
+    return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+  } catch (_) { return {}; }
 }
 
 function setCount(element, value) {

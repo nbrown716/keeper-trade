@@ -103,8 +103,8 @@
   .sos-cell{font-weight:800;font-size:11px;text-align:center;border-radius:6px;padding:3px 0;min-width:52px;display:inline-block}
   .view{display:none} .view.on{display:block}
   .skel{padding:48px;text-align:center;color:var(--ink-faint)}
-  .spin{width:24px;height:24px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}} @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  .spin{display:block;width:min(100%,32rem);height:3rem;margin:auto;border-radius:8px;background:linear-gradient(90deg,var(--surface-2),var(--surface),var(--surface-2));background-size:200% 100%;animation:sp 1.4s ease-in-out infinite}
+  @keyframes sp{0%{background-position:100% 0}100%{background-position:-100% 0}} @media (prefers-reduced-motion:reduce){.spin{animation:none}}
   .method{font-size:11px;color:var(--ink-faint);line-height:1.6;padding:12px 15px}
   .method b{color:var(--ink-soft)}
   .gobtn{border:0;background:var(--gold);color:#1A1204;font-weight:800;font-size:12px;padding:8px 14px;border-radius:9px;cursor:pointer;white-space:nowrap}
@@ -180,7 +180,7 @@
     <div class="kpis" id="kpis"></div>
 
     <section class="view on" data-view="board">
-      <div class="card"><div class="tblwrap"><table>
+      <div class="card"><div class="tblwrap" role="region" aria-label="Draft kit data table. Scroll horizontally for every column" tabindex="0"><table>
         <thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Proj</th><th>VORP</th><th>ADP</th><th>Δ ADP</th><th>SOS</th><th>Injury</th><th>FP · Mkt · Grd</th></tr></thead>
         <tbody id="boardRows"><tr><td colspan="10"><div class="skel"><span class="spin"></span></div></td></tr></tbody>
       </table></div></div>
@@ -189,7 +189,7 @@
     <section class="view" data-view="g26">
       <div class="card">
         <div class="card-h">GRIDIRON 2026 Rankings — custom analyst board <span class="srcmini">built from FantasyPros ECR + 4for4 + 3-yr trends, red zone, SOS &amp; coaching changes · Sep 6, 2026</span></div>
-        <div class="tblwrap"><table>
+        <div class="tblwrap" role="region" aria-label="Draft kit data table. Scroll horizontally for every column" tabindex="0"><table>
           <thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Team</th><th>FP</th><th>4for4</th><th>Split</th></tr></thead>
           <tbody id="g26Rows"></tbody>
         </table></div>
@@ -202,7 +202,7 @@
         <div class="pills" id="srcPills"><button data-v="compare" class="on">Compare</button><button data-v="fp">FantasyPros</button><button data-v="f4">4for4</button><button data-v="mkt">Market</button><button data-v="grd">GRIDIRON</button></div>
       </div>
       <div class="card">
-        <div class="tblwrap"><table>
+        <div class="tblwrap" role="region" aria-label="Draft kit data table. Scroll horizontally for every column" tabindex="0"><table>
           <thead id="srcHead"></thead>
           <tbody id="srcRows"></tbody>
         </table></div>
@@ -221,7 +221,7 @@
     <section class="view" data-view="sos">
       <div class="card">
         <div class="card-h">Strength of Schedule — impact on projected output <span class="srcmini">source: DraftSharks · <span class="chip c-good">green = favorable</span> <span class="chip c-bad">red = tough</span></span></div>
-        <div class="tblwrap"><table>
+        <div class="tblwrap" role="region" aria-label="Draft kit data table. Scroll horizontally for every column" tabindex="0"><table>
           <thead><tr><th>Team</th><th>QB</th><th>RB</th><th>WR</th><th>TE</th><th>Avg</th></tr></thead>
           <tbody id="sosRows"></tbody>
         </table></div>
@@ -903,7 +903,7 @@
     var id=TID[team], box=document.getElementById("pcDc");
     if(!id){box.innerHTML='<div class="pc-tot">No team mapping.</div>';return;}
     box.innerHTML='<span class="spin"></span>';
-    (DCCACHE[team]?Promise.resolve(DCCACHE[team]):fetch("https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/"+id+"/roster").then(function(r){return r.json();}).then(function(j){DCCACHE[team]=j;return j;}))
+    (DCCACHE[team]?Promise.resolve(DCCACHE[team]):fetch("https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/teams/"+id+"/roster").then(function(r){return r.json();}).then(function(j){DCCACHE[team]=j;return j;}))
     .then(function(j){
       var groups={QB:[],RB:[],WR:[],TE:[]};
       (j.athletes||[]).forEach(function(g){(g.items||[]).forEach(function(a){

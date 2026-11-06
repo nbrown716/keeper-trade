@@ -246,9 +246,9 @@
 <script>
 (function(){
   "use strict";
-  var ESPN_SITE="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
-  var ESPN_WEB="https://site.web.api.espn.com/apis/common/v3/sports/football/nfl";
-  var ESPN_STAND="https://site.api.espn.com/apis/v2/sports/football/nfl/standings";
+  var ESPN_SITE="https://keeper-trade-ai.nicholas-brown00.workers.dev/espn";
+  var ESPN_WEB="https://keeper-trade-ai.nicholas-brown00.workers.dev/espn";
+  var ESPN_STAND="https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/standings";
   var FC_URL="https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=1&numTeams=12&ppr=1";
 
   var loaded={}, players=[], playersById={};
@@ -408,6 +408,7 @@
       else if(ev.key==="Enter"){ev.preventDefault();if(hi>=0&&matches[hi]){openPlayer(matches[hi]);inp.value="";close();}}
       else if(ev.key==="Escape")close();
     });
+    render(inp.value);
   }
 
   /* ---------------- PLAYER DETAIL ---------------- */

@@ -13,6 +13,10 @@ import { getSleeperLeagueId } from '../data/sleeper.js';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+}
+
 function waitForSource(key) {
   return new Promise(resolve => {
     let settled = false;
@@ -67,7 +71,7 @@ async function renderNow() {
   const strip = document.querySelector('#scores');
   const snapshot = await getNowSnapshot();
   const sourceLabel = !navigator.onLine ? 'ESPN · Offline' : snapshot.status === 'stale' ? 'ESPN · Cached' : snapshot.status === 'live' ? 'ESPN · Live data' : snapshot.status === 'error' ? 'ESPN · Unavailable' : 'ESPN · Connecting';
-  strip.innerHTML = `<div><div class="kt-now-label"><span class="kt-live-dot" aria-hidden="true"></span>Now</div><span class="kt-demo-label">${sourceLabel}</span></div><div class="kt-now-week"><strong>${snapshot.week ? `NFL Week ${snapshot.week}` : 'NFL Schedule'}</strong><span><b class="kt-num" id="live-game-count">0</b> games in progress</span></div><div class="kt-now-trending" aria-label="Dynasty Dealer market movers">${snapshot.trending.map(player => `<span class="kt-trend-chip"><b>${player.name}</b><span class="kt-delta${player.delta < 0 ? ' is-down' : ''}">${player.delta >= 0 ? '+' : ''}${player.delta.toFixed(1)}%</span></span>`).join('') || '<span class="kt-trend-chip">Market values updating</span>'}</div>`;
+  strip.innerHTML = `<div><div class="kt-now-label"><span class="kt-live-dot" aria-hidden="true"></span>Now</div><span class="kt-demo-label">${escapeHtml(sourceLabel)}</span></div><div class="kt-now-week"><strong>${snapshot.week ? `NFL Week ${snapshot.week}` : 'NFL Schedule'}</strong><span><b class="kt-num" id="live-game-count">0</b> games in progress</span></div><div class="kt-now-trending" role="region" aria-label="Dynasty Dealer market movers" tabindex="0">${snapshot.trending.map(player => `<span class="kt-trend-chip"><b>${escapeHtml(player.name)}</b><span class="kt-delta${player.delta < 0 ? ' is-down' : ''}">${player.delta >= 0 ? '+' : ''}${player.delta.toFixed(1)}%</span></span>`).join('') || '<span class="kt-trend-chip">Market values updating</span>'}</div>`;
   animateNumber(document.querySelector('#live-game-count'), snapshot.gamesInProgress);
   strip.setAttribute('aria-busy', 'false');
 }
@@ -118,7 +122,8 @@ function mountLazyFeatures() {
       }
     }
   };
-  if (!('IntersectionObserver' in window)) { load(); return; }
+  window.addEventListener('hashchange', () => { if (window.location.hash === '#league') load(); });
+  if (window.location.hash === '#league' || !('IntersectionObserver' in window)) { load(); return; }
   const observer = new IntersectionObserver(entries => {
     if (!entries.some(entry => entry.isIntersecting)) return;
     observer.disconnect();

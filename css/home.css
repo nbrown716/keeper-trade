@@ -1,4 +1,4 @@
-.kt-home { overflow: clip; }
+.kt-home { overflow-x: clip; }
 .kt-home main { view-transition-name: kt-page; }
 
 .kt-hero { position: relative; isolation: isolate; padding-block: clamp(3rem, 8vw, 6.5rem) var(--kt-space-6); }
@@ -115,6 +115,7 @@
 }
 
 @media (max-width: 25rem) {
+  .kt-hero-title { font-size: clamp(2.75rem, 14vw, 3.5rem); }
   .kt-feature-preview { flex-wrap: wrap; }
   .kt-feature-go { width: 100%; margin-left: 0; }
 }

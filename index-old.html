@@ -139,8 +139,8 @@
   .pos-QB{background:#3A2247;color:#D9AEEC}.pos-RB{background:#173025;color:#7FD6A0}.pos-WR{background:#17263F;color:#9CBEF5}.pos-TE{background:#332512;color:#EEB483}
 
   .skel{padding:40px;text-align:center;color:var(--ink-faint)}
-  .spin{width:24px;height:24px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}}
+  .spin{display:block;width:min(100%,32rem);height:3rem;margin:auto;border-radius:8px;background:linear-gradient(90deg,var(--surface-2),var(--surface),var(--surface-2));background-size:200% 100%;animation:sp 1.4s ease-in-out infinite}
+  @keyframes sp{0%{background-position:100% 0}100%{background-position:-100% 0}}
   @media (prefers-reduced-motion:reduce){.spin,.dot{animation:none!important}}
   .dot{width:6px;height:6px;border-radius:50%;background:var(--live);display:inline-block;animation:pulse 1.2s infinite;margin-right:5px}
   @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
@@ -237,7 +237,7 @@
 <script>
 (function(){
   "use strict";
-  var ESPN="https://site.api.espn.com/apis/site/v2/sports/football/nfl";
+  var ESPN="https://keeper-trade-ai.nicholas-brown00.workers.dev/espn";
   var FC="https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=1&numTeams=12&ppr=1";
   function $(s){return document.querySelector(s);}
   function el(h){var d=document.createElement("div");d.innerHTML=h;return d.firstElementChild;}

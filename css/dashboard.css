@@ -10,14 +10,17 @@
 .kt-widget:hover { border-color: var(--kt-border); box-shadow: var(--kt-shadow-md); }
 .kt-widget-head { display: flex; min-height: 2rem; align-items: center; gap: var(--kt-space-2); margin-bottom: var(--kt-space-3); }
 .kt-widget-head h3 { margin: 0; font-size: var(--kt-text-sm); font-weight: 700; }
-.kt-widget-handle { display: none; color: var(--kt-text-muted); cursor: grab; touch-action: none; }
+.kt-widget-handle { display: none; width: var(--kt-tap); height: var(--kt-tap); flex: none; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--kt-text-muted); cursor: grab; touch-action: none; }
+.kt-widget-handle:hover, .kt-widget-handle:focus-visible { background: var(--kt-surface-2); color: var(--kt-accent); }
 .kt-widget-controls { display: none; margin-left: auto; gap: var(--kt-space-1); }
 .kt-widget-controls button { display: grid; width: var(--kt-tap); height: var(--kt-tap); place-items: center; border: 1px solid var(--kt-border); border-radius: 50%; background: var(--kt-surface-2); color: var(--kt-text-secondary); cursor: pointer; }
 .kt-widget-controls button:hover { border-color: var(--kt-live); color: var(--kt-live); }
 .is-editing .kt-widget { animation: kt-widget-wiggle 360ms ease-in-out infinite alternate; }
 .is-editing .kt-widget:nth-child(2n) { animation-direction: alternate-reverse; }
 .is-editing .kt-widget-handle, .is-editing .kt-widget-controls { display: flex; }
-.kt-widget.is-dragging { position: fixed; z-index: 1000; margin: 0; box-shadow: var(--kt-shadow-lg); cursor: grabbing; opacity: 0.94; pointer-events: none; }
+.kt-widget.is-dragging { position: fixed; z-index: 1000; margin: 0; box-shadow: var(--kt-shadow-lg); cursor: grabbing; opacity: 0.94; pointer-events: none; animation: none; will-change: transform; }
+.kt-widget-placeholder { border: 1px dashed var(--kt-border); background: var(--kt-surface-2); box-shadow: none; animation: none; }
+.kt-widget.is-drop-target { border-color: var(--kt-accent); box-shadow: 0 0 0 3px var(--kt-accent-soft), var(--kt-shadow-md); }
 .kt-widget-body { min-width: 0; }
 .kt-widget-skeleton { display: grid; align-content: start; gap: var(--kt-space-3); min-height: 9rem; }
 .kt-widget-empty { display: grid; min-height: 10rem; place-content: center; justify-items: center; text-align: center; }

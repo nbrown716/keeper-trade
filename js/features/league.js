@@ -1,4 +1,4 @@
-import { getSleeperLeagueId, setSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner } from '../data/sleeper.js?v=3';
+import { getSleeperLeagueId, setSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner, rosterPoints } from '../data/sleeper.js?v=3';
 import { getPlayerDatabase } from '../data/player-db.js';
 import { liveData } from '../data/live-data.js';
 import { dealerSource, normalizeDealerPlayers } from '../data/dynasty-dealer.js';
@@ -21,7 +21,7 @@ function escapeHtml(value) {
 }
 
 function connectMarkup() {
-  return `<div class="kt-league-connect"><span class="kt-league-ball" aria-hidden="true">KT</span><div><span class="kt-eyebrow">League mode</span><h3>Bring your league into the war room.</h3><p>Real rosters, standings, matchups, power rankings, and one-tap trade grading.</p></div><form id="sleeper-connect"><label for="sleeper-id">1. Paste your Sleeper league ID</label><div><input class="kt-control" id="sleeper-id" inputmode="numeric" pattern="[0-9]+" required placeholder="e.g. 123456789012345678"><button class="kt-btn kt-btn-primary" type="submit">Connect league</button></div><small>2. Choose any trade in the wire and grade it. Read-only. Stored only on this device.</small></form></div>`;
+  return `<div class="kt-league-connect"><span class="kt-league-ball" aria-hidden="true">KT</span><div><span class="kt-eyebrow">League mode</span><h3>Bring your league into the war room.</h3><p>Real rosters, standings, matchups, power rankings, and one-tap trade grading.</p></div><form id="sleeper-connect"><label for="sleeper-id">1. Paste your Sleeper league link or ID</label><div><input class="kt-control" id="sleeper-id" type="text" autocomplete="off" spellcheck="false" required placeholder="sleeper.com/leagues/… or league ID"><button class="kt-btn kt-btn-primary" type="submit">Connect league</button></div><small>In Sleeper: League → Settings → copy the league link or League ID. Public, read-only data; stored only on this device.</small></form></div>`;
 }
 
 function starterWeatherMarkup(matchup) {
@@ -97,7 +97,7 @@ function renderLeague() {
     avatar: users.get(roster.owner_id)?.avatar,
     wins: roster.settings?.wins || 0,
     losses: roster.settings?.losses || 0,
-    fp: roster.settings?.fpts || 0
+    fp: rosterPoints(roster.settings)
   }]));
   const standings = [...rosters.values()].sort((a, b) => b.wins - a.wins || b.fp - a.fp);
   setLeagueSnapshot({ league: bundle.league, week: bundle.week, standings });
@@ -155,10 +155,15 @@ function mountConnect() {
   const form = section.querySelector('#sleeper-connect');
   const input = section.querySelector('#sleeper-id');
   input.value = getSleeperLeagueId();
+  input.addEventListener('input', () => input.setCustomValidity(''));
   form.addEventListener('submit', event => {
     event.preventDefault();
-    const id = input.value.trim();
-    if (!/^\d+$/.test(id)) return;
+    const id = input.value.trim().match(/(\d{15,20})/)?.[1];
+    if (!id) {
+      input.setCustomValidity('Paste a full Sleeper league link or numeric league ID.');
+      input.reportValidity();
+      return;
+    }
     setSleeperLeagueId(id);
     loadLeague(id);
   });
@@ -181,5 +186,8 @@ export function mountLeague() {
   else {
     section.innerHTML = connectMarkup();
     mountConnect();
+  }
+  if (window.location.hash === '#league') {
+    requestAnimationFrame(() => section.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }));
   }
 }

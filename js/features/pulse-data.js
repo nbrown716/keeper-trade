@@ -1,4 +1,4 @@
-import { getLeagueBundle, leagueUsers, rosterOwner } from '../data/sleeper.js';
+import { getLeagueBundle, getLeagueLineage, leagueUsers, rosterOwner, rosterPoints } from '../data/sleeper.js';
 import { getPlayerDatabase } from '../data/player-db.js';
 import { askAI } from '../data/ai.js';
 
@@ -56,7 +56,9 @@ export function computeWeekSnapshot(bundle, playerMap) {
   const blowout = matchups.slice().sort((a, b) => Math.abs(b.aScore - b.bScore) - Math.abs(a.aScore - a.bScore))[0];
   const benches = bundle.matchups.map(matchup => {
     const starters = new Set((matchup.starters || []).map(String));
-    const bench = Object.entries(matchup.players_points || {}).filter(([id]) => !starters.has(String(id)))
+    const roster = bundle.rosters.find(item => item.roster_id === matchup.roster_id);
+    const unavailable = new Set([...(roster?.reserve || []), ...(roster?.taxi || [])].map(String));
+    const bench = Object.entries(matchup.players_points || {}).filter(([id]) => !starters.has(String(id)) && !unavailable.has(String(id)))
       .map(([id, value]) => ({ id, name: playerMap.get(String(id))?.name || `Player ${id}`, points: points(value) }))
       .sort((a, b) => b.points - a.points);
     return { teamId: matchup.roster_id, points: bench.reduce((sum, player) => sum + player.points, 0), top: bench[0] };
@@ -115,7 +117,7 @@ export function computeWeekSnapshot(bundle, playerMap) {
     leagueName: bundle.league.name,
     season: String(bundle.league.season),
     week: bundle.week,
-    teams: bundle.rosters.map(roster => ({ id: roster.roster_id, name: name(roster.roster_id), wins: points(roster.settings?.wins), losses: points(roster.settings?.losses), pointsFor: points(roster.settings?.fpts) })),
+    teams: bundle.rosters.map(roster => ({ id: roster.roster_id, ownerId: roster.owner_id, name: name(roster.roster_id), wins: points(roster.settings?.wins), losses: points(roster.settings?.losses), pointsFor: rosterPoints(roster.settings) })),
     matchups,
     awards,
     stories,
@@ -172,12 +174,13 @@ function openDatabase() {
   return database;
 }
 
-async function readSnapshots(leagueId) {
+async function readSnapshots(leagueIds) {
   const db = await openDatabase();
   if (!db) return [];
+  const ids = new Set((Array.isArray(leagueIds) ? leagueIds : [leagueIds]).map(String));
   return new Promise(resolve => {
     const request = db.transaction(STORE, 'readonly').objectStore(STORE).getAll();
-    request.onsuccess = () => resolve((request.result || []).filter(snapshot => snapshot.leagueId === String(leagueId)));
+    request.onsuccess = () => resolve((request.result || []).filter(snapshot => ids.has(String(snapshot.leagueId))));
     request.onerror = () => resolve([]);
   });
 }
@@ -193,6 +196,22 @@ async function writeSnapshots(snapshots) {
     transaction.onerror = resolve;
     transaction.onabort = resolve;
   });
+}
+
+async function ensureLineageSnapshots(lineage, playerMap) {
+  for (const league of lineage.slice(1)) {
+    const leagueId = String(league.league_id);
+    try {
+      const stored = await readSnapshots(leagueId);
+      const existing = new Set(stored.map(snapshot => snapshot.week));
+      const missing = Array.from({ length: 18 }, (_, index) => index + 1).filter(week => !existing.has(week));
+      if (!missing.length) continue;
+      const bundles = await Promise.all(missing.map(week => getLeagueBundle(leagueId, week)));
+      const snapshots = bundles.map((bundle, index) => computeWeekSnapshot({ ...bundle, week: missing[index] }, playerMap))
+        .filter(snapshot => snapshot.matchups.length);
+      await writeSnapshots(snapshots);
+    } catch (_) {}
+  }
 }
 
 function powerTable(snapshots, season, week) {
@@ -222,8 +241,11 @@ export function computePowerMovement(snapshots, season, week) {
 }
 
 export function computeRecordBook(snapshots) {
-  const teams = new Map();
-  snapshots.forEach(snapshot => snapshot.teams.forEach(team => teams.set(team.id, team.name)));
+  const identities = new Map();
+  snapshots.forEach(snapshot => snapshot.teams.forEach(team => identities.set(team.id, team)));
+  const keyForId = id => identities.get(id)?.ownerId ? `owner:${identities.get(id).ownerId}` : `roster:${id}`;
+  const names = new Map();
+  snapshots.forEach(snapshot => snapshot.teams.forEach(team => names.set(keyForId(team.id), team.name)));
   const entries = snapshots.flatMap(snapshot => snapshot.matchups.flatMap(matchup => [
     { snapshot, teamId: matchup.aId, opponentId: matchup.bId, score: matchup.aScore, opponentScore: matchup.bScore },
     { snapshot, teamId: matchup.bId, opponentId: matchup.aId, score: matchup.bScore, opponentScore: matchup.aScore }
@@ -232,8 +254,9 @@ export function computeRecordBook(snapshots) {
   const margins = entries.filter(entry => entry.score > entry.opponentScore).sort((a, b) => (b.score - b.opponentScore) - (a.score - a.opponentScore));
   const tradeCounts = new Map();
   snapshots.forEach(snapshot => snapshot.trades.forEach(trade => trade.rosterIds.forEach(id => {
-    const current = tradeCounts.get(id) || { count: 0, season: snapshot.season, week: snapshot.week };
-    tradeCounts.set(id, { count: current.count + 1, season: snapshot.season, week: snapshot.week });
+    const key = keyForId(id);
+    const current = tradeCounts.get(key) || { count: 0, season: snapshot.season, week: snapshot.week };
+    tradeCounts.set(key, { count: current.count + 1, season: snapshot.season, week: snapshot.week });
   })));
   const mostTrades = [...tradeCounts.entries()].sort((a, b) => b[1].count - a[1].count)[0];
   const chronological = snapshots.slice().sort((a, b) => Number(a.season) - Number(b.season) || a.week - b.week);
@@ -241,23 +264,29 @@ export function computeRecordBook(snapshots) {
   let longest = null;
   chronological.forEach(snapshot => snapshot.matchups.forEach(matchup => {
     [[matchup.aId, matchup.aScore, matchup.bScore], [matchup.bId, matchup.bScore, matchup.aScore]].forEach(([id, own, opponent]) => {
-      const next = own > opponent ? (currentStreaks.get(id) || 0) + 1 : 0;
-      currentStreaks.set(id, next);
-      if (next > (longest?.count || 0)) longest = { id, count: next, season: snapshot.season, week: snapshot.week };
+      const key = keyForId(id);
+      const next = own > opponent ? (currentStreaks.get(key) || 0) + 1 : 0;
+      currentStreaks.set(key, next);
+      if (next > (longest?.count || 0)) longest = { id: key, count: next, season: snapshot.season, week: snapshot.week };
     });
   }));
-  const record = (id, label, entry, value, detail) => entry ? {
-    id, label, value, displayValue: id === 'trades' || id === 'streak' ? String(value) : score(value),
-    teamId: entry.teamId ?? entry.id ?? entry[0], teamName: teams.get(entry.teamId ?? entry.id ?? entry[0]) || 'League record',
-    season: entry.snapshot?.season || entry.season || entry[1]?.season,
-    week: entry.snapshot?.week || entry.week || entry[1]?.week,
-    detail
-  } : null;
+  const record = (id, label, entry, value, detail) => {
+    if (!entry) return null;
+    const rawId = entry.teamId ?? entry.id ?? entry[0];
+    const teamId = identities.has(rawId) ? keyForId(rawId) : rawId;
+    return {
+      id, label, value, displayValue: id === 'trades' || id === 'streak' ? String(value) : score(value),
+      teamId, teamName: names.get(teamId) || 'League record',
+      season: entry.snapshot?.season || entry.season || entry[1]?.season,
+      week: entry.snapshot?.week || entry.week || entry[1]?.week,
+      detail
+    };
+  };
   return [
-    record('highest', 'Highest weekly score', highest, highest?.score, highest ? `${teams.get(highest.teamId)} scored ${score(highest.score)} in Week ${highest.snapshot.week}, ${highest.snapshot.season}.` : ''),
-    record('blowout', 'Biggest blowout', margins[0], margins[0] ? margins[0].score - margins[0].opponentScore : null, margins[0] ? `${teams.get(margins[0].teamId)} beat ${teams.get(margins[0].opponentId)} by ${score(margins[0].score - margins[0].opponentScore)} points.` : ''),
-    record('streak', 'Longest win streak', longest ? { ...longest, teamId: longest.id } : null, longest?.count, longest ? `${teams.get(longest.id)} won ${longest.count} straight through Week ${longest.week}, ${longest.season}.` : ''),
-    record('trades', 'Most trades', mostTrades, mostTrades?.[1]?.count, mostTrades ? `${teams.get(mostTrades[0])} has made ${mostTrades[1].count} recorded trades.` : '')
+    record('highest', 'Highest weekly score', highest, highest?.score, highest ? `${names.get(keyForId(highest.teamId))} scored ${score(highest.score)} in Week ${highest.snapshot.week}, ${highest.snapshot.season}.` : ''),
+    record('blowout', 'Biggest blowout', margins[0], margins[0] ? margins[0].score - margins[0].opponentScore : null, margins[0] ? `${names.get(keyForId(margins[0].teamId))} beat ${names.get(keyForId(margins[0].opponentId))} by ${score(margins[0].score - margins[0].opponentScore)} points.` : ''),
+    record('streak', 'Longest win streak', longest ? { ...longest, teamId: longest.id } : null, longest?.count, longest ? `${names.get(longest.id)} won ${longest.count} straight through Week ${longest.week}, ${longest.season}.` : ''),
+    record('trades', 'Most trades', mostTrades, mostTrades?.[1]?.count, mostTrades ? `${names.get(mostTrades[0])} has made ${mostTrades[1].count} recorded trades.` : '')
   ].filter(Boolean);
 }
 
@@ -288,7 +317,7 @@ function playoffOdds(leagueId, targetWeek) {
 function nextPreview(nextBundle) {
   if (!nextBundle) return null;
   const users = leagueUsers(nextBundle.users);
-  const names = new Map(nextBundle.rosters.map(roster => [roster.roster_id, { name: rosterOwner(roster, users), points: points(roster.settings?.fpts) }]));
+  const names = new Map(nextBundle.rosters.map(roster => [roster.roster_id, { name: rosterOwner(roster, users), points: rosterPoints(roster.settings) }]));
   const matchups = pairs(nextBundle).map(pair => {
     const [a, b] = pair.entries;
     return { aId: a.roster_id, bId: b.roster_id, aName: names.get(a.roster_id)?.name, bName: names.get(b.roster_id)?.name, combined: (names.get(a.roster_id)?.points || 0) + (names.get(b.roster_id)?.points || 0) };
@@ -299,17 +328,20 @@ function nextPreview(nextBundle) {
 }
 
 export async function loadPulseData(leagueId, week) {
-  const [playerMap, ...bundles] = await Promise.all([
+  const [playerMap, lineage, ...bundles] = await Promise.all([
     getPlayerDatabase(),
+    getLeagueLineage(leagueId),
     ...Array.from({ length: week }, (_, index) => getLeagueBundle(leagueId, index + 1))
   ]);
   const snapshots = bundles.map((bundle, index) => computeWeekSnapshot({ ...bundle, week: index + 1 }, playerMap));
   const snapshot = snapshots.at(-1);
   if (!snapshot?.matchups.length) throw new Error('This week has no completed matchup data yet.');
-  const before = await readSnapshots(leagueId);
+  await ensureLineageSnapshots(lineage, playerMap);
+  const lineageIds = lineage.length ? lineage.map(league => String(league.league_id)) : [String(leagueId)];
+  const before = await readSnapshots(lineageIds);
   const previousRecords = computeRecordBook(before);
   await writeSnapshots(snapshots);
-  const stored = await readSnapshots(leagueId);
+  const stored = await readSnapshots(lineageIds);
   const merged = [...new Map([...stored, ...snapshots].map(item => [item.key, item])).values()];
   const recordBook = computeRecordBook(merged);
   const celebrations = recordBook.filter(record => {
@@ -323,7 +355,7 @@ export async function loadPulseData(leagueId, week) {
     recordBook,
     celebrations,
     trophies: seasonTrophies(merged, snapshot.season, snapshot.teams),
-    power: computePowerMovement(merged.filter(item => item.season === snapshot.season), snapshot.season, week),
+    power: computePowerMovement(merged.filter(item => item.leagueId === snapshot.leagueId && item.season === snapshot.season), snapshot.season, week),
     odds: playoffOdds(leagueId, week + 1),
     preview: nextPreview(nextBundle),
     history: snapshots,
@@ -343,6 +375,16 @@ function parseJSON(result) {
   }
 }
 
+function numericTokens(value) {
+  return (String(value).match(/(?<![A-Za-z0-9_])\d[\d,]*(?:\.\d+)?(?![A-Za-z0-9_])/g) || [])
+    .map(token => Number(token.replace(/,/g, '')).toString());
+}
+
+function numbersSupported(text, facts) {
+  const allowed = new Set(numericTokens(JSON.stringify(facts)));
+  return numericTokens(text).every(token => allowed.has(token));
+}
+
 export async function narratePulse(data, { force = false } = {}) {
   const fallback = { stories: data.stories, awards: data.awards.map(award => ({ ...award, citation: award.detail })), source: 'computed', createdAt: null };
   try {
@@ -357,11 +399,13 @@ export async function narratePulse(data, { force = false } = {}) {
     const parsed = parseJSON(result);
     const stories = data.stories.map(item => {
       const narrative = parsed.headlines?.find(headline => headline.id === item.id);
-      return { ...item, headline: typeof narrative?.headline === 'string' && narrative.headline.length <= 140 ? narrative.headline : item.headline };
+      const supported = typeof narrative?.headline === 'string' && narrative.headline.length <= 140 && numbersSupported(narrative.headline, item.fact);
+      return { ...item, headline: supported ? narrative.headline : item.headline };
     });
     const awards = data.awards.map(award => {
       const narrative = parsed.awards?.find(item => item.id === award.id);
-      return { ...award, citation: typeof narrative?.citation === 'string' && narrative.citation.length <= 220 ? narrative.citation : award.detail };
+      const supported = typeof narrative?.citation === 'string' && narrative.citation.length <= 220 && numbersSupported(narrative.citation, award.detail);
+      return { ...award, citation: supported ? narrative.citation : award.detail };
     });
     return { stories, awards, source: 'ai', createdAt: result.createdAt, cached: result.cached };
   } catch (_) { return fallback; }
@@ -382,26 +426,52 @@ function fallbackNewsletter(data, narrative) {
   };
 }
 
+const UNSUPPORTED_NARRATIVE = /every other team|all other teams|all-in|franchise-altering|superstar|dominant|historic|record-setting|consistent|perfect|clutch|juggernaut|undoubtedly|playoff aspirations|contenders|pretenders|expect fireworks|hungry for revenge|final stretch|stretch run|maximizing|masterclass|season.high|could beat every/i;
+
 export async function writeNewsletter(data, narrative, { allowAI = true } = {}) {
   const fallback = { article: fallbackNewsletter(data, narrative), source: 'computed', createdAt: null };
   if (!allowAI) return fallback;
   try {
     const result = await askAI('newsletter', {
-      cacheKey: `commissioner-v2:${data.fingerprint}:${data.odds.map(team => `${team.id}-${team.playoff}-${team.delta}`).join(',')}`,
+      cacheKey: `commissioner-v3:${data.fingerprint}:${data.odds.map(team => `${team.id}-${team.playoff}-${team.delta}`).join(',')}`,
       leagueId: data.leagueId,
       leagueName: data.leagueName,
       season: data.season,
       week: data.week,
-      recaps: data.stories.map(item => ({ id: item.id, fact: item.fact })),
+      recaps: data.stories.filter(item => !['trade', 'waivers'].includes(item.id)).map(item => ({ id: item.id, fact: item.fact })),
       awards: narrative.awards.map(award => ({ label: AWARD_LABELS[award.id], citation: award.citation })),
       playoffOdds: data.odds.map(team => ({ team: data.teams.find(item => item.id === team.id)?.name || `Team ${team.id}`, probability: team.playoff, movement: team.delta })),
       nextWeek: data.preview?.fact || 'Schedule unavailable',
       powerRankings: data.power.slice(0, 6).map(team => ({ team: team.name, rank: team.rank, movement: team.movement }))
     }, { ttl: 604800000 });
     const parsed = parseJSON(result);
-    if (!parsed.title || !Array.isArray(parsed.sections) || !parsed.sections.length) throw new Error('Unexpected newsletter');
-    const sections = parsed.sections.slice(0, 5).filter(section => section.heading && Array.isArray(section.paragraphs)).map(section => ({ heading: String(section.heading), paragraphs: section.paragraphs.filter(paragraph => typeof paragraph === 'string').slice(0, 6) }));
-    return { article: { title: String(parsed.title), dek: String(parsed.dek || ''), sections }, source: 'ai', createdAt: result.createdAt, cached: result.cached };
+    if (!parsed.title || !Array.isArray(parsed.sections) || parsed.sections.length !== 4) throw new Error('Unexpected newsletter');
+    const factContext = {
+      season: data.season,
+      week: data.week,
+      leagueName: data.leagueName,
+      recaps: data.stories.filter(item => !['trade', 'waivers'].includes(item.id)).map(item => item.fact),
+      awards: narrative.awards,
+      playoffOdds: data.odds,
+      nextWeek: data.preview?.fact || 'Schedule unavailable',
+      powerRankings: data.power.slice(0, 6)
+    };
+    let sectionsGuarded = false;
+    const sections = parsed.sections.filter(section => section.heading && Array.isArray(section.paragraphs)).map((section, index) => {
+      const candidate = { heading: String(section.heading), paragraphs: section.paragraphs.filter(paragraph => typeof paragraph === 'string').slice(0, 6) };
+      const text = `${candidate.heading} ${candidate.paragraphs.join(' ')}`;
+      if (UNSUPPORTED_NARRATIVE.test(text) || !numbersSupported(text, factContext)) {
+        sectionsGuarded = true;
+        return fallback.article.sections[index];
+      }
+      return candidate;
+    });
+    const tradeFacts = data.stories.filter(item => ['trade', 'waivers'].includes(item.id)).map(item => item.fact);
+    if (tradeFacts.length) sections[0].paragraphs = [...new Set([...tradeFacts, ...sections[0].paragraphs])];
+    const title = UNSUPPORTED_NARRATIVE.test(String(parsed.title)) || !numbersSupported(parsed.title, factContext) ? fallback.article.title : String(parsed.title).slice(0, 200);
+    const dek = UNSUPPORTED_NARRATIVE.test(String(parsed.dek || '')) || !numbersSupported(parsed.dek, factContext) ? fallback.article.dek : String(parsed.dek || '').slice(0, 400);
+    const guarded = title !== parsed.title || dek !== (parsed.dek || '') || sectionsGuarded || tradeFacts.length > 0;
+    return { article: { title, dek, sections }, source: guarded ? 'guarded' : 'ai', createdAt: result.createdAt, cached: result.cached };
   } catch (_) { return fallback; }
 }
 

@@ -19,6 +19,7 @@ let aiBusy = false;
 let comments = [];
 let grades = [];
 let draftNumber = 0;
+let generation = 0;
 const HUMAN_ID = 1;
 
 function escapeHtml(value) {
@@ -71,7 +72,7 @@ function renderStage() {
   const human = team.id === HUMAN_ID;
   const recs = human ? recommendations(draft, pool, 3) : [];
   stage.innerHTML = `<div class="kt-clock-top"><div><span class="kt-eyebrow">On the clock · Pick ${draft.index + 1}</span><h2><span class="kt-draft-avatar" style="--kt-team-color:${team.personality?.color || '#c6ff4a'}">${team.personality?.avatar || 'KT'}</span>${escapeHtml(team.name)}</h2><p>${human ? 'Your call. Take the value, trust the board, or make it weird.' : `${escapeHtml(team.personality?.bio || 'Reading the board…')}`}</p></div><div class="kt-clock-number"><strong class="kt-num" id="draft-countdown">${countdown}</strong><span>seconds</span></div></div>${human ? `<div class="kt-draft-recommendations">${recs.map((player, index) => `<button class="kt-draft-pick-card" type="button" data-draft-player="${escapeHtml(player.id)}"><span>RECOMMENDED ${index + 1}</span><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position)} · ${escapeHtml(player.team)} · ${player.dealerValue.toLocaleString()}</small></button>`).join('')}</div>` : `<div class="kt-draft-ai-thinking"><span class="kt-skeleton kt-skeleton-text"></span><p>${aiBusy ? 'One Haiku call for the entire round…' : 'Reading the next card…'}</p></div>`}`;
-  document.querySelector('#draft-available-count').textContent = `${pool.length - draft.history.length} available`;
+  document.querySelector('#draft-available-count').textContent = `${pool.length - draft.history.length} available · ${pool.sourceLabel || 'Dynasty Dealer · market board'}`;
 }
 
 function renderComments() {
@@ -92,7 +93,8 @@ function renderAll() {
 }
 
 async function runAIRound() {
-  if (aiBusy || !currentTeam(draft) || currentTeam(draft).id === HUMAN_ID) return;
+  if (aiBusy || paused || !currentTeam(draft) || currentTeam(draft).id === HUMAN_ID) return;
+  const runGeneration = generation;
   aiBusy = true;
   const round = Math.floor(draft.index / draft.teams.length) + 1;
   const order = [];
@@ -113,17 +115,20 @@ async function runAIRound() {
   let parsed;
   try { parsed = parseAI(await askAI('draft-round', payload, { ttl: 604800000 })); }
   catch (_) { parsed = null; }
-    for (const team of order) {
-      const aiPick = parsed?.picks?.find(pick => Number(pick.team) === team.id);
-      const player = aiPick ? pool.find(item => item.id === aiPick.playerId) : fallbackPick(draft, pool, team);
-      makePick(draft, team, player || fallbackPick(draft, pool, team));
-      const comment = parsed?.comments?.find(item => Number(item.team) === team.id);
-      if (comment) addComment(team, comment.text);
-      else if (team.personality.rules.stealHumanTarget) addComment(team, `You wanted ${player?.name || 'that guy'}? I noticed.`);
-      renderAll();
-      await new Promise(resolve => window.setTimeout(resolve, reducedMotion.matches ? 0 : 600 / speed));
-    }
+  for (const team of order) {
+    if (paused || runGeneration !== generation) break;
+    const aiPick = parsed?.picks?.find(pick => Number(pick.team) === team.id);
+    const player = aiPick ? pool.find(item => item.id === aiPick.playerId) : fallbackPick(draft, pool, team);
+    makePick(draft, team, player || fallbackPick(draft, pool, team));
+    const comment = parsed?.comments?.find(item => Number(item.team) === team.id);
+    if (comment) addComment(team, comment.text);
+    else if (team.personality.rules.stealHumanTarget) addComment(team, `You wanted ${player?.name || 'that guy'}? I noticed.`);
+    renderAll();
+    await new Promise(resolve => window.setTimeout(resolve, reducedMotion.matches ? 0 : 600 / speed));
+  }
+  if (runGeneration !== generation) return;
   aiBusy = false;
+  if (paused) return;
   if (currentTeam(draft)) startClock();
   else finishDraft();
 }
@@ -154,6 +159,7 @@ function startClock() {
 }
 
 async function finishDraft() {
+  const finishGeneration = generation;
   clearInterval(timer);
   document.querySelector('#draft-stage').innerHTML = '<div class="kt-draft-complete"><span class="kt-eyebrow">Draft complete</span><h2>The league has opinions.</h2><p>Every roster graded. Every decision judged.</p></div>';
   const payload = {
@@ -164,6 +170,7 @@ async function finishDraft() {
   let parsed;
   try { parsed = parseAI(await askAI('draft-grades', payload, { ttl: 604800000 })); }
   catch (_) { parsed = null; }
+  if (finishGeneration !== generation) return;
   grades = draft.teams.map(team => {
     const ai = parsed?.grades?.find(item => Number(item.team) === team.id);
     return { team, grade: ai?.grade || gradeRoster(draft.rosters[team.id]), roast: ai?.roast || `${team.name} leaves with ${rosterScore(draft.rosters[team.id]).toLocaleString()} in value and several questions to answer.` };
@@ -202,28 +209,63 @@ function shareGrades() {
   link.click();
 }
 
+async function localDraftPool() {
+  const response = await fetch('fp-data.json');
+  if (!response.ok) throw new Error('Local draft board unavailable');
+  const data = await response.json();
+  return (data.players || []).filter(player => ['QB', 'RB', 'WR', 'TE'].includes(player.pos) && player.n && Number(player.ecr) > 0).map(player => ({
+    id: String(player.id),
+    name: player.n,
+    position: player.pos,
+    team: player.t || 'FA',
+    injury: '',
+    dealerValue: Math.max(100, Math.round(10000 * (1 - Math.log10(Number(player.ecr)) / 3)))
+  }));
+}
+
 async function init() {
+  const initGeneration = ++generation;
+  clearInterval(timer);
+  aiBusy = false;
+  paused = false;
+  document.querySelector('#draft-pause').textContent = 'Pause draft';
+  document.querySelector('#draft-pause').setAttribute('aria-pressed', 'false');
+  document.querySelector('#draft-stage').innerHTML = '<div class="kt-draft-complete"><span class="kt-eyebrow">Draft room warming up</span><h2>Building your board.</h2><div class="kt-widget-skeleton"><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span></div></div>';
   try {
-    const [playerMap, dealerData, state] = await Promise.all([getPlayerDatabase(), waitForSource(dealerSource()), getNflState()]);
-    const players = normalizeDealerPlayers(dealerData).map(player => ({
+    const [playerResult, dealerResult, stateResult] = await Promise.allSettled([getPlayerDatabase(), waitForSource(dealerSource()), getNflState()]);
+    if (initGeneration !== generation) return;
+    const playerMap = playerResult.status === 'fulfilled' ? playerResult.value : new Map();
+    const dealerData = dealerResult.status === 'fulfilled' ? dealerResult.value : null;
+    const state = stateResult.status === 'fulfilled' && stateResult.value ? stateResult.value : { display_week: 1, week: 1 };
+    let players = normalizeDealerPlayers(dealerData).map(player => ({
       ...player,
       dealerValue: player.value,
       position: playerMap.get(String(player.id))?.position || player.position,
       team: playerMap.get(String(player.id))?.team || player.team,
       injury: playerMap.get(String(player.id))?.injury || ''
     })).filter(player => player.name && player.position && player.team && player.dealerValue > 0).sort((a, b) => b.dealerValue - a.dealerValue);
+    let sourceLabel = 'Dynasty Dealer · market board';
+    if (!players.length) {
+      players = await localDraftPool();
+      sourceLabel = 'Local ECR board · live market offline';
+    }
+    if (initGeneration !== generation) return;
     pool = players;
+    pool.sourceLabel = sourceLabel;
     leagueId = getSleeperLeagueId();
     let manager = 'You';
     let rounds = 8;
     if (leagueId) {
-      const bundle = await getLeagueBundle(leagueId, state.display_week || state.week || 1);
-      const users = leagueUsers(bundle.users);
-      let rosterId = Number(localStorage.getItem('kt-drive-manager:v1')) || bundle.rosters[0]?.roster_id;
-      const roster = bundle.rosters.find(item => item.roster_id === rosterId) || bundle.rosters[0];
-      manager = rosterOwner(roster, users);
-      rounds = Math.max(4, Math.min(12, Number(bundle.league.settings?.draft_rounds) || 8));
+      try {
+        const bundle = await getLeagueBundle(leagueId, state.display_week || state.week || 1);
+        const users = leagueUsers(bundle.users);
+        const rosterId = Number(localStorage.getItem('kt-drive-manager:v1')) || bundle.rosters[0]?.roster_id;
+        const roster = bundle.rosters.find(item => item.roster_id === rosterId) || bundle.rosters[0];
+        manager = rosterOwner(roster, users);
+        rounds = Math.max(4, Math.min(12, Number(bundle.league.settings?.draft_rounds) || 8));
+      } catch (_) {}
     }
+    if (initGeneration !== generation) return;
     draftNumber += 1;
     const teams = [{ id: HUMAN_ID, name: manager, personality: { avatar: 'KT', color: '#c6ff4a', bio: 'Your board. Your convictions.', rules: {} } }, ...PERSONALITIES.map((personality, index) => ({ id: index + 2, name: personality.name, personality }))];
     draft = createDraft(teams, rounds);
@@ -232,8 +274,10 @@ async function init() {
     document.querySelector('#draft-grades').innerHTML = '';
     renderAll();
     startClock();
-  } catch (error) {
-    document.querySelector('#draft-stage').innerHTML = `<div class="kt-draft-complete"><h2>Draft room unavailable</h2><p>${escapeHtml(error.message)}</p></div>`;
+  } catch (_) {
+    if (initGeneration !== generation) return;
+    document.querySelector('#draft-stage').innerHTML = '<div class="kt-draft-complete"><h2>Draft room reconnecting</h2><p>The live player feeds and bundled draft board are unavailable. Check your connection and retry; your other tools are still ready.</p><button class="kt-btn kt-btn-primary" type="button" id="draft-retry">Retry draft</button></div>';
+    document.querySelector('#draft-retry').addEventListener('click', init, { once: true });
   }
 }
 
@@ -263,6 +307,7 @@ document.querySelector('#draft-pause').addEventListener('click', event => {
   paused = !paused;
   event.currentTarget.textContent = paused ? 'Resume draft' : 'Pause draft';
   event.currentTarget.setAttribute('aria-pressed', String(paused));
+  if (!paused && currentTeam(draft)?.id !== HUMAN_ID) runAIRound();
 });
 document.querySelector('#draft-speed').addEventListener('change', event => { speed = Number(event.target.value) || 1; });
 document.querySelector('#draft-reset').addEventListener('click', init);

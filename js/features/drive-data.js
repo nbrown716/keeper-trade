@@ -102,7 +102,7 @@ export async function loadDriveRecap(leagueId, week, rosterId) {
   try { localStorage.setItem(MANAGER_KEY, String(selected)); } catch (_) {}
 
   const season = bundle.league.season || (await getNflState())?.season || new Date().getFullYear();
-  const scoreboard = await fetchSource(`drive-scoreboard:${season}:${week}`, `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${season}&seasontype=2&week=${week}`, 86400000);
+  const scoreboard = await fetchSource(`drive-scoreboard:${season}:${week}`, `https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/scoreboard?dates=${season}&seasontype=2&week=${week}`, 86400000);
   const games = normalizeGames(scoreboard);
   const teamGames = new Map();
   games.forEach(game => {

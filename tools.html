@@ -120,7 +120,7 @@
     </div>
     <p class="legend"><b>Sleeper Dynasty ADP</b> (1QB PPR) cross-referenced with <b>FantasyCalc</b> value. <b>Tiers</b> mark value cliffs — draft to the tier, not the ranking. <b>Value</b> flags players falling past what they're worth (▲ = value, ▼ = reach).</p>
     <div class="tablecard" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden">
-      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px">
+      <div style="overflow-x:auto" role="region" aria-label="ADP and tiers table. Scroll horizontally for every column" tabindex="0"><table style="width:100%;border-collapse:collapse;font-size:13.5px">
         <thead><tr id="adpHead"></tr></thead>
         <tbody id="adpRows"><tr><td colspan="7"><div class="skel"><span class="spin"></span></div></td></tr></tbody>
       </table></div>
@@ -194,7 +194,7 @@
   var depthLoaded=false;
   function loadDepth(id){
     var box=$("#depth"); box.innerHTML='<div class="skel"><span class="spin"></span></div>';
-    fetch("https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/"+id+"/roster").then(function(r){return r.json();}).then(function(d){
+    fetch("https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/teams/"+id+"/roster").then(function(r){return r.json();}).then(function(d){
       var off=(d.athletes||[]).filter(function(g){return g.position==="offense";})[0];
       var items=(off&&off.items)||[];
       var groups={QB:[],RB:[],WR:[],TE:[]};

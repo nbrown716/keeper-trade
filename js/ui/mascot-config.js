@@ -1,18 +1,6 @@
 export const MASCOT_CONFIG = {
-  asset: 'assets/mascot.riv',
-  runtime: 'https://unpkg.com/@rive-app/canvas@2.30.0/rive.js',
-  stateMachine: 'Keeper',
-  states: {
-    idle: { input: 'idle', type: 'boolean' },
-    happy: { input: 'happy', type: 'boolean' },
-    devastated: { input: 'devastated', type: 'boolean' },
-    judging: { input: 'judging', type: 'boolean' },
-    celebrating: { input: 'celebrating', type: 'trigger' },
-    nervous: { input: 'nervous', type: 'boolean' },
-    hype: { input: 'hype', type: 'boolean' },
-    sleeping: { input: 'sleeping', type: 'boolean' },
-    thinking: { input: 'thinking', type: 'boolean' }
-  },
+  engine: 'native-svg',
+  states: ['idle', 'happy', 'devastated', 'judging', 'celebrating', 'nervous', 'hype', 'sleeping', 'thinking'],
   copy: {
     idle: ['Your league. Your edge. I’m watching.', 'Big commissioner energy. Tiny clipboard.'],
     happy: ['That’s a W. Act like you’ve been here before.', 'Your starters understood the assignment.'],

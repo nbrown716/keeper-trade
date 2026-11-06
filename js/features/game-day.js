@@ -50,7 +50,7 @@ function chartMarkup(summary) {
     const color = play.team?.id === summary.game.home.id ? summary.game.home.color : summary.game.away.color;
     return `<circle class="kt-chart-dot" cx="${point.x}" cy="${point.y}" r="6" fill="#${escapeHtml(color || 'c6ff4a')}" data-play-id="${escapeHtml(play.id)}" tabindex="0" role="button" aria-label="${escapeHtml(play.text)}"></circle>`;
   }).join('');
-  return `<div class="kt-chart-wrap"><svg class="kt-chart" viewBox="0 0 1000 280" preserveAspectRatio="none" role="img" aria-label="Home team win probability from 0 to 100 percent"><defs><linearGradient id="kt-area-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6ff4a" stop-opacity=".32"/><stop offset="1" stop-color="#c6ff4a" stop-opacity="0"/></linearGradient></defs><path class="kt-chart-grid" d="M0 40H1000M0 135H1000M0 230H1000"/><path class="kt-chart-grid kt-chart-mid" d="M0 135H1000"/><path class="kt-chart-area" d="${area}"/><path class="kt-chart-line is-drawing" d="${line}"/><line class="kt-chart-scrubber" id="kt-chart-scrubber-line" x1="1000" y1="25" x2="1000" y2="240"/>${dots}<text class="kt-chart-label" x="8" y="28">100%</text><text class="kt-chart-label" x="8" y="124">50%</text><text class="kt-chart-label" x="8" y="220">0%</text></svg></div><label class="kt-scrubber-control"><span>Kickoff</span><input id="kt-momentum-scrubber" type="range" min="0" max="${points.length - 1}" value="${points.length - 1}" aria-label="Rewind win probability"><span>Now</span></label>`;
+  return `<div class="kt-chart-wrap"><svg class="kt-chart" viewBox="0 0 1000 280" preserveAspectRatio="none" role="group" aria-label="Interactive home team win probability from 0 to 100 percent"><defs><linearGradient id="kt-area-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c6ff4a" stop-opacity=".32"/><stop offset="1" stop-color="#c6ff4a" stop-opacity="0"/></linearGradient></defs><path class="kt-chart-grid" d="M0 40H1000M0 135H1000M0 230H1000"/><path class="kt-chart-grid kt-chart-mid" d="M0 135H1000"/><path class="kt-chart-area" d="${area}"/><path class="kt-chart-line is-drawing" d="${line}"/><line class="kt-chart-scrubber" id="kt-chart-scrubber-line" x1="1000" y1="25" x2="1000" y2="240"/>${dots}<text class="kt-chart-label" x="8" y="28">100%</text><text class="kt-chart-label" x="8" y="124">50%</text><text class="kt-chart-label" x="8" y="220">0%</text></svg></div><label class="kt-scrubber-control"><span>Kickoff</span><input id="kt-momentum-scrubber" type="range" min="0" max="${points.length - 1}" value="${points.length - 1}" aria-label="Rewind win probability"><span>Now</span></label>`;
 }
 
 function playMarkup(play, summary, isLatest) {
@@ -64,7 +64,7 @@ function boxMarkup(summary) {
   const names = ['totalYards', 'netPassingYards', 'rushingYards', 'firstDowns', 'thirdDownEff', 'fourthDownEff', 'totalOffensivePlays', 'yardsPerPlay', 'redZoneAttempts', 'turnovers', 'totalPenaltiesYards', 'possessionTime'];
   const stat = (team, name) => team?.statistics?.find(item => item.name === name) || {};
   const leaders = summary.leaders.flatMap(team => (team.leaders || []).slice(0, 3).map(category => category.leaders?.[0] ? { category: category.displayName, ...category.leaders[0] } : null).filter(Boolean));
-  return `<div class="kt-box-leaders">${leaders.map(leader => `<div class="kt-leader-card"><img src="${escapeHtml(leader.athlete?.headshot?.href || '')}" alt="" loading="lazy"><div class="kt-leader-card-copy"><strong>${escapeHtml(leader.athlete?.displayName || '')}</strong><span>${escapeHtml(leader.category)}</span></div><span class="kt-leader-card-value">${escapeHtml(leader.mainStat?.value || leader.displayValue)}</span></div>`).join('')}</div><div class="kt-stat-table-wrap"><table class="kt-stat-table"><thead><tr><th scope="col">Team stat</th><th scope="col">${escapeHtml(summary.game.away.abbreviation)}</th><th scope="col">${escapeHtml(summary.game.home.abbreviation)}</th></tr></thead><tbody>${names.map(name => {
+  return `<div class="kt-box-leaders">${leaders.map(leader => `<div class="kt-leader-card"><img src="${escapeHtml(leader.athlete?.headshot?.href || '')}" alt="" loading="lazy"><div class="kt-leader-card-copy"><strong>${escapeHtml(leader.athlete?.displayName || '')}</strong><span>${escapeHtml(leader.category)}</span></div><span class="kt-leader-card-value">${escapeHtml(leader.mainStat?.value || leader.displayValue)}</span></div>`).join('')}</div><div class="kt-stat-table-wrap" role="region" aria-label="Team box score. Scroll horizontally for every column" tabindex="0"><table class="kt-stat-table"><thead><tr><th scope="col">Team stat</th><th scope="col">${escapeHtml(summary.game.away.abbreviation)}</th><th scope="col">${escapeHtml(summary.game.home.abbreviation)}</th></tr></thead><tbody>${names.map(name => {
     const awayStat = stat(away, name);
     const homeStat = stat(home, name);
     const numeric = value => Number.isFinite(Number(value)) && value !== '' ? ` data-count="${Number(value)}"` : '';
@@ -183,11 +183,13 @@ function coarseHaptics() {
 }
 
 function renderError() {
+  app.setAttribute('aria-busy', 'false');
   app.innerHTML = `<div class="kt-game-loading"><span class="kt-eyebrow">Game Day</span><h1 class="kt-display">The stadium is reconnecting</h1><p class="kt-muted">Your last-good scores are safe. Try the summary again.</p><div><a class="kt-btn" href="${backUrl()}">All games</a> <button class="kt-btn kt-btn-primary" type="button" id="game-retry">Retry</button></div></div>`;
   document.querySelector('#game-retry').addEventListener('click', () => liveData.refresh(sourceKey));
 }
 
 if (!gameId) {
+  app.setAttribute('aria-busy', 'false');
   app.innerHTML = '<div class="kt-game-loading"><h1 class="kt-display">No game selected</h1><a class="kt-btn kt-btn-primary" href="index.html">Back to scores</a></div>';
 } else {
   sourceKey = summarySource(gameId);

@@ -1,9 +1,9 @@
-.kt-game-day-body { min-height: 100vh; padding: 0; background: #070b12; }
+.kt-game-day-body { min-height: 100vh; padding: 0; background: var(--kt-bg); }
 .kt-stadium { --kt-away-glow: 0.12; --kt-home-glow: 0.12; position: relative; isolation: isolate; width: min(100%, 90rem); min-height: 100vh; margin-inline: auto; padding: var(--kt-space-4) var(--kt-space-4) var(--kt-space-7); overflow: hidden; }
 .kt-stadium::before, .kt-stadium::after { position: fixed; z-index: -1; top: 0; bottom: 0; width: 50%; content: ""; pointer-events: none; animation: kt-stadium-breathe 5s ease-in-out infinite alternate; }
 .kt-stadium::before { left: 0; background: radial-gradient(ellipse at 0% 15%, rgb(var(--kt-away-color) / var(--kt-away-glow)), transparent 65%); }
 .kt-stadium::after { right: 0; background: radial-gradient(ellipse at 100% 15%, rgb(var(--kt-home-color) / var(--kt-home-glow)), transparent 65%); animation-delay: -2.5s; }
-.kt-game-loading { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: var(--kt-space-5); }
+.kt-game-loading { display: grid; min-height: 100vh; place-content: center; justify-items: center; gap: var(--kt-space-5); background: var(--kt-surface-1); }
 .kt-game-topbar { display: flex; align-items: center; justify-content: space-between; gap: var(--kt-space-4); margin-bottom: var(--kt-space-5); }
 .kt-game-back { display: inline-flex; min-height: var(--kt-tap); align-items: center; gap: var(--kt-space-2); color: var(--kt-text-secondary); font-size: var(--kt-text-sm); font-weight: 650; text-decoration: none; }
 .kt-game-back:hover { color: var(--kt-accent); }

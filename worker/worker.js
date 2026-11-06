@@ -2,7 +2,7 @@ const FEATURES = {
   roast: {
     model: 'claude-haiku-4-5', maxTokens: 60, ratePerMinute: 10, cacheTtl: 3600,
     systemPrompt: 'You are the funny, sharp insider voice of a fantasy football keeper league. Write exactly two punchy sentences, no more than 30 words total. Roast or hype the named manager using only the supplied standings, XP, and streak data. No slurs, threats, profanity, personal attacks, or invented statistics.',
-    cacheKey: payload => `${payload.manager}:${payload.mode}:${payload.record}:${payload.streak}:${payload.xp}`
+    cacheKey: payload => `${payload.leagueId || 'anonymous'}:${payload.manager}:${payload.mode}:${payload.record}:${payload.streak}:${payload.xp}`
   },
   recap: {
     model: 'claude-haiku-4-5', maxTokens: 500, ratePerMinute: 10, cacheTtl: 604800,
@@ -41,7 +41,7 @@ const FEATURES = {
   },
   newsletter: {
     model: 'claude-sonnet-4-5', maxTokens: 900, ratePerMinute: 2, cacheTtl: 604800,
-    systemPrompt: 'You are The Commissioner, writing one polished weekly fantasy league newsletter. Use only supplied recaps, awards, playoff odds, power rankings, and next-week matchup facts. Return JSON only: {"title":"Compelling headline","dek":"One-sentence summary","sections":[{"heading":"Section heading","paragraphs":["Short paragraph"]}]}. Return exactly 4 sections: recap, awards, playoff picture, and next week/power rankings. Keep the full newsletter under 450 words. Never invent scores, odds movement, injuries, or matchups; explicitly note when a playoff snapshot is unavailable.',
+    systemPrompt: 'You are The Commissioner, writing one factual weekly fantasy league newsletter. Use only supplied recaps, awards, playoff odds, power rankings, and next-week matchup facts. Return JSON only: {"title":"Factual headline","dek":"One-sentence summary","sections":[{"heading":"Section heading","paragraphs":["Short factual paragraph"]}]}. Return exactly 4 sections: recap, awards, playoff picture, and next week/power rankings. Keep the full newsletter under 400 words. Every sentence must be directly supported by supplied data. Do not evaluate skill, effort, intent, momentum, roster quality, or future outlook. Do not use superlatives unless the supplied fact explicitly says highest, lowest, biggest, closest, or a record. Never compare a score to other scores unless the exact comparison is supplied. Do not say a performance was dominant, historic, perfect, clutch, consistent, franchise-altering, or a masterclass. Do not predict fireworks, revenge, contention, playoff aspirations, or a final stretch. When playoff odds are unavailable, only state that they are unavailable; do not speculate about the postseason.',
     cacheKey: payload => payload.cacheKey || JSON.stringify(payload)
   }
 };
@@ -84,6 +84,37 @@ async function cachedResponse(request, env, key) {
   return respond(request, env, { ...cached, cached: true }, 200, { 'X-Keeper-Cache': 'HIT' });
 }
 
+async function proxyESPN(request, env, url) {
+  if (!cors(request, env)) return new Response('Origin not allowed', { status: 403 });
+  let endpoint;
+  if (url.pathname === '/espn/scoreboard') endpoint = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
+  else if (url.pathname === '/espn/summary') endpoint = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary';
+  else if (url.pathname === '/espn/news') endpoint = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/news';
+  else if (url.pathname === '/espn/standings') endpoint = 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings';
+  else if (/^\/espn\/athletes\/\d+\/overview$/.test(url.pathname)) endpoint = `https://site.web.api.espn.com/apis/common/v3/sports/football/nfl${url.pathname}`;
+  else if (/^\/espn\/teams\/\d+\/roster$/.test(url.pathname)) endpoint = `https://site.api.espn.com/apis/site/v2/sports/football/nfl${url.pathname.slice(5)}`;
+  else return respond(request, env, { error: 'route' }, 404);
+  const allowed = ['dates', 'season', 'seasontype', 'week', 'event'];
+  const params = new URLSearchParams();
+  allowed.forEach(key => {
+    const value = url.searchParams.get(key);
+    if (value && /^[a-zA-Z0-9]+$/.test(value)) params.set(key, value);
+  });
+  if (url.pathname === '/espn/summary' && !url.searchParams.get('event')) return respond(request, env, { error: 'event-required' }, 400);
+  try {
+    const upstream = await fetch(`${endpoint}?${params}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'KeeperTrade/1.0' }
+    });
+    if (!upstream.ok) return respond(request, env, { error: 'upstream', status: upstream.status }, 502);
+    return new Response(await upstream.text(), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=15', ...cors(request, env) }
+    });
+  } catch (_) {
+    return respond(request, env, { error: 'upstream' }, 502);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -91,6 +122,7 @@ export default {
       const spend = Number(await env.AI_USAGE.get(`spend:${day()}`) || 0);
       return new Response(JSON.stringify({ date: day(), spend, cap: Number(env.DAILY_SPEND_CAP || '1'), currency: 'USD' }), { headers: { 'Content-Type': 'application/json' } });
     }
+    if (request.method === 'GET' && url.pathname.startsWith('/espn/')) return proxyESPN(request, env, url);
     if (!cors(request, env)) return new Response('Origin not allowed', { status: 403 });
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request, env) });
     if (request.method !== 'POST' || !url.pathname.startsWith('/ai/')) {
@@ -102,9 +134,11 @@ export default {
     if (!config) return respond(request, env, { status: 'resting', reason: 'feature' }, 200);
 
     let payload;
+    let estimatedInputTokens = 0;
     try {
       const raw = await request.text();
       if (raw.length > 12000) throw new Error('Payload too large');
+      estimatedInputTokens = Math.ceil((raw.length + config.systemPrompt.length) / 3);
       payload = JSON.parse(raw);
     } catch (_) {
       return respond(request, env, { status: 'resting', reason: 'payload' }, 200);
@@ -123,7 +157,9 @@ export default {
     const spendKey = `spend:${day()}`;
     const spend = Number(await env.AI_USAGE.get(spendKey) || 0);
     const cap = Number(env.DAILY_SPEND_CAP || '1');
-    if (spend >= cap) return respond(request, env, { status: 'resting', reason: 'budget' }, 200);
+    const price = PRICES[config.model];
+    const estimatedCost = (estimatedInputTokens * price.input + config.maxTokens * price.output) / 1000000;
+    if (spend >= cap || spend + estimatedCost > cap) return respond(request, env, { status: 'resting', reason: 'budget' }, 200);
 
     try {
       const upstream = await fetch('https://api.anthropic.com/v1/messages', {
@@ -152,7 +188,6 @@ export default {
       if (!text) return respond(request, env, { status: 'resting', reason: 'empty' }, 200);
 
       const usage = result.usage || {};
-      const price = PRICES[config.model];
       const cost = ((Number(usage.input_tokens || 0) * price.input) + (Number(usage.output_tokens || 0) * price.output)) / 1000000;
       const newSpend = spend + cost;
       const responseBody = { status: 'ready', feature, text, cached: false, createdAt: Date.now() };

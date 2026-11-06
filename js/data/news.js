@@ -3,7 +3,7 @@ import { liveData } from './live-data.js';
 export const NEWS_SOURCE = 'nfl-news';
 
 liveData.register(NEWS_SOURCE, {
-  url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/news',
+  url: 'https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/news',
   cadence: 300000
 });
 

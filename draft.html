@@ -99,8 +99,8 @@
   .wh input:focus{outline:none;border-bottom:1.5px solid var(--gold)}
   .wh .cnt{font-size:10.5px;color:var(--ink-faint);font-weight:700}
   .skel{padding:40px;text-align:center;color:var(--ink-faint)}
-  .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
-  @keyframes sp{to{transform:rotate(360deg)}} @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  .spin{display:block;width:min(100%,32rem);height:3rem;margin:auto;border-radius:8px;background:linear-gradient(90deg,var(--surface-2),var(--surface),var(--surface-2));background-size:200% 100%;animation:sp 1.4s ease-in-out infinite}
+  @keyframes sp{0%{background-position:100% 0}100%{background-position:-100% 0}} @media (prefers-reduced-motion:reduce){.spin{animation:none}}
   .foot-note{max-width:900px;margin:0 auto 40px;color:var(--ink-faint);font-size:11px;line-height:1.6;text-align:center}
 </style>
 </head>
@@ -136,7 +136,7 @@
 
   <div class="layout">
     <div class="boardcard">
-      <div class="tblwrap"><table>
+      <div class="tblwrap" role="region" aria-label="Draft rankings table. Scroll horizontally for every column" tabindex="0"><table>
         <thead><tr><th>ECR</th><th>Player</th><th>Pos</th><th>ADP</th><th>+/−</th><th>Proj</th><th>Range</th><th></th></tr></thead>
         <tbody id="rows"><tr><td colspan="8"><div class="skel"><span class="spin"></span></div></td></tr></tbody>
       </table></div>

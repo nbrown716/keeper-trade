@@ -55,6 +55,10 @@ function setBusy(button, busy, panel) {
   if (busy) document.querySelector(panel).innerHTML = '<div class="kt-widget-skeleton"><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span></div>';
 }
 
+function setActionLoading(busy) {
+  document.querySelectorAll('#war-oracle, #war-lineup, #war-waiver-run, #war-counter-run').forEach(button => { button.disabled = busy; });
+}
+
 function playerCard(player, verdict, index) {
   const start = verdict.verdict === 'START';
   return `<article class="kt-verdict-card ${start ? 'is-start' : 'is-sit'}" style="--kt-delay:${index * 45}ms"><div class="kt-verdict-head"><div class="kt-verdict-player"><div><h3>${escapeHtml(player.name)}</h3><p>${escapeHtml(player.position)} · ${escapeHtml(player.team)} · ${player.dealerValue.toLocaleString()} dealer</p></div></div><div class="kt-verdict-score"><strong>${verdict.confidence}/10</strong><span>confidence</span></div></div><div class="kt-verdict-meta"><span class="kt-verdict-badge">${escapeHtml(verdict.verdict)}</span><span class="kt-risk kt-risk-${String(verdict.risk).toLowerCase()}">${escapeHtml(verdict.risk)} RISK</span>${weatherBadge(player.weather)}</div><p class="kt-verdict-reason" data-typewriter>${escapeHtml(verdict.reason)}</p></article>`;
@@ -270,6 +274,7 @@ async function load() {
   const id = getSleeperLeagueId();
   if (!id) { document.querySelector('#war-error').hidden = false; return; }
   document.querySelector('#war-loading').hidden = false;
+  setActionLoading(true);
   try {
     const state = await getNflState();
     const week = state.display_week || state.week || 1;
@@ -301,6 +306,7 @@ async function load() {
     document.querySelector('#war-freshness').textContent = error.message || 'The War Room could not load your league.';
   } finally {
     document.querySelector('#war-loading').hidden = true;
+    setActionLoading(false);
   }
 }
 
@@ -333,6 +339,6 @@ document.querySelector('#war-manager').addEventListener('change', event => {
   history.replaceState(null, '', `war-room.html?roster=${event.target.value}`);
   load();
 });
-liveData.register(SCOREBOARD_SOURCE, { url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard', cadence: 300000 });
+liveData.register(SCOREBOARD_SOURCE, { url: 'https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/scoreboard', cadence: 300000 });
 mountNavigation({ active: 'more' });
 load();

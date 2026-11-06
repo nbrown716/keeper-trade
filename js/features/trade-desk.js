@@ -25,7 +25,10 @@ function displayValue(value) {
 }
 
 function history() {
-  try { return JSON.parse(localStorage.getItem(historyKey)) || []; } catch (_) { return []; }
+  try {
+    const saved = JSON.parse(localStorage.getItem(historyKey));
+    return Array.isArray(saved) ? saved.filter(entry => entry && typeof entry === 'object' && typeof entry.signature === 'string' && Array.isArray(entry.sides)) : [];
+  } catch (_) { return []; }
 }
 
 function currentTrade() {
@@ -177,7 +180,7 @@ function openPanel(type) {
   panel.querySelector('.kt-trade-panel-content').innerHTML = `<div class="kt-trade-panel-head"><h2>${title}</h2><button class="kt-btn kt-btn-ghost kt-icon-btn" type="button" data-close-panel aria-label="Close panel">×</button></div>${content}`;
   panel.hidden = false;
   document.body.style.overflow = 'hidden';
-  panel.querySelector('[data-close-panel]').addEventListener('click', closePanel);
+  panel.querySelectorAll('[data-close-panel]').forEach(element => element.addEventListener('click', closePanel));
   panel.querySelector('[data-close-panel]').focus();
   panel.querySelectorAll('[data-reopen]').forEach(button => button.addEventListener('click', () => {
     const entry = history()[Number(button.dataset.reopen)];
@@ -265,7 +268,7 @@ function buildShareCanvas(trade) {
 function mountPanel() {
   document.body.insertAdjacentHTML('beforeend', '<div class="kt-trade-panel-shell" hidden><div class="kt-trade-panel-backdrop" data-close-panel></div><aside class="kt-trade-panel" role="dialog" aria-modal="true" aria-label="Trade details"><div class="kt-trade-panel-content"></div></aside></div>');
   panel = document.querySelector('.kt-trade-panel-shell');
-  panel.querySelector('[data-close-panel]').addEventListener('click', closePanel);
+  panel.querySelectorAll('[data-close-panel]').forEach(element => element.addEventListener('click', closePanel));
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !panel.hidden) closePanel();
     if (event.key === 'Tab' && !panel.hidden) {

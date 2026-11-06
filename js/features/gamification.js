@@ -1,6 +1,7 @@
 import { levels, badgeDefinitions, triviaBank } from '../data/gamification-data.js';
 import { liveData } from '../data/live-data.js';
 import { SCOREBOARD_SOURCE, normalizeGames, scoreboardDate } from '../data/espn.js';
+import { getSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner, rosterPoints } from '../data/sleeper.js';
 
 const STORAGE_KEY = 'kt-gamification:v1';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -13,6 +14,7 @@ let celebrationQueue = [];
 let celebrationOpen = false;
 let wrappedCanvas;
 let countdownTimer;
+let leagueRecords;
 
 function defaults() {
   return {
@@ -30,20 +32,54 @@ function defaults() {
   };
 }
 
+function record(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function cleanNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : fallback;
+}
+
+function cleanText(value, fallback = '') {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function cleanPicks(saved) {
+  const picks = {};
+  Object.entries(record(saved)).slice(0, 60).forEach(([week, entry]) => {
+    const source = record(entry);
+    const games = {};
+    Object.entries(record(source.games)).slice(0, 20).forEach(([id, selection]) => {
+      const pick = record(selection);
+      if (!['string', 'number'].includes(typeof pick.teamId)) return;
+      games[id] = { teamId: String(pick.teamId), confidence: Math.max(1, Math.min(16, Math.floor(cleanNumber(pick.confidence, 1)))) };
+    });
+    picks[week] = { games, locked: source.locked === true, graded: source.graded === true, points: cleanNumber(source.points), correct: Math.floor(cleanNumber(source.correct)) };
+  });
+  return picks;
+}
+
 function migrate(saved) {
   const base = defaults();
-  if (!saved || typeof saved !== 'object') return base;
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return base;
+  const streak = record(saved.streak);
+  const actions = record(saved.actions);
+  const trivia = record(saved.trivia);
+  const stats = record(saved.stats);
+  const preferences = record(saved.preferences);
   return {
-    ...base,
-    ...saved,
     version: 1,
-    streak: { ...base.streak, ...saved.streak },
-    actions: { ...base.actions, ...saved.actions },
-    trivia: { ...base.trivia, ...saved.trivia },
-    picks: saved.picks || {},
-    badges: Array.isArray(saved.badges) ? saved.badges : [],
-    stats: { ...base.stats, ...saved.stats, pages: { ...base.stats.pages, ...saved.stats?.pages } },
-    preferences: { ...base.preferences, ...saved.preferences }
+    xp: cleanNumber(saved.xp),
+    manager: cleanText(saved.manager).slice(0, 24),
+    createdAt: cleanNumber(saved.createdAt, base.createdAt),
+    streak: { count: Math.floor(cleanNumber(streak.count)), lastClaim: cleanText(streak.lastClaim), freezeWeek: cleanText(streak.freezeWeek) },
+    actions: Object.fromEntries(Object.keys(base.actions).map(key => [key, Math.floor(cleanNumber(actions[key]))])),
+    trivia: { date: cleanText(trivia.date), correct: typeof trivia.correct === 'boolean' ? trivia.correct : null, streak: Math.floor(cleanNumber(trivia.streak)) },
+    picks: cleanPicks(saved.picks),
+    badges: Array.isArray(saved.badges) ? [...new Set(saved.badges.filter(id => badgeDefinitions.some(badge => badge.id === id)))] : [],
+    stats: { pages: Object.fromEntries(Object.entries(record(stats.pages)).slice(0, 100).map(([page, count]) => [page, Math.floor(cleanNumber(count))])), boldestCall: cleanText(stats.boldestCall, base.stats.boldestCall) },
+    preferences: { sound: preferences.sound === true }
   };
 }
 
@@ -265,6 +301,39 @@ function gradePicks() {
   state.stats.boldestCall = picks.correct ? `${picks.correct} correct calls with ${picks.points} confidence points` : state.stats.boldestCall;
 }
 
+async function loadLeagueRecords() {
+  const leagueId = getSleeperLeagueId();
+  if (!leagueId) { leagueRecords = null; return; }
+  try {
+    const nfl = await getNflState();
+    const week = Number(nfl?.display_week || nfl?.week || 1);
+    const current = await getLeagueBundle(leagueId, week);
+    const users = leagueUsers(current.users);
+    const selectedId = Number(localStorage.getItem('kt-drive-manager:v1')) || current.rosters[0]?.roster_id;
+    const selected = current.rosters.find(roster => roster.roster_id === selectedId) || current.rosters[0];
+    const selectedMatchup = current.matchups.find(matchup => matchup.roster_id === selected?.roster_id);
+    const opponent = current.matchups.find(matchup => matchup.matchup_id === selectedMatchup?.matchup_id && matchup.roster_id !== selected?.roster_id);
+    const history = await Promise.all(Array.from({ length: Math.max(0, week - 1) }, (_, index) => getLeagueBundle(leagueId, index + 1)));
+    const result = { wins: 0, losses: 0, ties: 0 };
+    history.forEach(bundle => {
+      const self = bundle.matchups.find(matchup => matchup.roster_id === selected?.roster_id);
+      const other = bundle.matchups.find(matchup => matchup.matchup_id === self?.matchup_id && matchup.roster_id !== selected?.roster_id);
+      if (!self || !other) return;
+      if (Number(self.points) > Number(other.points)) result.wins += 1;
+      else if (Number(self.points) < Number(other.points)) result.losses += 1;
+      else result.ties += 1;
+    });
+    leagueRecords = {
+      standings: current.rosters.map(roster => ({ id: roster.roster_id, name: rosterOwner(roster, users), points: rosterPoints(roster.settings), wins: Number(roster.settings?.wins || 0), losses: Number(roster.settings?.losses || 0), ties: Number(roster.settings?.ties || 0) })).sort((a, b) => b.wins - a.wins || b.points - a.points),
+      selectedId: selected?.roster_id,
+      selectedName: selected ? rosterOwner(selected, users) : 'Your manager',
+      opponentName: opponent ? rosterOwner(current.rosters.find(roster => roster.roster_id === opponent.roster_id), users) : 'No opponent yet',
+      ...result
+    };
+    if (clubhouse) renderClubhouse();
+  } catch (_) { leagueRecords = null; }
+}
+
 function pickemMarkup() {
   const week = currentPickWeek();
   const picks = picksForWeek();
@@ -273,17 +342,20 @@ function pickemMarkup() {
   gradePicks();
   const upcoming = games.filter(game => game.state === 'pre');
   const completed = games.filter(game => game.state === 'post');
-  const leaderboard = [
-    { name: 'Alex', points: 86, record: '11–3' },
-    { name: 'Sam', points: 74, record: '10–4' },
-    { name: state.manager || 'You', points: picks.points || 0, record: `${picks.correct || 0}–${Math.max(0, completed.length - (picks.correct || 0))}`, local: true },
-    { name: 'Commissioner', points: 61, record: '8–6' }
-  ].sort((a, b) => b.points - a.points);
-  return `<section class="kt-club-card kt-pickem-card"><div class="kt-club-card-head"><div><span class="kt-eyebrow">Weekly pick’em</span><h3>Confidence is currency.</h3></div><span class="kt-badge kt-badge-blue">Local league preview</span></div>${upcoming.length ? `<div class="kt-pick-list">${upcoming.map(game => {
+  const leaderboard = leagueRecords ? leagueRecords.standings.map(row => ({
+    ...row,
+    record: `${row.wins}–${row.losses}${row.ties ? `–${row.ties}` : ''}`,
+    local: row.id === leagueRecords.selectedId
+  })) : [{ name: state.manager || 'You', points: picks.points || 0, record: `${picks.correct || 0}–${Math.max(0, completed.length - (picks.correct || 0))}`, local: true }];
+  const sourceLabel = leagueRecords ? 'Sleeper · actual records' : 'Local pick’em';
+  const headToHead = leagueRecords
+    ? `<p><strong>${escapeHtml(leagueRecords.selectedName)}</strong> vs ${escapeHtml(leagueRecords.opponentName)}</p><span>${leagueRecords.wins}–${leagueRecords.losses}${leagueRecords.ties ? `–${leagueRecords.ties}` : ''} head-to-head · actual Sleeper record</span>`
+    : '<p>Connect Sleeper for real head-to-head records.</p><span>Pick’em selections and points stay on this device.</span>';
+  return `<section class="kt-club-card kt-pickem-card"><div class="kt-club-card-head"><div><span class="kt-eyebrow">Weekly pick’em</span><h3>Confidence is currency.</h3></div><span class="kt-badge kt-badge-blue">${sourceLabel}</span></div>${upcoming.length ? `<div class="kt-pick-list">${upcoming.map(game => {
     const pick = picks.games[game.id] || {};
     const locked = picks.locked || new Date(game.date) <= new Date();
     return `<article class="kt-pick-game"><div class="kt-pick-kickoff" data-kickoff="${escapeHtml(game.date)}">${locked ? 'Locked' : countdown(game)}</div><div class="kt-pick-teams"><button class="kt-pick-team" type="button" data-pick-game="${game.id}" data-team-id="${game.away.id}" aria-pressed="${String(pick.teamId) === String(game.away.id)}" ${locked ? 'disabled' : ''}>${escapeHtml(game.away.abbreviation)}</button><span>at</span><button class="kt-pick-team" type="button" data-pick-game="${game.id}" data-team-id="${game.home.id}" aria-pressed="${String(pick.teamId) === String(game.home.id)}" ${locked ? 'disabled' : ''}>${escapeHtml(game.home.abbreviation)}</button></div><label>Confidence <select data-confidence-game="${game.id}" ${locked ? 'disabled' : ''}>${Array.from({ length: 16 }, (_, index) => `<option value="${index + 1}" ${Number(pick.confidence) === index + 1 ? 'selected' : ''}>${index + 1}</option>`).join('')}</select></label></article>`;
-  }).join('')}</div><button class="kt-btn kt-btn-primary" type="button" id="lock-picks" ${picks.locked ? 'disabled' : ''}>${picks.locked ? 'Picks locked' : 'Lock weekly picks'}</button>` : `<div class="kt-pick-results"><strong>${picks.graded ? `${picks.correct} correct · ${picks.points} points` : 'This week is in the books'}</strong><p class="kt-muted">${picks.graded ? 'Your graded picks and confidence points are locked into the local leaderboard.' : 'Completed games lock automatically. Make your picks before kickoff next week.'}</p></div>`}<div class="kt-pickem-lower"><div><h4>League leaderboard</h4><table><thead><tr><th>Manager</th><th>Points</th><th>H2H</th></tr></thead><tbody>${leaderboard.map(row => `<tr${row.local ? ' class="is-you"' : ''}><td>${escapeHtml(row.name)}</td><td>${row.points}</td><td>${row.record}</td></tr>`).join('')}</tbody></table></div><div class="kt-manager-record"><h4>Head-to-head</h4><p><strong>${escapeHtml(state.manager || 'You')}</strong> vs Alex</p><span>3–2 this season · Local preview</span></div></div></section>`;
+  }).join('')}</div><button class="kt-btn kt-btn-primary" type="button" id="lock-picks" ${picks.locked ? 'disabled' : ''}>${picks.locked ? 'Picks locked' : 'Lock weekly picks'}</button>` : `<div class="kt-pick-results"><strong>${picks.graded ? `${picks.correct} correct · ${picks.points} points` : 'This week is in the books'}</strong><p class="kt-muted">${picks.graded ? 'Your graded picks and confidence points are locked into the local leaderboard.' : 'Completed games lock automatically. Make your picks before kickoff next week.'}</p></div>`}<div class="kt-pickem-lower"><div><h4>League leaderboard</h4><table><thead><tr><th>Manager</th><th>Points</th><th>H2H</th></tr></thead><tbody>${leaderboard.map(row => `<tr${row.local ? ' class="is-you"' : ''}><td>${escapeHtml(row.name)}</td><td>${Number(row.points).toFixed(1)}</td><td>${escapeHtml(row.record)}</td></tr>`).join('')}</tbody></table></div><div class="kt-manager-record"><h4>Head-to-head</h4>${headToHead}</div></div></section>`;
 }
 
 function badgesMarkup() {
@@ -483,5 +555,6 @@ export function mountGamification() {
     if (games.length && state.actions.scores === 0) trackAction('scores');
     if (clubhouse) renderClubhouse();
   });
+  loadLeagueRecords();
   window.addEventListener('kt:action', event => trackAction(event.detail.type, event.detail));
 }

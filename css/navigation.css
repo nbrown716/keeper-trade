@@ -106,8 +106,8 @@
 }
 
 @media (max-width: 48rem) {
-  .kt-site-header-inner { min-height: 3.75rem; }
-  .kt-site-brand { font-size: 1.125rem; }
+  .kt-site-header-inner { min-height: 3.75rem; gap: var(--kt-space-2); }
+  .kt-site-brand { gap: var(--kt-space-2); font-size: 1.125rem; }
   .kt-site-mark { width: 2rem; height: 2rem; }
   .kt-command-trigger { min-width: var(--kt-tap); width: var(--kt-tap); padding: 0; justify-content: center; }
   .kt-command-trigger > span:not(.kt-key) { display: none; }

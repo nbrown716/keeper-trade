@@ -1,7 +1,7 @@
 import { liveData } from './live-data.js';
 
 export const SCOREBOARD_SOURCE = 'nfl-scoreboard';
-const scoreboardBase = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
+const scoreboardBase = 'https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/scoreboard';
 
 function localDateString(date = new Date()) {
   const year = date.getFullYear();
@@ -64,7 +64,7 @@ export function isDebugDate() {
 export function summarySource(gameId) {
   const key = `nfl-summary:${gameId}`;
   liveData.register(key, {
-    url: `https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${gameId}`,
+    url: `https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/summary?event=${gameId}`,
     cadence: data => {
       const state = data?.header?.competitions?.[0]?.status?.type?.state;
       return state === 'in' ? 30000 : 300000;

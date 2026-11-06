@@ -42,14 +42,25 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 }
 
+function sanitizeLayout(saved) {
+  if (!Array.isArray(saved)) return null;
+  const seen = new Set();
+  const clean = [];
+  saved.forEach(item => {
+    if (!item || typeof item !== 'object' || !definitions.some(definition => definition.id === item.id) || seen.has(item.id)) return;
+    seen.add(item.id);
+    clean.push({ id: item.id, size: sizes.includes(item.size) ? item.size : 'medium' });
+  });
+  return clean.length || !saved.length ? clean : null;
+}
+
 function loadLayout() {
   const fallback = definitions.map(({ id, size }) => ({ id, size }));
   try {
-    const current = JSON.parse(localStorage.getItem(LAYOUT_KEY));
-    if (Array.isArray(current)) return current.filter(item => definitions.some(definition => definition.id === item.id)).map(item => ({ id: item.id, size: sizes.includes(item.size) ? item.size : 'medium' }));
-    const previous = JSON.parse(localStorage.getItem(PREVIOUS_LAYOUT_KEY));
-    if (!Array.isArray(previous)) return fallback;
-    const migrated = previous.filter(item => definitions.some(definition => definition.id === item.id)).map(item => ({ id: item.id, size: sizes.includes(item.size) ? item.size : 'medium' }));
+    const current = sanitizeLayout(JSON.parse(localStorage.getItem(LAYOUT_KEY)));
+    if (current) return current;
+    const migrated = sanitizeLayout(JSON.parse(localStorage.getItem(PREVIOUS_LAYOUT_KEY)));
+    if (!migrated) return fallback;
     if (!migrated.some(item => item.id === 'weather')) migrated.splice(migrated.findIndex(item => item.id === 'scores') + 1, 0, { id: 'weather', size: 'large' });
     return migrated;
   } catch (_) { return fallback; }
@@ -60,10 +71,12 @@ function saveLayout() {
 }
 
 function watchlist() {
+  const fallback = ['Jaxon Smith-Njigba', 'Jahmyr Gibbs', 'Drake London'];
   try {
     const saved = JSON.parse(localStorage.getItem(WATCHLIST_KEY));
-    return Array.isArray(saved) ? saved : ['Jaxon Smith-Njigba', 'Jahmyr Gibbs', 'Drake London'];
-  } catch (_) { return ['Jaxon Smith-Njigba', 'Jahmyr Gibbs', 'Drake London']; }
+    if (!Array.isArray(saved)) return fallback;
+    return [...new Set(saved.filter(item => typeof item === 'string').map(item => item.trim()).filter(Boolean))].slice(0, 50);
+  } catch (_) { return fallback; }
 }
 
 function saveWatchlist(players) {
@@ -160,7 +173,10 @@ function renderMovers(snapshot = {}) {
   const body = grid?.querySelector('[data-widget-body="movers"]');
   if (!body) return;
   const players = dealerMovers(snapshot.data, 4);
-  if (!players.length) { body.innerHTML = skeleton(); return; }
+  if (!players.length) {
+    body.innerHTML = ['loading', 'refreshing'].includes(snapshot.status) ? skeleton() : emptyState('↗', 'Market feed reconnecting', 'Trade values will refresh automatically. Your calculators and saved research remain ready.');
+    return;
+  }
   body.innerHTML = `<span class="kt-widget-label">Dynasty Dealer · Current vs base</span>${players.map(player => `<div class="kt-mover-row"><div><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(player.position)} · ${escapeHtml(player.team)}</span></div><span class="kt-num">${player.value.toLocaleString()}</span><b class="kt-delta ${player.change >= 0 ? 'kt-delta-up' : 'kt-delta-down'}">${player.change >= 0 ? '+' : ''}${player.change.toFixed(1)}%</b></div>`).join('')}`;
 }
 
@@ -228,7 +244,7 @@ function renderGrid() {
   if (!grid) return;
   grid.innerHTML = layout.map(item => {
     const definition = definitions.find(entry => entry.id === item.id);
-    return `<article class="kt-widget size-${item.size}" data-widget="${item.id}"><header class="kt-widget-head"><span class="kt-widget-handle" aria-hidden="true">⠿</span><h3>${definition.name}</h3><div class="kt-widget-controls"><button type="button" data-resize="${item.id}" aria-label="Resize ${definition.name}">↔</button><button type="button" data-remove="${item.id}" aria-label="Remove ${definition.name}">×</button></div></header><div class="kt-widget-body" data-widget-body="${item.id}">${skeleton()}</div></article>`;
+    return `<article class="kt-widget size-${item.size}" data-widget="${item.id}"><header class="kt-widget-head"><button class="kt-widget-handle" type="button" data-drag-handle="${item.id}" aria-label="Move ${definition.name} widget. Use arrow keys to reorder" tabindex="${editing ? '0' : '-1'}">⠿</button><h3>${definition.name}</h3><div class="kt-widget-controls"><button type="button" data-resize="${item.id}" aria-label="Resize ${definition.name}">↔</button><button type="button" data-remove="${item.id}" aria-label="Remove ${definition.name}">×</button></div></header><div class="kt-widget-body" data-widget-body="${item.id}">${skeleton()}</div></article>`;
   }).join('') || emptyState('▦', 'A blank playbook', 'Use Add widget to build your ideal Sunday dashboard.');
   grid.classList.toggle('is-editing', editing);
   renderAll();
@@ -241,12 +257,17 @@ function renderGrid() {
 function setEditing(value) {
   editing = value;
   grid.classList.toggle('is-editing', editing);
+  grid.querySelectorAll('.kt-widget-handle').forEach(handle => { handle.tabIndex = editing ? 0 : -1; });
   section.querySelector('#widget-edit').textContent = editing ? 'Done' : 'Customize';
   section.querySelector('#widget-edit').setAttribute('aria-pressed', String(editing));
 }
 
+function widgetPositions() {
+  return new Map([...grid.querySelectorAll('.kt-widget:not(.kt-widget-placeholder)')].map(card => [card.dataset.widget, card.getBoundingClientRect()]));
+}
+
 function animateReordered(before) {
-  const after = new Map([...grid.querySelectorAll('.kt-widget')].map(card => [card.dataset.widget, card.getBoundingClientRect()]));
+  const after = widgetPositions();
   after.forEach((rect, id) => {
     const previous = before.get(id);
     if (!previous) return;
@@ -258,12 +279,39 @@ function animateReordered(before) {
   });
 }
 
+function updateDropTarget(x = drag?.clientX, y = drag?.clientY) {
+  if (!drag) return;
+  let target = document.elementFromPoint(x, y)?.closest('.kt-widget');
+  if (target?.classList.contains('kt-widget-placeholder')) target = null;
+  if (drag.target === target) return;
+  drag.target?.classList.remove('is-drop-target');
+  drag.target = target || null;
+  drag.targetId = target?.dataset.widget || '';
+  drag.target?.classList.add('is-drop-target');
+}
+
+function updateDragScroll() {
+  if (!drag) return;
+  drag.frame = 0;
+  const edge = 72;
+  const distance = drag.clientY < edge ? drag.clientY - edge : drag.clientY > window.innerHeight - edge ? drag.clientY - window.innerHeight + edge : 0;
+  if (!distance) return;
+  window.scrollBy(0, Math.max(-14, Math.min(14, distance / 4)));
+  updateDropTarget();
+  drag.frame = requestAnimationFrame(updateDragScroll);
+}
+
 function finishDrag(event) {
   if (!drag) return;
-  const { card, id, before } = drag;
-  card.releasePointerCapture?.(event.pointerId);
-  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.kt-widget');
-  const targetId = target?.dataset.widget;
+  const current = drag;
+  const { card, id, before, placeholder } = current;
+  cancelAnimationFrame(current.frame);
+  if (event.type !== 'pointercancel') updateDropTarget(event.clientX, event.clientY);
+  const targetId = event.type === 'pointercancel' ? '' : current.targetId;
+  current.target?.classList.remove('is-drop-target');
+  placeholder.remove();
+  if (card.hasPointerCapture?.(event.pointerId)) card.releasePointerCapture(event.pointerId);
+  drag = null;
   if (targetId && targetId !== id) {
     const from = layout.findIndex(item => item.id === id);
     const to = layout.findIndex(item => item.id === targetId);
@@ -271,7 +319,6 @@ function finishDrag(event) {
     layout.splice(to, 0, moved);
     saveLayout();
   }
-  drag = null;
   renderGrid();
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) animateReordered(before);
 }
@@ -279,39 +326,77 @@ function finishDrag(event) {
 function mountDragAndLongPress() {
   grid.addEventListener('pointerdown', event => {
     const card = event.target.closest('.kt-widget');
-    if (!card || event.target.closest('button, a, input, select')) return;
+    const handle = event.target.closest('.kt-widget-handle');
+    if (!card || event.target.closest('a, input, select') || (event.target.closest('button') && !handle)) return;
     const id = card.dataset.widget;
-    if (editing && event.target.closest('.kt-widget-handle')) {
+    if (editing && handle) {
       event.preventDefault();
       const rect = card.getBoundingClientRect();
-      const before = new Map([...grid.querySelectorAll('.kt-widget')].map(item => [item.dataset.widget, item.getBoundingClientRect()]));
-      drag = { card, id, before, startX: event.clientX, startY: event.clientY, left: rect.left, top: rect.top };
+      const before = widgetPositions();
+      const placeholder = document.createElement('div');
+      placeholder.className = `kt-widget kt-widget-placeholder ${[...card.classList].find(name => name.startsWith('size-')) || ''}`;
+      placeholder.style.height = `${rect.height}px`;
+      placeholder.setAttribute('aria-hidden', 'true');
+      card.before(placeholder);
+      drag = { card, id, before, placeholder, startX: event.clientX, startY: event.clientY, clientX: event.clientX, clientY: event.clientY, target: null, targetId: '', frame: 0 };
       card.setPointerCapture(event.pointerId);
       card.classList.add('is-dragging');
-      Object.assign(card.style, { width: `${rect.width}px`, left: `${rect.left}px`, top: `${rect.top}px` });
+      Object.assign(card.style, { width: `${rect.width}px`, left: `${rect.left}px`, top: `${rect.top}px`, transform: 'translate3d(0, 0, 0)' });
       return;
     }
     if (!editing) {
-      const timer = window.setTimeout(() => setEditing(true), 550);
-      const cancel = () => { clearTimeout(timer); window.removeEventListener('pointerup', cancel); window.removeEventListener('pointermove', cancel); };
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const cancel = () => {
+        clearTimeout(timer);
+        window.removeEventListener('pointerup', cancel);
+        window.removeEventListener('pointercancel', cancel);
+        window.removeEventListener('pointermove', onMove);
+      };
+      const onMove = move => { if (Math.hypot(move.clientX - startX, move.clientY - startY) > 10) cancel(); };
+      const timer = window.setTimeout(() => { cancel(); setEditing(true); }, 550);
       window.addEventListener('pointerup', cancel, { once: true });
-      window.addEventListener('pointermove', cancel, { once: true });
+      window.addEventListener('pointercancel', cancel, { once: true });
+      window.addEventListener('pointermove', onMove, { passive: true });
     }
   });
   grid.addEventListener('pointermove', event => {
     if (!drag) return;
     event.preventDefault();
-    const { card, startX, startY, left, top } = drag;
-    card.style.left = `${left + event.clientX - startX}px`;
-    card.style.top = `${top + event.clientY - startY}px`;
+    drag.clientX = event.clientX;
+    drag.clientY = event.clientY;
+    drag.card.style.transform = `translate3d(${event.clientX - drag.startX}px, ${event.clientY - drag.startY}px, 0)`;
+    updateDropTarget();
+    if (!drag.frame) updateDragScroll();
   });
   grid.addEventListener('pointerup', finishDrag);
   grid.addEventListener('pointercancel', finishDrag);
+  grid.addEventListener('keydown', event => {
+    const handle = event.target.closest('[data-drag-handle]');
+    if (!editing || !handle) return;
+    const id = handle.dataset.dragHandle;
+    const from = layout.findIndex(item => item.id === id);
+    let to = from;
+    if (['ArrowLeft', 'ArrowUp'].includes(event.key)) to = from - 1;
+    else if (['ArrowRight', 'ArrowDown'].includes(event.key)) to = from + 1;
+    else if (event.key === 'Home') to = 0;
+    else if (event.key === 'End') to = layout.length - 1;
+    else return;
+    if (to < 0 || to >= layout.length || to === from) return;
+    event.preventDefault();
+    const before = widgetPositions();
+    const [moved] = layout.splice(from, 1);
+    layout.splice(to, 0, moved);
+    saveLayout();
+    renderGrid();
+    grid.querySelector(`[data-drag-handle="${id}"]`)?.focus();
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) animateReordered(before);
+  });
   grid.addEventListener('click', event => {
     const remove = event.target.closest('[data-remove]');
     const resize = event.target.closest('[data-resize]');
     if (remove) {
-      const before = new Map([...grid.querySelectorAll('.kt-widget')].map(item => [item.dataset.widget, item.getBoundingClientRect()]));
+      const before = widgetPositions();
       layout = layout.filter(item => item.id !== remove.dataset.remove);
       saveLayout();
       renderGrid();
@@ -322,6 +407,7 @@ function mountDragAndLongPress() {
       item.size = sizes[(sizes.indexOf(item.size) + 1) % sizes.length];
       saveLayout();
       renderGrid();
+      grid.querySelector(`[data-resize="${item.id}"]`)?.focus();
     }
   });
 }
