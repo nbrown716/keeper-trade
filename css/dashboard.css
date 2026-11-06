@@ -15,9 +15,8 @@
 .kt-widget-controls { display: none; margin-left: auto; gap: var(--kt-space-1); }
 .kt-widget-controls button { display: grid; width: var(--kt-tap); height: var(--kt-tap); place-items: center; border: 1px solid var(--kt-border); border-radius: 50%; background: var(--kt-surface-2); color: var(--kt-text-secondary); cursor: pointer; }
 .kt-widget-controls button:hover { border-color: var(--kt-live); color: var(--kt-live); }
-.is-editing .kt-widget { animation: kt-widget-wiggle 360ms ease-in-out infinite alternate; }
-.is-editing .kt-widget:nth-child(2n) { animation-direction: alternate-reverse; }
-.is-editing .kt-widget:hover, .is-editing .kt-widget:focus-within, .is-editing .kt-widget.is-drop-target { animation-play-state: paused; }
+.is-editing .kt-widget-handle { animation: kt-handle-pulse 1.2s ease-in-out infinite alternate; }
+.is-editing .kt-widget:nth-child(2n) .kt-widget-handle { animation-direction: alternate-reverse; }
 .is-editing .kt-widget-handle, .is-editing .kt-widget-controls { display: flex; }
 .kt-widget.is-dragging { position: fixed; z-index: 1000; margin: 0; box-shadow: var(--kt-shadow-lg); cursor: grabbing; opacity: 0.94; pointer-events: none; animation: none; will-change: transform; }
 .kt-widget-placeholder { border: 1px dashed var(--kt-border); background: var(--kt-surface-2); box-shadow: none; animation: none; }
@@ -77,7 +76,7 @@
 .kt-news-row > span { color: var(--kt-secondary); }
 .kt-news-row:hover strong { color: var(--kt-accent); }
 
-@keyframes kt-widget-wiggle { from { transform: rotate(-0.35deg); } to { transform: rotate(0.35deg); } }
+@keyframes kt-handle-pulse { from { opacity: 0.45; } to { opacity: 1; } }
 @keyframes kt-countdown-glow { from { opacity: 0.55; } to { opacity: 1; } }
 
 @media (max-width: 64rem) {
@@ -96,5 +95,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .is-editing .kt-widget, .kt-countdown-track span { animation: none; }
+  .is-editing .kt-widget-handle, .kt-countdown-track span { animation: none; }
 }

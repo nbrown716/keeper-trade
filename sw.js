@@ -1,4 +1,4 @@
-const CACHE = 'keeper-trade-shell-v52';
+const CACHE = 'keeper-trade-shell-v53';
 const SHELL = [
   './', './index.html', './offline.html', './command.html', './game.html', './drive.html', './sunday.html', './war-room.html', './mock-draft.html', './season-sim.html', './pulse.html', './keeper.html', './redraft.html', './rankings.html', './research.html', './tools.html',
   './css/design-system.css', './css/navigation.css', './css/home.css', './css/score-ticker.css', './css/gamification.css', './css/dashboard.css', './css/league.css', './css/trade-desk.css', './css/game-day.css', './css/roast.css', './css/weather.css', './css/drive.css', './css/sunday.css', './css/mascot.css', './css/war-room.css', './css/mock-draft.css', './css/season-sim.css', './css/pulse.css',
