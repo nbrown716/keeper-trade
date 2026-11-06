@@ -1,4 +1,4 @@
-const CACHE = 'keeper-trade-shell-v54';
+const CACHE = 'keeper-trade-shell-v55';
 const SHELL = [
   './', './index.html', './offline.html', './command.html', './game.html', './drive.html', './sunday.html', './war-room.html', './mock-draft.html', './season-sim.html', './pulse.html', './keeper.html', './redraft.html', './rankings.html', './research.html', './tools.html',
   './css/design-system.css', './css/navigation.css', './css/home.css', './css/score-ticker.css', './css/gamification.css', './css/dashboard.css', './css/league.css', './css/trade-desk.css', './css/game-day.css', './css/roast.css', './css/weather.css', './css/drive.css', './css/sunday.css', './css/mascot.css', './css/war-room.css', './css/mock-draft.css', './css/season-sim.css', './css/pulse.css',
@@ -29,7 +29,13 @@ self.addEventListener('fetch', event => {
       const copy = response.clone();
       caches.open(CACHE).then(cache => cache.put(request, copy));
       return response;
-    }).catch(async () => (await caches.match(request, { ignoreSearch: true })) || (await caches.match('./index.html', { ignoreSearch: true })) || caches.match('./offline.html', { ignoreSearch: true })));
+    }).catch(async () => {
+      if (url.pathname.endsWith('/index.html')) {
+        const canonicalHome = await caches.match('./', { ignoreSearch: true });
+        if (canonicalHome) return canonicalHome;
+      }
+      return (await caches.match(request, { ignoreSearch: true })) || (await caches.match('./index.html', { ignoreSearch: true })) || caches.match('./offline.html', { ignoreSearch: true });
+    }));
     return;
   }
   event.respondWith(caches.match(request, { ignoreSearch: true }).then(cached => cached || fetch(request).then(response => {
