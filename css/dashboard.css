@@ -2,6 +2,7 @@
 .kt-dashboard-actions select { max-width: 10rem; min-height: var(--kt-tap); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-md); background: var(--kt-surface-1); color: var(--kt-text-primary); font-size: var(--kt-text-xs); }
 .kt-dashboard-hint { margin-top: var(--kt-space-3); color: var(--kt-text-muted); font-size: var(--kt-text-xs); }
 .kt-widget-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--kt-space-4); align-items: start; }
+.kt-widget, .kt-widget-handle, .kt-widget-controls button { scroll-margin-top: 10rem; }
 .kt-widget { position: relative; min-width: 0; min-height: 15rem; padding: var(--kt-space-4); border: 1px solid var(--kt-border-subtle); border-radius: var(--kt-radius-lg); background: var(--kt-surface-1); box-shadow: var(--kt-shadow-sm); transition: border-color var(--kt-duration-micro) ease, box-shadow var(--kt-duration-micro) ease; }
 .kt-widget.size-small { grid-column: span 3; }
 .kt-widget.size-medium { grid-column: span 6; }
