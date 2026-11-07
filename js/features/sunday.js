@@ -1,4 +1,5 @@
 import { liveData } from '../data/live-data.js';
+import { getPlayerBaselines } from '../data/player-baselines.js';
 import { friendlyError } from '../ui/friendly-error.js';
 import { SCOREBOARD_SOURCE, normalizeGames, summarySource, normalizeSummary } from '../data/espn.js';
 import { getSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner } from '../data/sleeper.js';
@@ -25,7 +26,7 @@ let weatherCleanup = () => {};
 let weatherKey = '';
 let bundle;
 let playerMap = new Map();
-let projections = new Map();
+let baselines = null;
 let matchup;
 let opponent;
 let rosterId;
@@ -60,10 +61,10 @@ function opponentStarters() {
   return (opponent?.starters || []).filter(id => id !== '0').map(id => playerMap.get(id)).filter(Boolean);
 }
 
+// Baseline = the player's points per game this season in this league's scoring (live from Sleeper, min 2 games).
 function weeklyProjection(player) {
-  const season = projections.get(`${normalizeName(player.name)}:${player.team}`) || projections.get(normalizeName(player.name));
-  const value = Number(season?.proj);
-  return Number.isFinite(value) && value > 0 ? value / 17 : null;
+  const baseline = baselines?.players.get(String(player.id));
+  return baseline && baseline.games >= 2 ? baseline.mean : null;
 }
 
 function fantasyEdge(game) {
@@ -72,7 +73,7 @@ function fantasyEdge(game) {
   const projection = players.reduce((sum, player) => sum + (weeklyProjection(player) || 0), 0);
   const hasProjection = players.some(player => weeklyProjection(player) !== null);
   const delta = points - projection;
-  return `<div class="kt-fantasy-edge${players.length ? '' : ' is-empty'}" title="Weekly baseline: season projection divided by 17"><span>YOUR GUYS</span><strong class="kt-num">${players.length ? points.toFixed(1) : '—'}</strong>${hasProjection ? `<b class="${delta >= 0 ? 'kt-delta-up' : 'kt-delta-down'}">${delta >= 0 ? '+' : ''}${delta.toFixed(1)} vs proj</b>` : '<small>PROJ —</small>'}</div>`;
+  return `<div class="kt-fantasy-edge${players.length ? '' : ' is-empty'}" title="Baseline: each player's points per game this season in your league's scoring"><span>YOUR GUYS</span><strong class="kt-num">${players.length ? points.toFixed(1) : '—'}</strong>${hasProjection ? `<b class="${delta >= 0 ? 'kt-delta-up' : 'kt-delta-down'}">${delta >= 0 ? '+' : ''}${delta.toFixed(1)} vs avg</b>` : '<small>AVG —</small>'}</div>`;
 }
 
 function weatherMarkup(game) {
@@ -294,6 +295,7 @@ async function loadLeague() {
     opponent = bundle.matchups.find(entry => entry.matchup_id === matchup?.matchup_id && entry.roster_id !== rosterId);
     previousPlayerPoints = new Map(userStarters().map(player => [player.id, Number(matchup.players_points?.[player.id] || 0)]));
     scheduleRender();
+    getPlayerBaselines(id, players).then(result => { baselines = result; scheduleRender(); }).catch(() => {});
   } catch (error) {
     document.querySelector('#sunday-league-note').textContent = friendlyError(error, 'League overlays are unavailable right now. Live scores still work.');
   } finally {
@@ -353,11 +355,6 @@ liveData.subscribe(SCOREBOARD_SOURCE, snapshot => {
   scoreStatus = snapshot.data ? 'live' : snapshot.status;
   syncSummaries();
   syncWeather();
-  scheduleRender();
-});
-liveData.register('sunday-projections', { url: new URL('../../fp-data.json', import.meta.url).href, cadence: 86400000 });
-liveData.subscribe('sunday-projections', snapshot => {
-  projections = new Map((snapshot.data?.players || []).flatMap(player => [[`${normalizeName(player.n)}:${player.t}`, player], [normalizeName(player.n), player]]));
   scheduleRender();
 });
 loadLeague();

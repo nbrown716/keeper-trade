@@ -102,8 +102,27 @@ async def main():
             await pg.wait_for_timeout(250)
         picks = await pg.evaluate("document.querySelectorAll('#draft-board [data-pick], #draft-board .kt-draft-pick, #draft-board .is-picked').length")
         grades = await pg.locator('#draft-grades .kt-grade-card').count()
-        check(grades == 12, f'offline local-ECR mock draft completes with 12 grades (board cells {picks})')
+        # Owner rule: live values only, no frozen exports. Cold cache + every API down = honest reconnect state.
+        stage = await pg.inner_text('#draft-stage')
+        check(grades == 0 and 'draft room reconnecting' in stage.lower() and await pg.locator('#draft-retry').count() == 1, f'cold offline: honest reconnect state with Retry, no stale board ("{stage[:60]}")')
         check(not errs, f'mock draft no page errors {errs[:2]}')
+        await c.close()
+        # Warm cache: one online visit, then every API down -> the draft runs on the last live values, labelled
+        c = await ctx_for(b, mobile=False, league=False, down=False); pg = await c.new_page()
+        await pg.route(re.compile(r'https://www\.dynastydealer\.com/.*'), lambda r: r.abort())
+        await pg.goto(BASE + 'mock-draft.html'); await pg.wait_for_timeout(5000)
+        await pg.unroute(re.compile(r'https://www\.dynastydealer\.com/.*'))
+        await c.route(re.compile(r'^https?://(?!127\.0\.0\.1).*'), lambda r: r.abort())
+        await pg.reload(); await pg.wait_for_timeout(3000)
+        label = await pg.inner_text('#draft-available-count')
+        await pg.select_option('#draft-speed', '12')
+        for _ in range(240):
+            if await pg.locator('#draft-grades .kt-grade-card').count(): break
+            btn = pg.locator('#draft-stage [data-draft-player]')
+            if await btn.count(): await btn.first.click()
+            await pg.wait_for_timeout(250)
+        grades = await pg.locator('#draft-grades .kt-grade-card').count()
+        check(grades == 12 and 'FantasyCalc' in label and 'ECR' not in label, f'warm offline: mock draft completes on cached live values with an honest label ({grades} grades, "{label}")')
         await c.close()
 
         # ---------------- Offline service worker v56 ----------------

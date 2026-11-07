@@ -110,11 +110,18 @@
   button:active:not(:disabled),.tab:active,[role=button]:active{transform:scale(.96);transition:transform 90ms ease-out}
   @media (prefers-reduced-motion:reduce){button:active,.tab:active,[role=button]:active{transform:none}}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="stylesheet" href="css/navigation.css?v=2">
+<link rel="stylesheet" href="css/kt-shell.css">
+
 </head>
-<body>
+<body class="kt-shell-body" data-kt-active="tools">
 <header class="site-header">
   <div class="wrap">
-    <a class="logo" href="index.html">🏈 <span>GRID<span class="lg">IRON</span></span></a>
+    <a class="logo" href="index.html"><span>Keeper <span class="lg">Trade</span></span></a>
     <nav class="site-nav" id="nav">
       <a href="index.html">Home</a><a href="keeper.html">Keeper</a><a href="redraft.html">Redraft</a>
       <a href="rankings.html">Rankings</a><a href="tools.html" class="on">Tools</a><a href="research.html">Research</a>
@@ -168,7 +175,7 @@
     <div id="depth"><div class="skel">Pick a team to load its roster.</div></div>
   </section>
 
-  <p class="foot-note"><b>GRIDIRON Tools</b> — pick values are a model (not gospel); rosters via ESPN. Free, no login, on any device.</p>
+  <p class="foot-note"><b>Keeper Trade Tools</b> — pick values are a model (not gospel); rosters via ESPN. Free, no login, on any device.</p>
 </main>
 
 <script>
@@ -348,6 +355,7 @@
   adpLoaded=true; loadADP();
 })();
 </script>
+<script type="module" src="js/ui/kt-shell.js"></script>
 <script type="module" src="js/pwa.js"></script>
 </body>
 </html>

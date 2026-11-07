@@ -200,17 +200,23 @@ function shareGrades() {
   link.click();
 }
 
+// Fallback board when Dynasty Dealer is unreachable: FantasyCalc redraft values, scaled to 0-10,000. Read through
+// LiveData, so offline it uses the last live values this device fetched (never a frozen export). A device that has
+// never been online gets the honest "reconnecting" state instead of a stale board.
+const FC_REDRAFT = 'fantasycalc-redraft-values';
+liveData.register(FC_REDRAFT, { url: 'https://api.fantasycalc.com/values/current?isDynasty=false&numQbs=1&numTeams=12&ppr=1', cadence: 1800000 });
 async function localDraftPool() {
-  const response = await fetch('fp-data.json');
-  if (!response.ok) throw new Error('Local draft board unavailable');
-  const data = await response.json();
-  return (data.players || []).filter(player => ['QB', 'RB', 'WR', 'TE'].includes(player.pos) && player.n && Number(player.ecr) > 0).map(player => ({
-    id: String(player.id),
-    name: player.n,
-    position: player.pos,
-    team: player.t || 'FA',
+  const data = await liveData.get(FC_REDRAFT);
+  if (!Array.isArray(data) || !data.length) throw new Error('Draft board unavailable');
+  const rows = data.filter(row => ['QB', 'RB', 'WR', 'TE'].includes(String(row.player?.position || '').toUpperCase()) && row.player?.name);
+  const top = Math.max(1, ...rows.map(row => Number(row.value || 0)));
+  return rows.map(row => ({
+    id: String(row.player.sleeperId || row.player.espnId || row.player.name),
+    name: row.player.name,
+    position: String(row.player.position).toUpperCase(),
+    team: row.player.maybeTeam || 'FA',
     injury: '',
-    dealerValue: Math.max(100, Math.round(10000 * (1 - Math.log10(Number(player.ecr)) / 3)))
+    dealerValue: Math.max(100, Math.round(10000 * Number(row.value || 0) / top))
   }));
 }
 
@@ -238,7 +244,8 @@ async function init() {
     let sourceLabel = 'Dynasty Dealer · market board';
     if (!players.length) {
       players = await localDraftPool();
-      sourceLabel = 'Local ECR board · live market offline';
+      const age = Date.now() - (liveData.sources.get(FC_REDRAFT)?.updatedAt || Date.now());
+      sourceLabel = age < 5 * 60000 ? 'FantasyCalc · live market board' : `FantasyCalc · values from ${age < 3600000 ? `${Math.round(age / 60000)} min` : age < 172800000 ? `${Math.round(age / 3600000)} h` : `${Math.round(age / 86400000)} days`} ago`;
     }
     if (initGeneration !== generation) return;
     pool = players;
@@ -267,7 +274,7 @@ async function init() {
     startClock();
   } catch (_) {
     if (initGeneration !== generation) return;
-    document.querySelector('#draft-stage').innerHTML = '<div class="kt-draft-complete"><h2>Draft room reconnecting</h2><p>The live player feeds and bundled draft board are unavailable. Check your connection and retry; your other tools are still ready.</p><button class="kt-btn kt-btn-primary" type="button" id="draft-retry">Retry draft</button></div>';
+    document.querySelector('#draft-stage').innerHTML = '<div class="kt-draft-complete"><h2>Draft room reconnecting</h2><p>Mock Draft runs on live player values, and none are reachable yet. Connect once and the board is saved for offline drafts. Your other tools are still ready.</p><button class="kt-btn kt-btn-primary" type="button" id="draft-retry">Retry draft</button></div>';
     document.querySelector('#draft-retry').addEventListener('click', init, { once: true });
   }
 }

@@ -80,7 +80,7 @@ async def main():
         errors = []; pg.on('pageerror', lambda e: errors.append(str(e)))
         await c.route('https://keeper-trade-ai.nicholas-brown00.workers.dev/yahoo/**', handle)
         await c.route('https://api.sleeper.app/v1/players/nfl', lambda r: r.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}, body=json.dumps(SLEEPER_PLAYERS)))
-        await pg.goto('http://127.0.0.1:4173/offline.html')
+        await pg.goto(_os.environ.get('KT_BASE', 'http://127.0.0.1:4173/') + 'offline.html')
         out = await pg.evaluate("""async () => {
           const y = await import('/js/data/yahoo.js');
           const leagues = await y.listYahooLeagues();

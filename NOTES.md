@@ -526,6 +526,50 @@ Every failure this phase, its root cause, and the safeguard now in place:
 | Unlabelled scrollable table (axe) | `overflow-x` region not focusable | `tabindex=0` plus a labelled region. Matrix axe scans every route. |
 | Features suite failed on the SW version | The test hardcoded `v58` | The test reads the version from `sw.js`. Rule: never hardcode per-release values in tests. |
 
+### 2026-11-07 — Live values, Rankings rebuild, Gridiron retired, theme fix
+
+**Live values (owner rule: live sources only, ≤ 6 h)**
+
+The audit found three problems:
+- **Keeper:** half of every trade value came from a frozen DraftSharks CSV.
+- **Dynasty Dealer** (Trade Desk, trade wire, movers, mock draft, season sim) refreshed only every 24 h.
+- **Sunday "vs proj" and the mock-draft fallback** read a FantasyPros export from September.
+
+What changed:
+- **Keeper:** values = Dynasty Dealer (live, matched by Sleeper ID) + FantasyCalc (live).
+  - If Dealer is down, values fall back to FantasyCalc alone and the status says so.
+  - The seed is only an offline placeholder.
+  - Refreshes every 15 min while open, and on return if stale.
+  - Sacred functions are byte-identical.
+- **Redraft:** values expire after 15 min and refresh while open.
+- **Dealer cadence:** 24 h → 30 min.
+- **Sunday:** shows "vs avg", from the new `js/data/player-baselines.js`: each player's per-game average this season in the league's own scoring, from Sleeper matchups.
+- **Mock draft fallback:** FantasyCalc redraft values (live).
+- **`fp-data.json`:** dropped from code and the SW shell.
+
+**Rankings rebuilt in the Keeper Trade design**
+- Files: `rankings.html`, `js/features/rankings.js`, `css/rankings.css`.
+- Same FantasyCalc logic and the same Keeper blend.
+- The board defaults to the connected league's scoring (PPR / Half / Non, 1QB / SF).
+- "Your players" filter and "Yours" tags.
+- Skeleton rows, show-more paging, a sticky player column, and a 15-min live refresh.
+- Fixed: sr-only text inside the table widened the page to 700 px on phones.
+
+**Gridiron retired**
+- Tools and Research now use the shared Keeper Trade shell (`css/kt-shell.css` + `js/ui/kt-shell.js`), with their palettes mapped to KT tokens.
+- The hidden Redraft and Tools headers are rebranded.
+- `index-old.html`, `draft.html` and `kit.html` are now redirect stubs to their Keeper Trade replacements.
+- The footer "Original homepage fallback" link is removed.
+- Kept on purpose: `keeper-legacy.html` and `redraft-legacy.html`, which are unlinked sacred-math reference copies.
+
+**Theme fix (site-wide)**
+- 11 Keeper Trade pages never restored a saved light theme, so the matrix "light" run passed them trivially while they were still dark.
+- Each page now restores the theme in `<head>`.
+- The matrix now fails a page whose `data-theme` doesn't match the saved theme (`drive.html` excepted: deliberate cinema dark).
+- It also fails on layout-viewport growth on phones.
+
+**Tests:** new `tests/values_live.py` (18 checks, in the release gate). It checks the static source and cadence rules, Keeper/Redraft/Rankings 15-minute refetch with a fake clock, the honest Dealer-down status, Rankings filters, and baselines against an independent recomputation.
+
 ## Architecture summary
 
 - **UI:** static HTML + CSS tokens/components + ES modules; shared navigation, command palette, transitions, ticker, trade panels, game day, dashboard, clubhouse, league.

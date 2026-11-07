@@ -1,0 +1,29 @@
+/* Keeper Trade shell for pages that predate the design system (Tools, Research).
+   Swaps the retired GRIDIRON header for the shared Keeper Trade navigation and maps each page's own
+   color/font variables onto the Keeper Trade tokens, so the page looks and themes like every other page. */
+.kt-shell-body > .site-header,
+.kt-shell-body .mast .pagenav { display: none !important; }
+.kt-shell-body {
+  --bg: var(--kt-bg);
+  --surface: var(--kt-surface-1);
+  --surface-2: var(--kt-surface-2);
+  --ink: var(--kt-text-primary);
+  --ink-soft: var(--kt-text-secondary);
+  --ink-faint: var(--kt-text-muted);
+  --line: var(--kt-border);
+  --line-soft: var(--kt-border-subtle);
+  --gold: var(--kt-accent);
+  --gold-bright: var(--kt-accent);
+  --gold-wash: var(--kt-accent-soft);
+  --sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --cond: "Barlow Condensed", "Arial Narrow", sans-serif;
+  background: var(--kt-bg);
+  color: var(--kt-text-primary);
+  font-family: Inter, system-ui, sans-serif;
+  padding-bottom: 5rem; /* room for the mobile bottom navigation */
+}
+.kt-shell-body h1, .kt-shell-body .crumb, .kt-shell-body .brand h1 { font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 800; }
+/* text that sat on the old gold now sits on volt: keep it dark for contrast in both themes */
+.kt-shell-body .seg button[aria-pressed="true"], .kt-shell-body .pagenav a.on { color: var(--kt-on-accent); }
+:root[data-theme="light"] .kt-shell-body .kicker, :root[data-theme="light"] .kt-shell-body .ncard-cat { color: var(--kt-accent); }
+@media (min-width: 64rem) { .kt-shell-body { padding-bottom: 0; } }

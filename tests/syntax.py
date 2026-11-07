@@ -8,7 +8,7 @@ files = [p.replace(os.sep, '/')[len(ROOT)+1:] for p in glob.glob(ROOT + r"\js\**
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(); c = await b.new_context(service_workers='block'); pg = await c.new_page()
-        await pg.goto('http://127.0.0.1:4173/offline.html')
+        await pg.goto(_os.environ.get('KT_BASE', 'http://127.0.0.1:4173/') + 'offline.html')
         res = await pg.evaluate("""async files => { const out = {}; for (const f of files) {
             if (f.endsWith('sim.worker.js')) { try { new Worker('/' + f, { type: 'module' }); out[f]='ok-worker'; } catch(e) { out[f]=String(e); } continue; }
             try { await import('/' + f); out[f] = 'ok'; } catch (e) { out[f] = (e && e.name) + ': ' + (e && e.message); } } return out; }""", files)

@@ -1,7 +1,7 @@
 import { liveData } from './live-data.js';
 
 export const DEALER_SOURCE = 'dynasty-dealer-values';
-const DAY = 86400000;
+const REFRESH = 1800000; // 30 min: values move with votes and news; trades must never price off day-old data
 
 export function dealerSource(settings = {}) {
   const key = settings.format || settings.scoring || settings.superflex
@@ -13,7 +13,7 @@ export function dealerSource(settings = {}) {
   if (settings.superflex) params.set('sf', 'true');
   liveData.register(key, {
     url: `https://www.dynastydealer.com/api/player-values${params.size ? `?${params}` : ''}`,
-    cadence: DAY
+    cadence: REFRESH
   });
   return key;
 }

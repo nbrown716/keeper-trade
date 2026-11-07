@@ -149,7 +149,7 @@
 <body>
 <header class="site-header">
   <div class="wrap">
-    <a class="logo" href="index.html">🏈 <span>GRID<span class="lg">IRON</span></span></a>
+    <a class="logo" href="index.html"><span>Keeper <span class="lg">Trade</span></span></a>
     <nav class="site-nav" id="nav">
       <a href="index.html">Home</a>
       <a href="keeper.html">Keeper</a>
@@ -235,7 +235,7 @@
     e.innerHTML='<span class="dot"></span>'+(state==="live"?"Live · FantasyCalc":state==="loading"?"Loading…":"Offline — retry");}
   function photo(p){return p.espnId?head(p.espnId):(p.sleeperId?"https://sleepercdn.com/content/nfl/players/"+p.sleeperId+".jpg":"");}
 
-  function loadValues(){
+  function loadValues(force){
     var url=fcUrl(); setStatus("loading");
     var done=function(data){
       if(url!==fcUrl()) return; // a newer format was selected while this one loaded
@@ -247,9 +247,14 @@
       ["A","B"].forEach(function(sd){S.sides[sd].forEach(function(e){var np=byName[e.ref.name.toLowerCase()];if(np)e.ref=np;});});
       setStatus("live"); renderSide("A"); renderSide("B"); renderVerdict();
     };
-    if(cache[url]){done(cache[url]);return;}
-    jget(url).then(function(d){cache[url]=d;done(d);}).catch(function(){setStatus("offline");});
+    var hit=cache[url];
+    if(hit && force!==true && Date.now()-hit.at < VALUES_TTL){done(hit.data);return;}
+    jget(url).then(function(d){cache[url]={data:d,at:Date.now()};done(d);}).catch(function(){ if(hit) done(hit.data); setStatus("offline"); });
   }
+  // Values stay live on an open page: expire after 15 minutes, refresh while visible and on return.
+  var VALUES_TTL=15*60*1000;
+  setInterval(function(){ if(!document.hidden) loadValues(true); }, VALUES_TTL); // force: the timer can fire seconds before the cached copy turns 15 min old
+  document.addEventListener("visibilitychange",function(){ var hit=cache[fcUrl()]; if(!document.hidden && (!hit || Date.now()-hit.at>=VALUES_TTL)) loadValues(); });
 
   function valueOf(p){var v=p.val||0; if(S.tePrem&&p.pos==="TE")v*=1.15; return v;}
   function sideEffective(side){

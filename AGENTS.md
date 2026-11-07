@@ -64,6 +64,13 @@
 - Yahoo Fantasy (OAuth, NOT keyless): only through the Cloudflare Worker `/yahoo/*` routes. The browser holds a random session ID only; tokens stay in Worker KV. Always show "Fantasy data provided by Yahoo Fantasy" attribution. See `worker/DEPLOY.md`.
 - ESPN is reached through the Worker `/espn/*` proxy (direct browser calls fail CORS).
 
+## Live values rule (owner, 2026-11-07)
+
+- Every value that feeds a trade or a ranking must come from a **live, approved source**: FantasyCalc, Dynasty Dealer, or Sleeper.
+- Each such source refreshes at least every **6 hours**. Trade sources currently refresh every 15–30 minutes, including on an open page.
+- Never price trades or rankings off a manual export (CSV, `fp-data.json`). The DraftSharks seed in `keeper.html` is used only as an offline placeholder until live values arrive.
+- `tests/values_live.py` enforces this rule.
+
 ## Workflow rules
 
 1. Read `NOTES.md` before starting work — it's the project memory.

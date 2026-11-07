@@ -74,7 +74,7 @@ async def audit_route(browser, route, vname, viewport, mobile, report):
                 key = url.scheme + url.netloc + url.path
                 if key in seen_links: continue
                 seen_links.add(key)
-                if url.netloc in ('127.0.0.1:4173', ''):
+                if url.netloc in (M.BASE.split('/')[2], ''):
                     r = await page.request.get(BASE + url.path.lstrip('/'))
                     if r.status >= 400: issues.append(f'BROKEN LINK {label} -> {href} ({r.status})')
                 elif url.scheme not in ('https', 'mailto', 'sms', 'tel'): issues.append(f'INSECURE LINK {label} -> {href}')

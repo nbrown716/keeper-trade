@@ -6,7 +6,7 @@ from playwright.async_api import async_playwright
 import yahoo_test as Y  # reuse fixtures + mock handler
 
 CUR, PREV = '1370223929452433408', '1255694966676537344'
-BASE = 'http://127.0.0.1:4173/'
+BASE = _os.environ.get('KT_BASE', 'http://127.0.0.1:4173/')
 results = []
 def check(cond, msg): results.append((bool(cond), msg)); print(('PASS ' if cond else 'FAIL ') + msg)
 

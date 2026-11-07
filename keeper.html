@@ -366,14 +366,15 @@
   </section>
 
   <p class="foot-explain">
-    <b>How it reads your rules.</b> Each player has a <b>market value</b> (Full-PPR, 0–10,000 scale). Their <b>keeper value</b> adds the <b>surplus</b> of their contract: market value minus what it costs to keep them, summed over every season you still control them. Cost rises <b>one round earlier each year</b> until it would beat a 1st — a <code>2nd-round</code> keeper costs a 1st, a <code>1st-round</code> keeper costs a <b>1st + 3rd</b>, and that's where the ladder ends. So a stud you keep in the <code>10th</code> carries years of cheap surplus; a 1st-rounder carries almost none. The stamp compares keeper-adjusted totals against your <b>1,000-point</b> band: inside it, the trade auto-approves; outside, it goes to a league vote. <b>Player values</b> are a consensus of <b>DraftSharks 3D dynasty</b> (your CSV) and <b>FantasyCalc dynasty</b> (1QB, 12-team, pulled live), averaged and scaled to 10,000 — KTC tracks within a few points. <b>Draft picks</b> ride the <i>same</i> curve: unlike a rookie-only dynasty pick, a snake keeper pick drafts the best player still on the board once leaguewide keepers are gone, so a pick is worth the player you'd take with it — and the keeper cost you pay is that exact pick value. Adjust "keepers off board" to match how many studs your league locks up. Click any value to override toward your own board.
+    <b>How it reads your rules.</b> Each player has a <b>market value</b> (Full-PPR, 0–10,000 scale). Their <b>keeper value</b> adds the <b>surplus</b> of their contract: market value minus what it costs to keep them, summed over every season you still control them. Cost rises <b>one round earlier each year</b> until it would beat a 1st — a <code>2nd-round</code> keeper costs a 1st, a <code>1st-round</code> keeper costs a <b>1st + 3rd</b>, and that's where the ladder ends. So a stud you keep in the <code>10th</code> carries years of cheap surplus; a 1st-rounder carries almost none. The stamp compares keeper-adjusted totals against your <b>1,000-point</b> band: inside it, the trade auto-approves; outside, it goes to a league vote. <b>Player values</b> are a consensus of <b>Dynasty Dealer</b> and <b>FantasyCalc dynasty</b> (1QB, 12-team), both pulled live and refreshed every 15 minutes, averaged and scaled to 10,000 — KTC tracks within a few points. <b>Draft picks</b> ride the <i>same</i> curve: unlike a rookie-only dynasty pick, a snake keeper pick drafts the best player still on the board once leaguewide keepers are gone, so a pick is worth the player you'd take with it — and the keeper cost you pay is that exact pick value. Adjust "keepers off board" to match how many studs your league locks up. Click any value to override toward your own board.
   </p>
 </div>
 
 <script>
 (function(){
   "use strict";
-  // --- Source 1: DraftSharks "3D Value" dynasty (from your crouchh-fanclub-keeper-rankings.csv), 0-100 ---
+  // --- Offline seed only: last DraftSharks "3D Value" export (0-100). Shown until live values arrive and used
+  // only if BOTH live sources are unreachable. Live: Dynasty Dealer + FantasyCalc (see fetchLive). ---
   var DS = [
     ["Jahmyr Gibbs","RB","DET",100],["Jaxon Smith-Njigba","WR","SEA",79],["Ja'Marr Chase","WR","CIN",78.7],
     ["Kenneth Walker III","RB","KC",78],["Christian McCaffrey","RB","SF",77],["Amon-Ra St. Brown","WR","DET",76.1],
@@ -656,7 +657,8 @@
   }
   function fpUrl(p){ return "https://www.fantasypros.com/nfl/players/"+(FP_OVR[p.n]||fpSlug(p.n))+".php"; }
 
-  // Blend: average of DraftSharks 3D and FantasyCalc (normalized to 0-100). One source falls back cleanly.
+  // Blend: average of the second source (`ds`: Dynasty Dealer when live, the seed export offline) and FantasyCalc
+  // (both normalized to 0-100). One source falls back cleanly.
   var DB = DS.map(function(r,i){
     var bio = BIO[r[0]] || [null,null];
     return {id:i, n:r[0], p:r[1], t:r[2], ds:r[3], base:r[3], age:bio[0], bye:bio[1], pick:false};
@@ -685,7 +687,7 @@
   // ---- ONE value scale for players AND picks ----
   // A snake keeper pick drafts the best player left after leaguewide keepers are gone,
   // so its value = the player you'd take with it. Keeper cost = the pick you forfeit.
-  // Everything lives on the same blended (DraftSharks + FantasyCalc) curve.
+  // Everything lives on the same blended (Dynasty Dealer + FantasyCalc) curve.
   function playerValueByRank(r){
     r=Math.max(1,r); var n=DB.length, idx=r-1;
     if(idx<=n-1){ var lo=Math.floor(idx), hi=Math.ceil(idx);
@@ -1050,7 +1052,8 @@
   function setValStatus(state){
     var el=document.getElementById("valStatus"); if(!el) return;
     el.className="chip valstat "+state;
-    if(state==="live")        el.innerHTML='<span class="dot"></span>Values: <b>live</b> · FantasyCalc + DraftSharks';
+    if(state==="live")        el.innerHTML='<span class="dot"></span>Values: <b>live</b> · FantasyCalc + Dynasty Dealer';
+    else if(state==="partial")el.innerHTML='<span class="dot"></span>Values: <b>live</b> · FantasyCalc (Dynasty Dealer reconnecting)';
     else if(state==="loading")el.innerHTML='<span class="dot"></span>Values: <b>refreshing…</b>';
     else                      el.innerHTML='<span class="dot"></span>Values: <b>snapshot</b> · click to retry';
   }
@@ -1060,9 +1063,15 @@
     ["A","B"].forEach(function(sd){ S.sides[sd].forEach(function(e){ if(!e.ref.pick && !e.mvEdited) e.mv=e.ref.base; }); });
     renderSide("A"); renderSide("B"); renderVerdict(); renderPickChart();
   }
+  var DD_URL = "https://www.dynastydealer.com/api/player-values";
+  var REFRESH_MS = 15*60*1000, lastLive = 0, liveBusy = false;
+  function getJSON(u){ return fetch(u, {cache:"no-store"}).then(function(r){ if(!r.ok) throw 0; return r.json(); }); }
   function fetchLive(){
+    if(liveBusy) return; liveBusy = true;
     setValStatus("loading");
-    fetch(FC_URL).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(data){
+    var dealer = getJSON(DD_URL).catch(function(){ return null; });
+    getJSON(FC_URL).then(function(data){ return dealer.then(function(dd){ return [data, dd]; }); }).then(function(pair){
+      var data = pair[0], dd = pair[1];
       var live={}, meta={}, max=0;
       (data||[]).forEach(function(row){
         var pl=row.player||{}, pos=(pl.position||"").toUpperCase();
@@ -1092,11 +1101,30 @@
                  liveAge:m.age, roster:m.roster, trend:m.trend});
         known[k]=1;
       }
+      // Second live source: Dynasty Dealer (0-10,000), matched by Sleeper ID then name, normalized to 0-100.
+      // If it is unreachable, values fall back to FantasyCalc alone (never to the stale seed export).
+      var dealerOk = false;
+      if(dd && dd.players && dd.players.length){
+        var byId={}, byName={}, dmax=0;
+        dd.players.forEach(function(r){ if(r.position==="PICK") return; var v=+r.current_value||0; if(v>dmax) dmax=v; });
+        if(dmax>0){
+          dd.players.forEach(function(r){ if(r.position==="PICK") return; var v=(+r.current_value||0)/dmax*100;
+            if(r.sleeper_id) byId[String(r.sleeper_id)]=v; byName[keyOf(r.name||"")]=v; });
+          dealerOk = true;
+          DB.forEach(function(p){ var v=(p.sleeperId!=null && byId[String(p.sleeperId)]!=null) ? byId[String(p.sleeperId)] : byName[keyOf(p.n)];
+            p.ds = v!=null ? Math.round(v*10)/10 : null; });
+        }
+      }
+      if(!dealerOk) DB.forEach(function(p){ p.ds = null; });
       var merged={}; for(k in fcMapBaked) merged[k]=fcMapBaked[k]; for(k in live) merged[k]=live[k];
       applyBlend(merged, max);
-      setValStatus("live");
-    }).catch(function(){ setValStatus("snap"); });
+      lastLive = Date.now();
+      setValStatus(dealerOk ? "live" : "partial");
+    }).catch(function(){ setValStatus("snap"); }).then(function(){ liveBusy = false; });
   }
+  // Keep values live on an open page: refresh every 15 minutes while visible, and on return if stale.
+  setInterval(function(){ if(!document.hidden) fetchLive(); }, REFRESH_MS);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden && Date.now()-lastLive > REFRESH_MS) fetchLive(); });
   document.getElementById("valStatus").addEventListener("click",fetchLive);
   fetchLive();
 })();

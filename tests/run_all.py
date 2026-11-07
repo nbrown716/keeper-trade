@@ -9,7 +9,9 @@ import os, re, subprocess, sys, time, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 OUT = os.path.join(HERE, 'output')
-BASE = 'http://127.0.0.1:4173/'
+PORT = os.environ.get('KT_PORT', '4173')  # run a frozen snapshot on its own port: KT_PORT=4174
+BASE = f'http://127.0.0.1:{PORT}/'
+os.environ['KT_BASE'] = BASE
 # (script, marker that must appear in its output, slow?)
 SUITES = [
     ('syntax.py', 'SYNTAX PASS', False),               # every ES module parses and resolves its imports
@@ -20,6 +22,7 @@ SUITES = [
     ('league_test.py', 'ALL PASS', False),
     ('yahoo_test.py', 'ALL PASS', False),
     ('fly_edge.py', 'passed', False),                  # The Drive "Home Of" edge cases
+    ('values_live.py', 'passed', False),               # live-only value sources, <=6 h cadence, open-page refresh, baselines
     ('wrapped_entry.py', 'passed', False),             # Wrapped entry points + one-time championship prompt
     ('wr_audit.py', 'passed', True),                  # Wrapped: overflow detector, interactions, exports, edge cases
     ('deep.py', 'DEEP ALL PASS', True),                       # animations, Drive exports, AI features, Pulse
@@ -41,7 +44,7 @@ def main():
     os.makedirs(os.path.join(OUT, 'sleeper_raw'), exist_ok=True)
     server = None
     if not server_up():
-        server = subprocess.Popen([sys.executable, '-m', 'http.server', '4173', '--bind', '127.0.0.1'], cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        server = subprocess.Popen([sys.executable, '-m', 'http.server', PORT, '--bind', '127.0.0.1'], cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(30):
             if server_up(): break
             time.sleep(0.5)

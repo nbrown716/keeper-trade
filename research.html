@@ -226,7 +226,14 @@
   button:active:not(:disabled),.tab:active,[role=button]:active{transform:scale(.96);transition:transform 90ms ease-out}
   @media (prefers-reduced-motion:reduce){button:active,.tab:active,[role=button]:active{transform:none}}
 </style>
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="stylesheet" href="css/navigation.css?v=2">
+<link rel="stylesheet" href="css/kt-shell.css">
+</head>
+<body class="kt-shell-body" data-kt-active="research">
 <div class="wrap">
   <header class="mast">
     <div class="brand">
@@ -585,6 +592,7 @@
 })();
 </script>
 <script type="module" src="js/features/research-tracking.js"></script>
+<script type="module" src="js/ui/kt-shell.js"></script>
 <script type="module" src="js/pwa.js"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@ REPO = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 import asyncio, json, re, sys
 from playwright.async_api import async_playwright
 
-BASE = 'http://127.0.0.1:4173/'
+BASE = _os.environ.get('KT_BASE', 'http://127.0.0.1:4173/')  # KT_BASE=https://keeper-trade.pages.dev/ audits production
 ROUTES = ['wrapped.html', 'weather.html', 'index.html', 'keeper.html', 'redraft.html', 'rankings.html', 'research.html', 'tools.html', 'game.html',
           'sunday.html', 'war-room.html', 'mock-draft.html', 'season-sim.html', 'pulse.html', 'drive.html', 'command.html']
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'mobile'   # mobile | down
@@ -40,7 +40,7 @@ STRUCT = """() => {
   const busy = [...document.querySelectorAll('[aria-busy=true]')].filter(vis).map(e => e.id || e.className.toString().slice(0, 30));
   const W = visualViewport ? visualViewport.width : innerWidth;
   const wide = [...document.querySelectorAll('body *')].filter(e => { const r = e.getBoundingClientRect(); if (!(r.width > 0) || r.right <= W + 1) return false; const cs = getComputedStyle(e); if (cs.position === 'fixed') return r.left < W && r.width > W + 1; let n = e.parentElement; while (n && n !== document.body) { const o = getComputedStyle(n); if (/(auto|scroll|hidden|clip)/.test(o.overflowX)) { const pr = n.getBoundingClientRect(); if (pr.right <= W + 1) return false; } n = n.parentElement; } return true; }).slice(0, 4).map(e => (e.id || e.className || e.tagName).toString().slice(0, 40));
-  return { overflow: Math.max(document.documentElement.scrollWidth - W, wide.length ? 1 : 0), wide, dup, small: small.slice(0, 6), smallCount: small.length, raw, busy, nodes: document.getElementsByTagName('*').length };
+  return { overflow: Math.max(document.documentElement.scrollWidth - W, innerWidth - W, wide.length ? 1 : 0), wide, dup, small: small.slice(0, 6), smallCount: small.length, raw, busy, theme: document.documentElement.dataset.theme || '', nodes: document.getElementsByTagName('*').length };
 }"""
 
 async def audit(browser, route, theme):
@@ -87,6 +87,9 @@ async def main():
                 if s['smallCount']: problems.append(f"small<24px {s['smallCount']} {s['small']}")
                 if s['raw']: problems.append(f"raw-text {s['raw'][:4]}")
                 if s['busy']: problems.append(f"stuck-busy {s['busy']}")
+                # the saved theme must actually apply (drive.html is a deliberately dark cinema page); without this
+                # a page that ignores the setting passes the light run trivially
+                if theme == 'light' and s['theme'] != 'light' and r != 'drive.html': problems.append(f"theme-not-applied (data-theme={s['theme']!r})")
                 if axe: problems.append(f'axe {axe}')
                 if cons: problems.append(f'console {cons[:2]}')
                 fails += bool(problems)
