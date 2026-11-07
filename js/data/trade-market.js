@@ -195,11 +195,13 @@ export async function loadLeagueTrades(leagueId, players) {
         const production = gets.filter(asset => asset.kind === 'player').reduce((sum, asset) => sum + starterLog.filter(row => row.id === asset.id && row.rosterId === rosterId && row.week >= leg).reduce((s, row) => s + row.points, 0), 0);
         return { rosterId, ownerId: owners.get(rosterId), name: names.get(rosterId) || `Team ${rosterId}`, gets, production: Math.round(production * 10) / 10 };
       });
-      if (sides.length !== 2) return; // multi-team trades are rare; Deals shows head-to-head deals
+      if (sides.length !== 2) { all.multiTeam = (all.multiTeam || 0) + 1; return; } // Deals compares two sides; counted so the UI can say so
       all.push({ id: txId, leagueId: id, season: String(league.season || first.league?.season), week: leg, created: Number(tx.created || 0), sides, scoredWeeks: bundles.filter(item => item?.matchups?.some(entry => Number(entry.points) > 0)).length });
     }));
   }
-  return all.sort((a, b) => b.created - a.created);
+  const sorted = all.sort((a, b) => b.created - a.created);
+  sorted.multiTeam = all.multiTeam || 0;
+  return sorted;
 }
 
 // Team values today: every rostered player (live market) + owned next-draft picks (keeper/dynasty).

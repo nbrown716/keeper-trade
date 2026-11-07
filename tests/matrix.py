@@ -13,6 +13,14 @@ LEAGUE = "try{localStorage.setItem('kt-sleeper-league:v1',JSON.stringify({id:'13
 ESPN = {'/espn/scoreboard': 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard', '/espn/summary': 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary',
         '/espn/news': 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/news', '/espn/standings': 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings'}
 
+async def worker_relay(route):
+    # The Worker only answers the production origin; relay local test calls with it (same answer production gets).
+    try:
+        resp = await route.fetch(headers={**route.request.headers, 'origin': 'https://keeper-trade.pages.dev'})
+        await route.fulfill(status=resp.status, body=await resp.body(), headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+    except Exception:
+        await route.fulfill(status=200, body='{"status":"resting"}', headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
+
 async def espn_proxy(route):
     from urllib.parse import urlparse
     u = urlparse(route.request.url)
@@ -51,10 +59,11 @@ async def audit(browser, route, theme):
         await ctx.route(re.compile(r'^https?://(?!127\.0\.0\.1).*'), lambda r: r.abort())
     else:
         await ctx.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/espn/.*'), espn_proxy)
+        await ctx.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/votes.*'), worker_relay)
     page = await ctx.new_page()
     errors, local_fail, cons = [], [], []
     page.on('pageerror', lambda e: errors.append(str(e)[:160]))
-    page.on('console', lambda m: cons.append(m.text[:140]) if m.type == 'error' else None)
+    page.on('console', lambda m: cons.append(m.text) if m.type == 'error' else None)  # full text: classify first, truncate when printing
     page.on('response', lambda r: local_fail.append(f'{r.status} {r.url[:90]}') if r.url.startswith(BASE) and r.status >= 400 else None)
     page.on('requestfailed', lambda r: local_fail.append(f'FAILED {r.url[:90]}') if r.url.startswith(BASE) else None)
     await page.goto(BASE + route, wait_until='load', timeout=60000)
@@ -69,6 +78,7 @@ async def audit(browser, route, theme):
             axe = ['axe-error ' + str(e)[:80]]
     await ctx.close()
     cons = [c for c in cons if 'blocked' not in c and 'ERR_FAILED' not in c and 'net::' not in c and 'Failed to load resource' not in c and 'CORS' not in c]
+    cons = [c[:140] for c in cons]
     return s, errors, local_fail, axe, cons
 
 async def main():

@@ -92,9 +92,10 @@ function renderCall() {
     const agree = vote.pick === modelPick;
     const verdict = read.even ? `Even: ${num(Math.abs(read.diff))} apart, inside the ${ctx.type === 'keeper' ? '1,000-point house band' : 'fair band'}` : `${escapeHtml(read.sides[read.winner].name)} won by ${num(Math.abs(read.diff))}${read.diffInPicks ? ` (≈${read.diffInPicks.toFixed(read.diffInPicks < 1 ? 2 : 1)} of a 1st)` : ''}`;
     const sameSeason = trade.season === String(ctx.season);
-    const since = sameSeason && state.completed >= trade.week
-      ? `<p class="dl-since"><span>Since the trade</span>${escapeHtml(a.name)}’s new players scored <b>${a.production.toFixed(1)}</b> in their lineup · ${escapeHtml(b.name)}’s scored <b>${b.production.toFixed(1)}</b>.</p>`
-      : sameSeason ? '<p class="dl-since"><span>Since the trade</span>No completed week since this trade yet.</p>' : '';
+    const sinceLabel = sameSeason ? 'Since the trade' : `Rest of the ${escapeHtml(trade.season)} season`;
+    const since = !sameSeason || state.completed >= trade.week
+      ? `<p class="dl-since"><span>${sinceLabel}</span>${escapeHtml(a.name)}’s new players scored <b>${a.production.toFixed(1)}</b> in their lineup · ${escapeHtml(b.name)}’s scored <b>${b.production.toFixed(1)}</b>.</p>`
+      : '<p class="dl-since"><span>Since the trade</span>No completed week since this trade yet.</p>';
     reveal = `<div class="dl-reveal" role="status"><div class="dl-bar" aria-hidden="true"><i style="width:${(a.total / total * 100).toFixed(1)}%"></i></div>
       <p class="dl-verdict"><span>Model read · values today</span>${verdict}.</p>${since}
       <p class="dl-yours ${agree ? 'is-agree' : 'is-differ'}">${agree ? '✓ You and the model agree.' : `✗ Your call: ${vote.pick === 'E' ? 'even' : escapeHtml(read.sides[vote.pick === 'A' ? 0 : 1].name)}. The model disagrees, and you might be right: values aren’t everything.`}</p>
@@ -152,7 +153,7 @@ function renderDatabase() {
     panel.querySelector('#dl-season').addEventListener('change', event => { state.season = event.target.value; renderDatabase(); });
     panel.querySelector('#dl-manager').addEventListener('change', event => { state.manager = event.target.value; renderDatabase(); });
   }
-  panel.querySelector('#dl-count').textContent = `${rows.length} of ${state.trades.length} trades`;
+  panel.querySelector('#dl-count').textContent = `${rows.length} of ${state.trades.length} trades${state.multiTeam ? ` · ${state.multiTeam} three-team trade${state.multiTeam === 1 ? '' : 's'} not shown yet` : ''}`;
   panel.querySelector('#dl-list').innerHTML = rows.length ? rows.map(trade => {
     const read = modelRead(trade, state.market, state.ctx);
     const voted = votes()[trade.id];
@@ -270,6 +271,7 @@ async function load() {
     const [market, trades, traded] = await Promise.all([getMarket(state.ctx.type), loadLeagueTrades(leagueId, players), liveData.get(tradedKey).catch(() => [])]);
     state.market = market;
     state.trades = trades;
+    state.multiTeam = trades.multiTeam || 0;
     state.tradedPicks = Array.isArray(traded) ? traded : [];
     $('#dl-eyebrow').textContent = `${bundle.league.name} · ${trades.length} real trade${trades.length === 1 ? '' : 's'}`;
     status.textContent = `Values live · ${market.sources.dealer ? 'FantasyCalc + Dynasty Dealer' : 'FantasyCalc'} · priced like your ${state.ctx.type === 'keeper' ? 'Keeper calculator' : 'trade calculator'}`;

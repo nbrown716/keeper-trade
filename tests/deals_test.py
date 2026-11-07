@@ -37,7 +37,7 @@ async def main():
           const players = await getPlayerDatabase(); const trades = await m.loadLeagueTrades('%s', players);
           const market = await m.getMarket('keeper');
           const ctx = { type: 'keeper', keepersGone: 24, teams: 12, nextDraft: 2027, season: 2026 };
-          return trades.map(t => { const r = m.modelRead(t, market, ctx); return { id: t.id, sides: t.sides.map(s => ({ rosterId: s.rosterId, players: s.gets.filter(a => a.kind === 'player').map(a => a.id).sort(), picks: s.gets.filter(a => a.kind === 'pick').map(a => a.season + '-' + a.round).sort() })), totals: r.sides.map(s => s.total), assetVals: r.sides.map(s => s.assets.map(a => a.value)), winner: r.winner, diff: r.diff }; });
+          return trades.map(t => { const r = m.modelRead(t, market, ctx); return { id: t.id, leagueId: t.leagueId, week: t.week, sides: t.sides.map(s => ({ production: s.production, rosterId: s.rosterId, players: s.gets.filter(a => a.kind === 'player').map(a => a.id).sort(), picks: s.gets.filter(a => a.kind === 'pick').map(a => a.season + '-' + a.round).sort() })), totals: r.sides.map(s => s.total), assetVals: r.sides.map(s => s.assets.map(a => a.value)), winner: r.winner, diff: r.diff }; });
         })()""" % L)
         ids = {t['id'] for t in data}
         check(set(raw) == ids, f'every completed 2-team trade in every season appears ({len(ids)} shown, {len(raw)} in Sleeper) missing={sorted(set(raw) - ids)[:3]} extra={sorted(ids - set(raw))[:3]}')
@@ -51,6 +51,21 @@ async def main():
                 picks = sorted(f"{pk['season']}-{pk['round']}" for pk in tx.get('draft_picks') or [] if pk['owner_id'] == rid and pk['previous_owner_id'] != rid)
                 if players != side['players'] or picks != side['picks']: wrong.append((t['id'], rid))
         check(not wrong, f'each side shows exactly the players and picks it received {wrong[:3]}')
+        # production since the trade, independently from raw matchups (that season, starters for the new team, weeks >= leg)
+        mcache = {}
+        def matchups(lid, w):
+            if (lid, w) not in mcache: mcache[(lid, w)] = get(f'league/{lid}/matchups/{w}') or []
+            return mcache[(lid, w)]
+        off = []
+        for t in data:
+            for side in t['sides']:
+                total = 0.0
+                for w in range(t['week'], 19):
+                    for m in matchups(t['leagueId'], w):
+                        if m.get('roster_id') == side['rosterId']:
+                            total += sum(float(m['players_points'].get(pid, 0) or 0) for pid in side['players'] if pid in (m.get('starters') or []))
+                if abs(round(total, 1) - side['production']) > 0.11: off.append((t['id'], side['rosterId'], side['production'], round(total, 1)))
+        check(not off, f'"since the trade" production matches raw Sleeper for every side of every trade {off[:3]}')
         bad_math = [t['id'] for t in data if any(abs(sum(v or 0 for v in vals) - tot) > 0.5 for vals, tot in zip(t['assetVals'], t['totals'])) or (abs(t['diff']) <= 1000) != (t['winner'] == -1) or (t['winner'] == 0) != (t['diff'] > 1000)]
         check(not bad_math, f'model read: totals = sum of assets; inside 1,000 = even, else bigger side wins {bad_math[:3]}')
         # vote → reveal

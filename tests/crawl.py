@@ -34,6 +34,7 @@ async def make_context(browser, viewport, mobile):
     await c.add_init_script(M.LEAGUE)
     await c.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/espn/.*'), M.espn_proxy)
     await c.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/(ai|yahoo)/.*'), ai_proxy)
+    await c.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/votes.*'), M.worker_relay)
     return c
 
 ENUM = r"""() => {
