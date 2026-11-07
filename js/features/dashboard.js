@@ -180,11 +180,16 @@ function renderMovers(snapshot = {}) {
   body.innerHTML = `<span class="kt-widget-label">Dynasty Dealer · Current vs base</span>${players.map(player => `<div class="kt-mover-row"><div><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(player.position)} · ${escapeHtml(player.team)}</span></div><span class="kt-num">${player.value.toLocaleString()}</span><b class="kt-delta ${player.change >= 0 ? 'kt-delta-up' : 'kt-delta-down'}">${player.change >= 0 ? '+' : ''}${player.change.toFixed(1)}%</b></div>`).join('')}`;
 }
 
-function renderStreak() {
+let streakSignature = '';
+function renderStreak(force = true) {
   const body = grid?.querySelector('[data-widget-body="streak"]');
   if (!body) return;
   const state = getGamificationState();
   const level = levels.reduce((current, item) => state.xp >= item.xp ? item : current, levels[0]);
+  // The periodic check only touches the DOM when something changed (re-rendering knocked keyboard focus off the link).
+  const signature = `${state.streak.count}|${state.xp}|${state.streak.freezeWeek}|${state.badges.length}|${level.name}`;
+  if (!force && signature === streakSignature && body.firstElementChild) return;
+  streakSignature = signature;
   body.innerHTML = `<div class="kt-streak-widget"><div><span>🔥</span><strong class="kt-num">${state.streak.count}</strong><small>day streak</small></div><div><span class="kt-widget-label">${escapeHtml(level.name)}</span><strong class="kt-num">${state.xp.toLocaleString()}</strong><small>total XP</small></div></div><div class="kt-freeze-status">❄ ${state.streak.freezeWeek ? 'Freeze used this week' : 'Freeze ready'} · ${state.badges.length} badges earned</div><a class="kt-btn kt-btn-sm kt-btn-secondary" href="#clubhouse">Open clubhouse</a>`;
 }
 
@@ -199,9 +204,13 @@ function renderPickem() {
   body.innerHTML = upcoming.length ? `<span class="kt-widget-label">${picks.locked ? 'Picks locked' : `${remaining} picks remaining`}</span><strong class="kt-widget-big">${picks.locked ? '✓' : remaining}</strong><p>${picks.locked ? 'Your card is in. Good luck.' : 'Make every point count before kickoff.'}</p><span class="kt-chip" data-next-kickoff>${upcoming[0] ? formatDuration(new Date(upcoming[0].date) - Date.now()) : ''}</span>` : emptyState('✓', 'Card complete', 'This week is in the books. Your next card opens soon.');
 }
 
+let kickoffCache = { data: undefined, next: null };
 function nextKickoff() {
+  if (kickoffCache.data === scoreSnapshot.data && kickoffCache.next) return kickoffCache.next;
   const upcoming = normalizeGames(scoreSnapshot.data).filter(game => game.state === 'pre').sort((a, b) => new Date(a.date) - new Date(b.date));
-  return upcoming[0] ? { date: new Date(upcoming[0].date), label: `${upcoming[0].away.abbreviation} at ${upcoming[0].home.abbreviation}` } : { date: new Date('2027-04-22T00:00:00Z'), label: 'NFL Draft · estimated' };
+  kickoffCache = { data: scoreSnapshot.data, next: null };
+  kickoffCache.next = upcoming[0] ? { date: new Date(upcoming[0].date), label: `${upcoming[0].away.abbreviation} at ${upcoming[0].home.abbreviation}` } : { date: new Date('2027-04-22T00:00:00Z'), label: 'NFL Draft · estimated' };
+  return kickoffCache.next;
 }
 
 function formatDuration(milliseconds) {
@@ -431,16 +440,19 @@ export function mountDashboard() {
   });
   mountDragAndLongPress();
   renderGrid();
-  liveData.subscribe(SCOREBOARD_SOURCE, snapshot => { scoreSnapshot = snapshot; renderScores(); syncWeather(); renderPickem(); renderCountdown(); });
-  liveData.subscribe(VALUES_SOURCE, snapshot => { valueSnapshot = snapshot; renderTrending(); renderWatchlist(); });
-  liveData.subscribe(NEWS_SOURCE, snapshot => { newsSnapshot = snapshot; renderNews(); });
-  liveData.subscribe(dealerSource(), renderMovers);
-  window.setInterval(renderStreak, 10000);
+  // statusOnly snapshots ("refreshing…" with unchanged data) skip the full widget re-render.
+  liveData.subscribe(SCOREBOARD_SOURCE, snapshot => { if (snapshot.statusOnly) return; scoreSnapshot = snapshot; renderScores(); syncWeather(); renderPickem(); renderCountdown(); });
+  liveData.subscribe(VALUES_SOURCE, snapshot => { if (snapshot.statusOnly) return; valueSnapshot = snapshot; renderTrending(); renderWatchlist(); });
+  liveData.subscribe(NEWS_SOURCE, snapshot => { if (snapshot.statusOnly) return; newsSnapshot = snapshot; renderNews(); });
+  liveData.subscribe(dealerSource(), snapshot => { if (!snapshot.statusOnly) renderMovers(snapshot); });
+  window.addEventListener('kt:gamification', () => renderStreak(false));
+  window.setInterval(() => renderStreak(false), 10000);
   countdownTimer = window.setInterval(() => {
+    if (document.hidden) return;
+    const next = nextKickoff();
     const value = section.querySelector('[data-countdown-value]');
-    if (value) value.textContent = formatDuration(nextKickoff().date - Date.now());
+    if (value) value.textContent = formatDuration(next.date - Date.now());
     const kickoff = section.querySelector('[data-next-kickoff]');
-    const next = normalizeGames(scoreSnapshot.data).filter(game => game.state === 'pre').sort((a, b) => new Date(a.date) - new Date(b.date))[0];
-    if (kickoff && next) kickoff.textContent = formatDuration(new Date(next.date) - Date.now());
+    if (kickoff && !next.label.startsWith('NFL Draft')) kickoff.textContent = formatDuration(next.date - Date.now());
   }, 1000);
 }

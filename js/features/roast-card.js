@@ -1,7 +1,7 @@
 import { askAI, configureAIEndpoint } from '../data/ai.js';
 import { getGamificationState } from './gamification.js';
 import { getLeagueSnapshot } from '../data/league-state.js';
-import { getSleeperLeagueId } from '../data/sleeper.js?v=3';
+import { getSleeperLeagueId } from '../data/sleeper.js';
 
 let section;
 let canvas;

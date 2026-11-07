@@ -97,6 +97,10 @@ def main():
     anthropic_key = getpass.getpass('Anthropic API key (hidden; not saved): ').strip()
     if not anthropic_key:
         raise SystemExit('An Anthropic key is required for AI requests. Nothing was deployed.')
+    yahoo_client_id = getpass.getpass('Yahoo client ID (optional; hidden; not saved): ').strip()
+    yahoo_client_secret = getpass.getpass('Yahoo client secret (optional; hidden; not saved): ').strip()
+    if bool(yahoo_client_id) != bool(yahoo_client_secret):
+        raise SystemExit('Enter both Yahoo credentials or leave both empty. Nothing was deployed.')
 
     metadata = {
         'main_module': config['main'],
@@ -113,8 +117,17 @@ def main():
     cloudflare(token, 'PUT', f'/accounts/{args.account_id}/workers/scripts/{worker_name}/secrets', {
         'name': 'ANTHROPIC_API_KEY', 'text': anthropic_key, 'type': 'secret_text'
     })
+    if yahoo_client_id:
+        cloudflare(token, 'PUT', f'/accounts/{args.account_id}/workers/scripts/{worker_name}/secrets', {
+            'name': 'YAHOO_CLIENT_ID', 'text': yahoo_client_id, 'type': 'secret_text'
+        })
+        cloudflare(token, 'PUT', f'/accounts/{args.account_id}/workers/scripts/{worker_name}/secrets', {
+            'name': 'YAHOO_CLIENT_SECRET', 'text': yahoo_client_secret, 'type': 'secret_text'
+        })
     anthropic_key = ''
-    print(f'Deployed {worker_name}. The Anthropic secret was uploaded and was not saved locally.')
+    yahoo_client_id = ''
+    yahoo_client_secret = ''
+    print(f'Deployed {worker_name}. The Anthropic secret and any Yahoo credentials were uploaded and were not saved locally.')
     print('Next: open the /ai/stats URL on your Worker and paste its base URL into Keeper Trade AI setup.')
 
 

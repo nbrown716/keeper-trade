@@ -1,4 +1,4 @@
-import { mountNavigation } from '../ui/navigation.js?v=2';
+import { mountNavigation } from '../ui/navigation.js';
 import { mountPageTransitions } from '../ui/page-transitions.js';
 import { liveData } from '../data/live-data.js';
 import { dealerSource, normalizeDealerPlayers } from '../data/dynasty-dealer.js';
@@ -27,7 +27,7 @@ function displayValue(value) {
 function history() {
   try {
     const saved = JSON.parse(localStorage.getItem(historyKey));
-    return Array.isArray(saved) ? saved.filter(entry => entry && typeof entry === 'object' && typeof entry.signature === 'string' && Array.isArray(entry.sides)) : [];
+    return Array.isArray(saved) ? saved.filter(entry => entry && typeof entry === 'object' && typeof entry.signature === 'string' && entry.sides && Array.isArray(entry.sides.A) && Array.isArray(entry.sides.B)) : [];
   } catch (_) { return []; }
 }
 
@@ -35,7 +35,13 @@ function currentTrade() {
   return latest || history()[0];
 }
 
+let saveTimer = 0;
 function saveTrade(detail) {
+  clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(() => writeTrade(detail), 350);
+}
+
+function writeTrade(detail) {
   const entries = history().filter(entry => entry.signature !== detail.signature);
   entries.unshift({ ...detail, sides: structuredClone(detail.sides), verdict: document.querySelector('#vStamp').textContent, names: [...document.querySelectorAll('.team-name')].map(input => input.value), date: Date.now(), kind });
   try { localStorage.setItem(historyKey, JSON.stringify(entries.slice(0, 12))); } catch (_) {}
@@ -70,16 +76,17 @@ function updateVerdict(detail) {
   const center = document.querySelector('.trade-gauge-center');
   if (center) center.textContent = `${Math.round(percent * 100)}%`;
   const stamp = document.querySelector('#vStamp').textContent;
+  const verdictClass = document.querySelector('#vStamp').className;
   latest.verdict = stamp;
   latest.names = [...document.querySelectorAll('.team-name')].map(input => input.value);
-  if (stamp !== lastVerdict) {
+  if (verdictClass !== lastVerdict) {
     const element = document.querySelector('#vStamp');
     element.classList.remove('is-celebrating');
     void element.offsetWidth;
     element.classList.add('is-celebrating');
-    if (stamp.includes('Auto-Approved') && !reducedMotion.matches && window.matchMedia('(pointer: coarse)').matches && 'vibrate' in navigator) navigator.vibrate([30, 35, 55]);
-    window.dispatchEvent(new CustomEvent('kt:trade-verdict', { detail: { verdict: stamp, lopsided: Math.abs(detail.totals.A - detail.totals.B) > 1000 } }));
-    lastVerdict = stamp;
+    if (stamp.includes('Auto-Approved') && !reducedMotion.matches && window.matchMedia('(pointer: coarse)').matches && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate([30, 35, 55]);
+    window.dispatchEvent(new CustomEvent('kt:trade-verdict', { detail: { verdict: stamp, lopsided: Math.abs(detail.totals.A - detail.totals.B) > (kind === 'keeper' ? 10 : 1000) } }));
+    lastVerdict = verdictClass;
   }
   if (detail.sides.A.length && detail.sides.B.length) saveTrade(detail);
 }
@@ -100,13 +107,16 @@ function mountDrag() {
   const observer = new MutationObserver(() => {
     document.querySelectorAll('.players').forEach(list => {
       const side = list.dataset.list;
-      list.querySelectorAll('.pcard').forEach((card, index) => {
+      [...list.children].forEach((card, index) => {
         const entry = engine.state.sides[side][index];
         if (!entry) return;
         card.draggable = finePointer.matches;
         card.dataset.uid = entry.uid;
+        card.dataset.side = side;
+        if (card.dataset.dragBound) return;
+        card.dataset.dragBound = 'true';
         card.addEventListener('dragstart', event => {
-          event.dataTransfer.setData('application/x-keeper-trade', JSON.stringify({ uid: entry.uid, from: side }));
+          event.dataTransfer.setData('application/x-keeper-trade', JSON.stringify({ uid: Number(card.dataset.uid), from: card.dataset.side }));
           event.dataTransfer.effectAllowed = 'move';
         });
         const image = card.querySelector('img');
@@ -184,7 +194,10 @@ function openPanel(type) {
   panel.querySelector('[data-close-panel]').focus();
   panel.querySelectorAll('[data-reopen]').forEach(button => button.addEventListener('click', () => {
     const entry = history()[Number(button.dataset.reopen)];
-    engine.state.sides = structuredClone(entry.sides);
+    let reopenUid = Date.now();
+    const sides = structuredClone(entry.sides);
+    ['A', 'B'].forEach(side => sides[side].forEach(asset => { asset.uid = reopenUid++; }));
+    engine.state.sides = sides;
     engine.render('A');
     engine.render('B');
     closePanel();
@@ -304,7 +317,8 @@ function loadPendingTrade() {
 function subscribeDealer() {
   dealerUnsubscribe?.();
   const settings = kind === 'redraft' ? { format: engine.state.format, scoring: engine.state.ppr === '1' ? 'ppr' : undefined, superflex: engine.state.qb === '2' } : {};
-  dealerUnsubscribe = liveData.subscribe(dealerSource(settings), ({ data, status }) => {
+  dealerUnsubscribe = liveData.subscribe(dealerSource(settings), ({ data, status, statusOnly }) => {
+    if (statusOnly) return;
     const players = normalizeDealerPlayers(data);
     const badge = document.querySelector('#dealer-status');
     if (badge) badge.textContent = status === 'stale' ? 'Dynasty Dealer · Cached 24h' : 'Dynasty Dealer · Live values';

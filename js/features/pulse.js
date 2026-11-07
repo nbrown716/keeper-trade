@@ -1,4 +1,5 @@
 import { getSleeperLeagueId, getNflState } from '../data/sleeper.js';
+import { friendlyError } from '../ui/friendly-error.js';
 import { liveData } from '../data/live-data.js';
 import { mountNavigation } from '../ui/navigation.js';
 import { AWARD_LABELS, loadPulseData, narratePulse, writeNewsletter, newsletterText } from './pulse-data.js';
@@ -120,7 +121,7 @@ async function loadWeek(week) {
     renderNewsletter(newsletter);
   } catch (error) {
     document.querySelector('#pulse-stories').setAttribute('aria-busy', 'false');
-    document.querySelector('#pulse-stories').innerHTML = `<div class="kt-pulse-error"><h2>${escapeHtml(error.message)}</h2><p>Try another week or reconnect your league. The rest of Keeper Trade is unaffected.</p><a class="kt-btn kt-btn-primary" href="index.html#league">Open league setup</a></div>`;
+    document.querySelector('#pulse-stories').innerHTML = `<div class="kt-pulse-error"><h2>${escapeHtml(friendlyError(error, 'League Pulse could not reach your league right now.'))}</h2><p>Try another week or reconnect your league. The rest of Keeper Trade is unaffected.</p><a class="kt-btn kt-btn-primary" href="index.html#league">Open league setup</a></div>`;
     document.querySelector('#pulse-awards').innerHTML = '';
     document.querySelector('#pulse-newsletter').innerHTML = '<p class="kt-muted">The Commissioner will arrive when matchup data is available.</p>';
     status('League Pulse is waiting for matchup data.');

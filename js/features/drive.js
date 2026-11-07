@@ -1,4 +1,5 @@
 import { loadDriveRecap, defaultDriveWeek, DRIVE_DURATION } from './drive-data.js';
+import { friendlyError } from '../ui/friendly-error.js';
 import { createFieldRenderer } from './drive-field.js';
 import { createMapRenderer } from './drive-map.js';
 import { askAI } from '../data/ai.js';
@@ -214,7 +215,7 @@ async function load() {
     loading.hidden = true;
     const panel = document.querySelector('#drive-error');
     panel.hidden = false;
-    panel.querySelector('p').textContent = error.message || 'Your recap could not load. Your league and other tools are still available.';
+    panel.querySelector('p').textContent = friendlyError(error, 'Your recap could not load. Your league and other tools are still available.');
     setStatus('The Drive is waiting for a connected league.');
   }
 }

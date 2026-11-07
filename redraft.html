@@ -219,6 +219,7 @@
   function loadValues(){
     var url=fcUrl(); setStatus("loading");
     var done=function(data){
+      if(url!==fcUrl()) return; // a newer format was selected while this one loaded
       players=(data||[]).map(function(r){var pl=r.player||{};return{name:pl.name,pos:(pl.position||"").toUpperCase(),
         team:pl.maybeTeam||"FA",val:r.value,espnId:pl.espnId,sleeperId:pl.sleeperId,posRank:r.positionRank};})
         .filter(function(p){return["QB","RB","WR","TE"].indexOf(p.pos)>=0&&p.name;});

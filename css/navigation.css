@@ -1,8 +1,7 @@
 @view-transition { navigation: auto; }
 
-.kt-js body { opacity: 0; }
-.kt-js body.kt-page-ready { opacity: 1; transition: opacity var(--kt-duration-standard) ease; }
-.kt-js body.kt-page-leaving { opacity: 0; transition: opacity var(--kt-duration-micro) ease-in; }
+/* Pages paint as soon as HTML/CSS arrive. Hiding <body> until every ES module executed kept routes blank for 1-3s on mobile;
+   cross-document view transitions (above) and per-element .kt-animate-in entrances provide the motion instead. */
 
 ::view-transition-old(kt-page) { animation: kt-view-out 180ms ease-in both; }
 ::view-transition-new(kt-page) { animation: kt-view-in 320ms ease-out both; }
@@ -14,9 +13,10 @@
   z-index: 90;
   top: 0;
   border-bottom: 1px solid var(--kt-border-subtle);
-  background: rgb(var(--kt-bg-rgb) / 82%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  backdrop-filter: blur(20px) saturate(140%);
+  background: rgb(var(--kt-bg-rgb) / 96%);
+}
+@media (hover: hover) and (pointer: fine) {
+  .kt-site-header { background: rgb(var(--kt-bg-rgb) / 82%); -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%); }
 }
 
 .kt-site-header-inner { display: flex; min-height: 4.25rem; align-items: center; gap: var(--kt-space-5); }

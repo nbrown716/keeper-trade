@@ -138,9 +138,11 @@
     .filter(function(p){return ["QB","RB","WR","TE"].indexOf(p.pos)>=0&&p.name;});}
   function setStatus(s){var e=$("#valStatus");e.className="statuschip "+(s==="loading"?"loading":"");e.innerHTML='<span class="dot"></span>'+(s==="loading"?"Loading…":(s==="offline"?"Offline — retry":"Live · FantasyCalc"));}
 
+  var loadSeq=0;
   function load(){
     setStatus("loading");
-    function build(list){ rows=list; buildTeams(); render(); setStatus("live"); }
+    var seq=++loadSeq;
+    function build(list){ if(seq!==loadSeq) return; rows=list; buildTeams(); render(); setStatus("live"); }
     if(S.mode==="keeper"){
       var ur=url(false), ud=url(true);
       Promise.all([cache[ur]?Promise.resolve(cache[ur]):jget(ur).then(function(d){cache[ur]=d;return d;}),

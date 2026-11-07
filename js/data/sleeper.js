@@ -1,14 +1,24 @@
 import { liveData } from './live-data.js';
+import { addLeagueConnection, getActiveLeagueConnection } from './league-connections.js';
 
 const BASE = 'https://api.sleeper.app/v1';
-const STORAGE_KEY = 'kt-sleeper-league:v1';
+
+function isYahooLeague(id) {
+  const active = getActiveLeagueConnection();
+  return (active?.id === String(id) && active.provider === 'yahoo') || /^(?:nfl|\d{2,4})\.l\.\d+$/.test(String(id));
+}
+
+async function yahooBundle(id, week) {
+  const { getYahooLeagueBundle } = await import('./yahoo.js');
+  return getYahooLeagueBundle(id, week);
+}
 
 export function getSleeperLeagueId() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY))?.id || ''; } catch (_) { return ''; }
+  return getActiveLeagueConnection()?.id || '';
 }
 
 export function setSleeperLeagueId(id) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ id, savedAt: Date.now() })); } catch (_) {}
+  addLeagueConnection('sleeper', String(id || '').trim());
 }
 
 export function rosterPoints(settings = {}) {
@@ -17,24 +27,27 @@ export function rosterPoints(settings = {}) {
 
 function subscribeSource(key, path, cadence) {
   liveData.register(key, { url: `${BASE}/${path}`, cadence });
-  return new Promise(resolve => {
-    let settled = false;
-    let unsubscribe;
-    unsubscribe = liveData.subscribe(key, snapshot => {
-      if (!snapshot.data && snapshot.status !== 'error') return;
-      settled = true;
-      if (typeof unsubscribe === 'function') unsubscribe();
-      resolve(snapshot.data);
-    });
-    if (settled && typeof unsubscribe === 'function') unsubscribe();
-  });
+  return liveData.get(key).then(data => data ?? undefined);
+}
+
+// Calendar estimate used only when Sleeper's NFL state is unreachable and nothing is cached:
+// Week 1 kicks off the Thursday after Labor Day (first Monday of September).
+function estimatedNflState(now = new Date()) {
+  const season = now.getMonth() < 2 ? now.getFullYear() - 1 : now.getFullYear();
+  const laborDay = new Date(season, 8, 1);
+  laborDay.setDate(1 + ((8 - laborDay.getDay()) % 7));
+  const kickoff = new Date(season, 8, laborDay.getDate() + 3);
+  const week = Math.min(18, Math.max(1, Math.floor((now - kickoff) / 604800000) + 1));
+  return { season: String(season), week, display_week: week, season_type: 'regular', estimated: true };
 }
 
 export async function getNflState() {
-  return subscribeSource('sleeper-nfl-state', 'state/nfl', 3600000);
+  const state = await subscribeSource('sleeper-nfl-state', 'state/nfl', 3600000);
+  return state && typeof state === 'object' ? state : estimatedNflState();
 }
 
 export async function getLeagueBundle(id, week) {
+  if (isYahooLeague(id)) return yahooBundle(id, week);
   const [league, rosters, users, matchups, transactions] = await Promise.all([
     subscribeSource(`sleeper-league:${id}`, `league/${id}`, 300000),
     subscribeSource(`sleeper-rosters:${id}`, `league/${id}/rosters`, 300000),
@@ -47,6 +60,10 @@ export async function getLeagueBundle(id, week) {
 }
 
 export async function getLeagueLineage(id) {
+  if (isYahooLeague(id)) {
+    const bundle = await yahooBundle(id, 1);
+    return [bundle.league];
+  }
   const lineage = [];
   const seen = new Set();
   let current = String(id);

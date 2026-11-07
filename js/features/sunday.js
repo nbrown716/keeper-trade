@@ -1,4 +1,5 @@
 import { liveData } from '../data/live-data.js';
+import { friendlyError } from '../ui/friendly-error.js';
 import { SCOREBOARD_SOURCE, normalizeGames, summarySource, normalizeSummary } from '../data/espn.js';
 import { getSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner } from '../data/sleeper.js';
 import { getPlayerDatabase } from '../data/player-db.js';
@@ -227,6 +228,7 @@ function syncSummaries() {
   games.forEach(game => {
     if (summaryUnsubscribers.has(game.id)) return;
     summaryUnsubscribers.set(game.id, liveData.subscribe(summarySource(game.id), snapshot => {
+      if (snapshot.statusOnly) return;
       if (!snapshot.data) { scheduleRender(); return; }
       const summary = normalizeSummary(snapshot.data);
       summaries.set(game.id, summary);
@@ -240,7 +242,7 @@ function syncSummaries() {
           if (scorer) window.dispatchEvent(new CustomEvent('kt:player-score', { detail: { player: scorer, game, play } }));
         });
         const userTouchdown = fresh.some(play => userStarters().some(player => normalizeName(play.text).includes(normalizeName(player.name))) && /touchdown|\bTD\b/i.test(play.text));
-        if (userTouchdown && coarsePointer.matches && 'vibrate' in navigator && !reducedMotion.matches) navigator.vibrate([35, 45, 35]);
+        if (userTouchdown && coarsePointer.matches && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false && !reducedMotion.matches) navigator.vibrate([35, 45, 35]);
       }
       knownScoring.set(game.id, currentIds);
       scheduleRender();
@@ -288,7 +290,7 @@ async function loadLeague() {
     previousPlayerPoints = new Map(userStarters().map(player => [player.id, Number(matchup.players_points?.[player.id] || 0)]));
     scheduleRender();
   } catch (error) {
-    document.querySelector('#sunday-league-note').textContent = error.message || 'League overlays are unavailable.';
+    document.querySelector('#sunday-league-note').textContent = friendlyError(error, 'League overlays are unavailable right now. Live scores still work.');
   } finally {
     loadingLeague = false;
   }
@@ -341,6 +343,7 @@ document.querySelector('#sunday-sound').addEventListener('click', async event =>
 mountNavigation({ active: 'scores' });
 mascot.mountDock();
 liveData.subscribe(SCOREBOARD_SOURCE, snapshot => {
+  if (snapshot.statusOnly) return;
   games = normalizeGames(snapshot.data);
   syncSummaries();
   syncWeather();

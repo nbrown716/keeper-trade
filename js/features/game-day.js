@@ -179,7 +179,7 @@ function render(summary) {
 }
 
 function coarseHaptics() {
-  return !reducedMotion.matches && window.matchMedia('(pointer: coarse)').matches && 'vibrate' in navigator;
+  return !reducedMotion.matches && window.matchMedia('(pointer: coarse)').matches && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false;
 }
 
 function renderError() {

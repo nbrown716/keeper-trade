@@ -16,7 +16,7 @@ function toast(message) {
 function commissionerMode() {
   document.body.classList.add('kt-commissioner-mode');
   toast('Commissioner mode unlocked. Vetoes are not a strategy.');
-  if (!reducedMotion.matches && window.matchMedia('(pointer: coarse)').matches && 'vibrate' in navigator) navigator.vibrate([20, 30, 40]);
+  if (!reducedMotion.matches && window.matchMedia('(pointer: coarse)').matches && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate([20, 30, 40]);
 }
 
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) {

@@ -14,18 +14,9 @@ export const TEAM_COLORS = {
   NYJ: '#125740', PHI: '#004c54', PIT: '#ffb612', SEA: '#69be28', SF: '#aa0000', TB: '#d50a0a', TEN: '#4b92db', WAS: '#5a1414'
 };
 
+// One-shot read: fresh cache or a fresh network result (stale cache only as a fallback).
 function waitForSource(key) {
-  return new Promise(resolve => {
-    let settled = false;
-    let unsubscribe;
-    unsubscribe = liveData.subscribe(key, snapshot => {
-      if (!snapshot.data && snapshot.status !== 'error') return;
-      settled = true;
-      resolve(snapshot.data || null);
-      if (typeof unsubscribe === 'function') unsubscribe();
-    });
-    if (settled && typeof unsubscribe === 'function') unsubscribe();
-  });
+  return liveData.get(key);
 }
 
 function fetchSource(key, url, cadence = 300000) {

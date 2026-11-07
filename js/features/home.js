@@ -1,9 +1,9 @@
-import { mountNavigation } from '../ui/navigation.js?v=2';
+import { mountNavigation } from '../ui/navigation.js';
 import { mountPageTransitions } from '../ui/page-transitions.js';
 import { mountScoreTicker } from '../ui/score-ticker.js';
 import { mountRedZoneAlert } from '../ui/red-zone-alert.js';
 import { mountGamification } from './gamification.js';
-import { mountRoastCard } from './roast-card.js?v=2';
+import { mountRoastCard } from './roast-card.js';
 import { mascot } from '../ui/mascot.js';
 import { liveData } from '../data/live-data.js';
 import { SCOREBOARD_SOURCE, normalizeGames } from '../data/espn.js';
@@ -17,18 +17,9 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 }
 
+// One-shot read: fresh cache or a fresh network result (stale cache only as a fallback).
 function waitForSource(key) {
-  return new Promise(resolve => {
-    let settled = false;
-    let unsubscribe;
-    unsubscribe = liveData.subscribe(key, snapshot => {
-      if (!snapshot.data && snapshot.status !== 'error') return;
-      settled = true;
-      resolve(snapshot.data || null);
-      if (typeof unsubscribe === 'function') unsubscribe();
-    });
-    if (settled && typeof unsubscribe === 'function') unsubscribe();
-  });
+  return liveData.get(key);
 }
 
 export async function getNowSnapshot() {
@@ -67,10 +58,14 @@ function animateNumber(element, target) {
   requestAnimationFrame(frame);
 }
 
+function espnLabel(status) {
+  return !navigator.onLine ? 'ESPN · Offline' : status === 'stale' ? 'ESPN · Cached' : status === 'live' || status === 'refreshing' ? 'ESPN · Live data' : status === 'error' ? 'ESPN · Unavailable' : 'ESPN · Connecting';
+}
+
 async function renderNow() {
   const strip = document.querySelector('#scores');
   const snapshot = await getNowSnapshot();
-  const sourceLabel = !navigator.onLine ? 'ESPN · Offline' : snapshot.status === 'stale' ? 'ESPN · Cached' : snapshot.status === 'live' ? 'ESPN · Live data' : snapshot.status === 'error' ? 'ESPN · Unavailable' : 'ESPN · Connecting';
+  const sourceLabel = espnLabel(snapshot.status);
   strip.innerHTML = `<div><div class="kt-now-label"><span class="kt-live-dot" aria-hidden="true"></span>Now</div><span class="kt-demo-label">${escapeHtml(sourceLabel)}</span></div><div class="kt-now-week"><strong>${snapshot.week ? `NFL Week ${snapshot.week}` : 'NFL Schedule'}</strong><span><b class="kt-num" id="live-game-count">0</b> games in progress</span></div><div class="kt-now-trending" role="region" aria-label="Dynasty Dealer market movers" tabindex="0">${snapshot.trending.map(player => `<span class="kt-trend-chip"><b>${escapeHtml(player.name)}</b><span class="kt-delta${player.delta < 0 ? ' is-down' : ''}">${player.delta >= 0 ? '+' : ''}${player.delta.toFixed(1)}%</span></span>`).join('') || '<span class="kt-trend-chip">Market values updating</span>'}</div>`;
   animateNumber(document.querySelector('#live-game-count'), snapshot.gamesInProgress);
   strip.setAttribute('aria-busy', 'false');
@@ -100,7 +95,7 @@ function mountCardPhysics() {
   });
   document.querySelectorAll('.kt-feature-card').forEach(card => {
     card.addEventListener('click', () => {
-      if (window.matchMedia('(pointer:coarse)').matches && 'vibrate' in navigator) navigator.vibrate(8);
+      if (window.matchMedia('(pointer:coarse)').matches && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate(8);
     });
   });
 }
@@ -154,7 +149,7 @@ window.addEventListener('kt:scores-update', event => {
   if (!weekLabel) return;
   weekLabel.textContent = week ? `NFL Week ${week}` : 'NFL Schedule';
   strip.querySelector('.kt-now-week span').innerHTML = `<b class="kt-num">${games.filter(game => game.state === 'in').length}</b> games in progress`;
-  strip.querySelector('.kt-demo-label').textContent = status === 'stale' ? 'ESPN · Cached' : 'ESPN · Live data';
+  strip.querySelector('.kt-demo-label').textContent = espnLabel(status);
 });
 renderFeed().catch(() => {
   const feed = document.querySelector('#for-you-feed');

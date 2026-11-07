@@ -1,4 +1,5 @@
 import { getSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner, rosterPoints } from '../data/sleeper.js';
+import { friendlyError } from '../ui/friendly-error.js';
 import { dealerSource, normalizeDealerPlayers } from '../data/dynasty-dealer.js';
 import { liveData } from '../data/live-data.js';
 import { mountNavigation } from '../ui/navigation.js';
@@ -14,18 +15,9 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 }
 
+// One-shot read: fresh cache or a fresh network result (stale cache only as a fallback).
 function waitForSource(key) {
-  return new Promise(resolve => {
-    let settled = false;
-    let unsubscribe;
-    unsubscribe = liveData.subscribe(key, snapshot => {
-      if (!snapshot.data && snapshot.status !== 'error') return;
-      settled = true;
-      resolve(snapshot.data || null);
-      if (typeof unsubscribe === 'function') unsubscribe();
-    });
-    if (settled && typeof unsubscribe === 'function') unsubscribe();
-  });
+  return liveData.get(key);
 }
 
 function average(values) {
@@ -253,7 +245,7 @@ async function init() {
   } catch (error) {
     document.querySelector('#season-meta').textContent = 'Season Sim is waiting for a league.';
     document.querySelector('#season-board').setAttribute('aria-busy', 'false');
-    document.querySelector('#season-board').innerHTML = `<div class="kt-season-error"><h2>${escapeHtml(error.message)}</h2><a class="kt-btn kt-btn-primary" href="index.html#league">Connect league</a></div>`;
+    document.querySelector('#season-board').innerHTML = `<div class="kt-season-error"><h2>${escapeHtml(friendlyError(error, 'Season Sim could not reach your league right now.'))}</h2><a class="kt-btn kt-btn-primary" href="index.html#league">Connect league</a></div>`;
   }
 }
 

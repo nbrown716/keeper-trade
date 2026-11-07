@@ -19,7 +19,7 @@
 .kt-match-vs { color: var(--kt-text-muted); font-family: var(--kt-font-display); font-size: var(--kt-text-xl); }
 .kt-match-status { max-width: 10rem; color: var(--kt-text-secondary); font-size: var(--kt-text-xs); text-align: center; }
 
-.kt-momentum-card { padding: var(--kt-space-4); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-xl); background: rgb(17 24 39 / 76%); box-shadow: var(--kt-shadow-lg), var(--kt-inner-glow); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+.kt-momentum-card { padding: var(--kt-space-4); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-xl); background: rgb(17 24 39 / 92%); box-shadow: var(--kt-shadow-lg), var(--kt-inner-glow); }
 .kt-momentum-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--kt-space-4); margin-bottom: var(--kt-space-3); }
 .kt-momentum-header h1, .kt-momentum-header h2 { margin: 0; font-family: var(--kt-font-display); font-size: var(--kt-text-2xl); line-height: 1; text-transform: uppercase; }
 .kt-momentum-readout { text-align: right; }

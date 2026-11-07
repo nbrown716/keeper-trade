@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏈%3C/text%3E%3C/svg%3E">
-<script>(function(){try{var t=localStorage.getItem('gi-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('gi-theme');if(t!=='light'&&t!=='dark')t='dark';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();</script>
 <title>The Wire · NFL Research — Keeper Trade</title>
 <style>
   :root{
@@ -355,9 +355,11 @@
   }
 
   /* ---------------- PLAYERS DB (FantasyCalc) ---------------- */
+  var playersLoading=null;
   function loadPlayers(){
     if(players.length) return Promise.resolve();
-    return jget(FC_URL).then(function(data){
+    if(playersLoading) return playersLoading;
+    return playersLoading=jget(FC_URL).finally(function(){ playersLoading=null; }).then(function(data){
       players=(data||[]).map(function(row){
         var pl=row.player||{};
         return { name:pl.name, pos:(pl.position||"").toUpperCase(), team:pl.maybeTeam||"FA",
@@ -545,8 +547,16 @@
     var b=ev.target.closest(".tab"); if(!b)return; switchTab(b.getAttribute("data-tab"));
   });
 
-  // initial
-  loaded.news=1; loadNews();
+  // initial (command-palette deep links arrive as ?player=<name-slug>)
+  var wanted=new URLSearchParams(location.search).get("player");
+  function nameSlug(n){ return String(n||"").toLowerCase().replace(/[.'’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
+  if(wanted){
+    switchTab("players");
+    loadPlayers().then(function(){
+      var hit=players.find(function(p){ return nameSlug(p.name)===wanted; });
+      if(hit) openPlayer(hit);
+    }).catch(function(){});
+  } else { loaded.news=1; loadNews(); }
 })();
 </script>
 <script type="module" src="js/features/research-tracking.js"></script>

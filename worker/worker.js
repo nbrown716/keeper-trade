@@ -47,7 +47,7 @@ const FEATURES = {
 };
 
 const PRICES = {
-  'claude-haiku-4-5': { input: 0.80, output: 4.00 },
+  'claude-haiku-4-5': { input: 1.00, output: 5.00 },
   'claude-sonnet-4-5': { input: 3.00, output: 15.00 }
 };
 
@@ -60,7 +60,7 @@ function cors(request, env) {
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Keeper-Session',
     Vary: 'Origin'
   };
 }
@@ -91,7 +91,7 @@ async function proxyESPN(request, env, url) {
   else if (url.pathname === '/espn/summary') endpoint = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary';
   else if (url.pathname === '/espn/news') endpoint = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/news';
   else if (url.pathname === '/espn/standings') endpoint = 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings';
-  else if (/^\/espn\/athletes\/\d+\/overview$/.test(url.pathname)) endpoint = `https://site.web.api.espn.com/apis/common/v3/sports/football/nfl${url.pathname}`;
+  else if (/^\/espn\/athletes\/\d+\/overview$/.test(url.pathname)) endpoint = `https://site.web.api.espn.com/apis/common/v3/sports/football/nfl${url.pathname.slice(5)}`;
   else if (/^\/espn\/teams\/\d+\/roster$/.test(url.pathname)) endpoint = `https://site.api.espn.com/apis/site/v2/sports/football/nfl${url.pathname.slice(5)}`;
   else return respond(request, env, { error: 'route' }, 404);
   const allowed = ['dates', 'season', 'seasontype', 'week', 'event'];
@@ -115,6 +115,187 @@ async function proxyESPN(request, env, url) {
   }
 }
 
+const YAHOO_API = 'https://fantasysports.yahooapis.com/fantasy/v2';
+const YAHOO_OAUTH = 'https://api.login.yahoo.com/oauth2';
+
+function yahooSession(request) {
+  const session = request.headers.get('X-Keeper-Session') || '';
+  return /^[A-Za-z0-9_-]{22,80}$/.test(session) ? session : '';
+}
+
+function yahooError(status, reason) {
+  const error = new Error(reason);
+  error.status = status;
+  error.reason = reason;
+  return error;
+}
+
+async function yahooTokenRequest(env, parameters) {
+  const response = await fetch(`${YAHOO_OAUTH}/get_token`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${btoa(`${env.YAHOO_CLIENT_ID}:${env.YAHOO_CLIENT_SECRET}`)}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json'
+    },
+    body: new URLSearchParams(parameters)
+  });
+  if (!response.ok) throw yahooError(401, 'yahoo-auth');
+  return response.json();
+}
+
+function yahooCallbackUrl(request) {
+  return `${new URL(request.url).origin}/yahoo/callback`;
+}
+
+// Best-effort, per-isolate guards. KV is not used for counting because each Yahoo league load
+// is several requests and KV writes are quota-limited; the edge cache below absorbs repeats.
+const YAHOO_RATE_PER_MINUTE = 40;
+const yahooRate = new Map();
+const yahooRefreshes = new Map();
+
+function yahooRateLimited(session) {
+  const now = minute();
+  const entry = yahooRate.get(session);
+  if (!entry || entry.minute !== now) {
+    if (yahooRate.size > 5000) yahooRate.clear();
+    yahooRate.set(session, { minute: now, count: 1 });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > YAHOO_RATE_PER_MINUTE;
+}
+
+async function refreshYahooToken(request, env, key, saved) {
+  const token = await yahooTokenRequest(env, { grant_type: 'refresh_token', refresh_token: saved.refresh_token, redirect_uri: yahooCallbackUrl(request) });
+  await env.AI_CACHE.put(key, JSON.stringify({
+    access_token: token.access_token,
+    refresh_token: token.refresh_token || saved.refresh_token,
+    expires_at: Date.now() + Number(token.expires_in || 3600) * 1000,
+    guid: token.xoauth_yahoo_guid || saved.guid || ''
+  }), { expirationTtl: 60 * 60 * 24 * 90 });
+  return token.access_token;
+}
+
+async function yahooAccessToken(request, env) {
+  const session = yahooSession(request);
+  if (!session) throw yahooError(400, 'session-required');
+  const key = `yahoo:session:${session}`;
+  const saved = await env.AI_CACHE.get(key, 'json');
+  if (!saved?.refresh_token) throw yahooError(401, 'yahoo-auth-required');
+  if (saved.access_token && Number(saved.expires_at) > Date.now() + 60000) return saved.access_token;
+  // Parallel league requests share one refresh so a rotated refresh token is never spent twice.
+  if (!yahooRefreshes.has(session)) {
+    yahooRefreshes.set(session, refreshYahooToken(request, env, key, saved).finally(() => yahooRefreshes.delete(session)));
+  }
+  return yahooRefreshes.get(session);
+}
+
+async function yahooApi(request, env, path, { cacheSeconds = 0 } = {}) {
+  const session = yahooSession(request);
+  if (!session) throw yahooError(400, 'session-required');
+  const edgeCache = typeof caches !== 'undefined' && caches.default ? caches.default : null;
+  const cacheKey = cacheSeconds && edgeCache ? new Request(`https://yahoo-cache.keeper-trade.internal/${await digest(`${session}:${path}`)}`) : null;
+  if (cacheKey) {
+    const hit = await edgeCache.match(cacheKey);
+    if (hit) return hit.json();
+  }
+  if (yahooRateLimited(session)) throw yahooError(429, 'rate-limit');
+  const token = await yahooAccessToken(request, env);
+  const response = await fetch(`${YAHOO_API}${path}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+  if (response.status === 401) throw yahooError(401, 'yahoo-auth-expired');
+  if (!response.ok) throw yahooError(502, 'yahoo-upstream');
+  const text = await response.text();
+  let data;
+  try { data = JSON.parse(text); } catch (_) { throw yahooError(502, 'yahoo-upstream'); }
+  if (cacheKey) await edgeCache.put(cacheKey, new Response(text, { headers: { 'Content-Type': 'application/json', 'Cache-Control': `max-age=${cacheSeconds}` } }));
+  return data;
+}
+
+// The callback is a top-level browser navigation from Yahoo, so it must always end in a redirect
+// back to the site, never a raw JSON error page.
+async function handleYahooCallback(request, env, url) {
+  const failed = () => Response.redirect(`${env.ALLOWED_ORIGIN}/?yahoo=error#league`, 302);
+  if (!env.YAHOO_CLIENT_ID || !env.YAHOO_CLIENT_SECRET) return failed();
+  try {
+    const state = url.searchParams.get('state') || '';
+    const code = url.searchParams.get('code') || '';
+    if (!/^[0-9a-f-]{36}$/.test(state) || !code) return failed();
+    const stateKey = `yahoo:state:${state}`;
+    const savedState = await env.AI_CACHE.get(stateKey, 'json');
+    if (!savedState?.session) return failed();
+    await env.AI_CACHE.delete(stateKey);
+    const token = await yahooTokenRequest(env, { grant_type: 'authorization_code', code, redirect_uri: yahooCallbackUrl(request) });
+    if (!token?.access_token || !token?.refresh_token) return failed();
+    await env.AI_CACHE.put(`yahoo:session:${savedState.session}`, JSON.stringify({
+      access_token: token.access_token,
+      refresh_token: token.refresh_token,
+      expires_at: Date.now() + Number(token.expires_in || 3600) * 1000,
+      guid: token.xoauth_yahoo_guid || ''
+    }), { expirationTtl: 60 * 60 * 24 * 90 });
+    return Response.redirect(`${env.ALLOWED_ORIGIN}/?yahoo=connected#league`, 302);
+  } catch (_) {
+    return failed();
+  }
+}
+
+async function handleYahoo(request, env, url) {
+  if (request.method === 'GET' && url.pathname === '/yahoo/callback') return handleYahooCallback(request, env, url);
+  if (!env.YAHOO_CLIENT_ID || !env.YAHOO_CLIENT_SECRET) return respond(request, env, { status: 'unavailable', reason: 'yahoo-config' }, 503);
+  try {
+    if (request.method === 'GET' && url.pathname === '/yahoo/connect') {
+      const session = yahooSession(request);
+      if (!session) return respond(request, env, { status: 'error', reason: 'session-required' }, 400);
+      const state = crypto.randomUUID();
+      await env.AI_CACHE.put(`yahoo:state:${state}`, JSON.stringify({ session }), { expirationTtl: 600 });
+      const redirect_uri = yahooCallbackUrl(request);
+      const auth = new URL(`${YAHOO_OAUTH}/request_auth`);
+      auth.searchParams.set('client_id', env.YAHOO_CLIENT_ID);
+      auth.searchParams.set('redirect_uri', redirect_uri);
+      auth.searchParams.set('response_type', 'code');
+      auth.searchParams.set('state', state);
+      auth.searchParams.set('language', 'en-us');
+      return respond(request, env, { status: 'ready', url: auth.toString() });
+    }
+    if (request.method === 'GET' && url.pathname === '/yahoo/leagues') {
+      const data = await yahooApi(request, env, '/users;use_login=1/games;game_keys=nfl/leagues?format=json', { cacheSeconds: 60 });
+      return respond(request, env, data);
+    }
+    if (request.method === 'GET' && url.pathname === '/yahoo/proxy') {
+      const league = url.searchParams.get('league') || '';
+      const resource = url.searchParams.get('resource') || '';
+      const week = String(Number(url.searchParams.get('week')) || 1);
+      if (!/^(?:nfl|\d{2,4})\.l\.\d+$/.test(league) || !/^\d{1,2}$/.test(week)) return respond(request, env, { status: 'error', reason: 'league' }, 400);
+      // Yahoo takes week as a matrix parameter (`;week=N`); a `?week=` query is ignored upstream.
+      // `rosters` returns every team's roster in one call instead of one request per team.
+      const resources = {
+        standings: `/league/${league}/standings`,
+        scoreboard: `/league/${league}/scoreboard;week=${week}`,
+        settings: `/league/${league}/settings`,
+        transactions: `/league/${league}/transactions`,
+        rosters: `/league/${league}/teams/roster;week=${week}`
+      };
+      let path = resources[resource];
+      if (resource === 'roster') {
+        const team = url.searchParams.get('team') || '';
+        if (!/^(?:nfl|\d{2,4})\.l\.\d+\.t\.\d+$/.test(team) || team.split('.')[2] !== league.split('.')[2]) return respond(request, env, { status: 'error', reason: 'team' }, 400);
+        path = `/team/${team}/roster;week=${week}`;
+      }
+      if (!path) return respond(request, env, { status: 'error', reason: 'resource' }, 404);
+      const data = await yahooApi(request, env, `${path}?format=json`, { cacheSeconds: resource === 'settings' ? 3600 : 60 });
+      return respond(request, env, data);
+    }
+    if (request.method === 'POST' && url.pathname === '/yahoo/disconnect') {
+      const session = yahooSession(request);
+      if (session) await env.AI_CACHE.delete(`yahoo:session:${session}`);
+      return respond(request, env, { status: 'ready' });
+    }
+    return respond(request, env, { status: 'error', reason: 'route' }, 404);
+  } catch (error) {
+    return respond(request, env, { status: 'error', reason: error.reason || 'yahoo-upstream' }, error.status || 502);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -123,8 +304,10 @@ export default {
       return new Response(JSON.stringify({ date: day(), spend, cap: Number(env.DAILY_SPEND_CAP || '1'), currency: 'USD' }), { headers: { 'Content-Type': 'application/json' } });
     }
     if (request.method === 'GET' && url.pathname.startsWith('/espn/')) return proxyESPN(request, env, url);
+    if (request.method === 'GET' && url.pathname === '/yahoo/callback') return handleYahoo(request, env, url);
     if (!cors(request, env)) return new Response('Origin not allowed', { status: 403 });
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request, env) });
+    if (url.pathname.startsWith('/yahoo/')) return handleYahoo(request, env, url);
     if (request.method !== 'POST' || !url.pathname.startsWith('/ai/')) {
       return respond(request, env, { status: 'resting', reason: 'route' }, 200);
     }

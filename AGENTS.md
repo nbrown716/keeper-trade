@@ -61,6 +61,8 @@
 - Dynasty Dealer values: `https://www.dynastydealer.com/api/player-values`
 - FantasyCalc values: `https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=1&numTeams=12&ppr=1`
 - Weather: `https://api.open-meteo.com/v1/forecast` (always attribute "Weather data by Open-Meteo.com" somewhere visible)
+- Yahoo Fantasy (OAuth, NOT keyless): only through the Cloudflare Worker `/yahoo/*` routes. The browser holds a random session ID only; tokens stay in Worker KV. Always show "Fantasy data provided by Yahoo Fantasy" attribution. See `worker/DEPLOY.md`.
+- ESPN is reached through the Worker `/espn/*` proxy (direct browser calls fail CORS).
 
 ## Workflow rules
 

@@ -1,5 +1,5 @@
 import { icon } from './icons.js';
-import { mountCommandPalette } from './command-palette.js?v=6';
+import { mountCommandPalette } from './command-palette.js';
 
 const destinations = [
   { id: 'home', label: 'Home', url: 'index.html', icon: 'home' },
@@ -58,7 +58,7 @@ export function mountNavigation({ active = 'home' } = {}) {
     document.documentElement.dataset.theme = theme;
     try { localStorage.setItem('gi-theme', theme); } catch (_) {}
     updateThemeButton(theme);
-    if (window.matchMedia('(pointer:coarse)').matches && 'vibrate' in navigator) navigator.vibrate(8);
+    if (window.matchMedia('(pointer:coarse)').matches && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate(8);
   });
   window.addEventListener('kt:theme-change', event => updateThemeButton(event.detail.theme));
   updateThemeButton(document.documentElement.dataset.theme || 'dark');

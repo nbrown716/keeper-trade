@@ -142,3 +142,34 @@ anthropic-workspace-id: WORKSPACE_ID_WHEN_REQUIRED
 - Generate the same card twice; the second response should be cached.
 - Check the Cloudflare logs for feature/token/cost entries.
 - To stop AI immediately, raise no key or client code: remove the Worker URL locally or pause the Worker in Cloudflare. Existing site features continue working.
+
+## Yahoo Fantasy connector (OAuth through this Worker)
+
+Status (2026-11-06): source complete and verified against realistic Yahoo-shaped fixtures and a mocked OAuth Worker test. **Not deployed and not verified against a real Yahoo account.** Do not call it live until the real acceptance test below passes.
+
+1. Create a Yahoo Developer app with **Fantasy Sports — Read** access. Yahoo may require application review before Fantasy data is returned.
+2. Set the redirect URI to exactly `https://keeper-trade-ai.nicholas-brown00.workers.dev/yahoo/callback`.
+3. In a private terminal, set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, then from `worker/` run `python deploy.py --origin "https://keeper-trade.pages.dev"`. Enter the Anthropic key and both Yahoo values at the hidden prompts. They upload as `secret_text` (`YAHOO_CLIENT_ID`, `YAHOO_CLIENT_SECRET`) and are never printed or stored in the repository.
+4. Check: `GET /yahoo/connect` (from the site, with an `X-Keeper-Session` header) returns a Yahoo sign-in URL instead of `503 yahoo-config`.
+
+How it works:
+- The browser keeps only a random session ID (`kt-yahoo-session:v1`) and sends it as `X-Keeper-Session`.
+- Access and refresh tokens are stored only in the `AI_CACHE` KV namespace under `yahoo:session:<id>`, with a 90-day expiry. They are never returned to the browser.
+- Parallel requests share a single token refresh, so a rotated refresh token is never spent twice.
+- Yahoo league keys look like `461.l.12345` (numeric game key). `nfl.l.12345` is accepted as a request alias.
+- The week is sent as a Yahoo matrix parameter: `/scoreboard;week=9` and `/teams/roster;week=9`.
+- A league bundle costs 5 Worker calls: standings, scoreboard, settings, transactions, and all rosters in one request.
+- Per-session guard: 40 Yahoo calls per minute per isolate (best effort). Edge cache: 60s, or 1h for settings.
+- The callback always redirects to `/?yahoo=connected#league` or `/?yahoo=error#league` and never shows a raw error page.
+- Attribution "Fantasy data provided by Yahoo Fantasy" with the Yahoo logo is shown wherever Yahoo data appears.
+
+Real acceptance test after deployment:
+1. Connect a real Yahoo league and verify team names, records, points and rosters against Yahoo.
+2. Wait more than one hour (access-token expiry) and reload to confirm the refresh works.
+3. Disconnect.
+4. Re-run the production Sleeper checks.
+
+## Other Worker fixes awaiting the next deploy (2026-11-06)
+
+- `/espn/athletes/:id/overview` previously proxied to `.../nfl/espn/athletes/...` and returned **502 in production**, so Research player detail never loaded live ESPN data. Fixed with `url.pathname.slice(5)`.
+- Haiku 4.5 budget pricing corrected to $1/$5 per MTok (was $0.80/$4, which undercounted spend by 20% against the $1 daily cap).

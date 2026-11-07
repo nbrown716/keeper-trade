@@ -8,7 +8,7 @@
 .kt-sunday-controls select { min-width: 11rem; min-height: var(--kt-tap); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-md); background: var(--kt-surface-1); color: var(--kt-text-primary); }
 #sunday-sync { padding-bottom: 0.85rem; color: var(--kt-text-muted); font-size: 0.625rem; font-weight: 750; letter-spacing: 0.08em; }
 .kt-sunday-meta { display: flex; justify-content: space-between; gap: var(--kt-space-3); margin-bottom: var(--kt-space-4); color: var(--kt-text-muted); font-size: var(--kt-text-xs); }
-.kt-sunday-meta a { color: var(--kt-secondary); }
+.kt-sunday-meta a { display: inline-flex; flex: none; align-items: center; min-height: var(--kt-tap, 44px); color: var(--kt-secondary); }
 .kt-sunday-radar { margin-bottom: var(--kt-space-3); padding: var(--kt-space-3) var(--kt-space-4); border: 1px solid rgb(198 255 74 / 35%); border-radius: var(--kt-radius-md); background: var(--kt-accent-soft); color: var(--kt-accent); font-size: var(--kt-text-sm); font-weight: 800; letter-spacing: 0.05em; text-align: center; animation: kt-radar-pulse 1.8s ease-in-out infinite alternate; }
 .kt-sunday-director { display: flex; align-items: center; justify-content: space-between; gap: var(--kt-space-3); margin-bottom: var(--kt-space-3); padding: var(--kt-space-2) var(--kt-space-2) var(--kt-space-2) var(--kt-space-4); border: 1px solid rgb(255 82 104 / 40%); border-radius: var(--kt-radius-pill); background: var(--kt-danger-soft); color: var(--kt-live); font-size: var(--kt-text-xs); }
 .kt-sunday-director[hidden] { display: none; }

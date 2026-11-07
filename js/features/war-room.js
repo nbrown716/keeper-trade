@@ -1,4 +1,5 @@
 import { getSleeperLeagueId, getNflState } from '../data/sleeper.js';
+import { friendlyError } from '../ui/friendly-error.js';
 import { askAI } from '../data/ai.js';
 import { timeAgo } from '../data/news.js';
 import { liveData } from '../data/live-data.js';
@@ -104,7 +105,7 @@ async function runStartSit(full = false, force = false) {
     results.querySelectorAll('[data-typewriter]').forEach((element, index) => typewriter(element, currentStart[index].verdict.reason));
     freshness('#war-start-freshness', result);
   } catch (error) {
-    document.querySelector('#war-start-results').innerHTML = `<p class="kt-muted">${escapeHtml(error.message)}</p>`;
+    document.querySelector('#war-start-results').innerHTML = `<p class="kt-muted">${escapeHtml(friendlyError(error, 'Start/Sit is unavailable right now. Try again shortly.'))}</p>`;
   } finally {
     loading = false;
     setBusy(button, false, '#war-start-results');
@@ -143,7 +144,7 @@ async function runWaiver(force = false) {
     results.querySelectorAll('[data-typewriter]').forEach((element, index) => typewriter(element, currentWaivers[index].blurb));
     freshness('#war-waiver-freshness', result);
   } catch (error) {
-    document.querySelector('#war-waiver-results').innerHTML = `<p class="kt-muted">${escapeHtml(error.message)}</p>`;
+    document.querySelector('#war-waiver-results').innerHTML = `<p class="kt-muted">${escapeHtml(friendlyError(error, 'The waiver wire is unavailable right now. Try again shortly.'))}</p>`;
   } finally {
     loading = false;
     setBusy(button, false, '#war-waiver-results');
@@ -207,7 +208,7 @@ async function runCounter(force = false) {
     results.innerHTML = `<div class="kt-counter-verdict"><h3>${escapeHtml(parsed.verdict)}</h3><ul>${parsed.reasoning.slice(0, 3).map(reason => `<li>${escapeHtml(reason)}</li>`).join('')}</ul></div><div class="kt-counter-grid">${counters.map((counter, index) => `<article class="kt-verdict-card" style="--kt-delay:${index * 60}ms"><span class="kt-eyebrow">Counter ${index + 1}</span><div class="kt-counter-assets"><div class="kt-counter-side"><small>You receive</small><strong>${escapeHtml(counter.sideA.map(player => player.name).join(' + '))}</strong></div><div class="kt-counter-side"><small>They receive</small><strong>${escapeHtml(counter.sideB.map(player => player.name).join(' + '))}</strong></div></div><div class="kt-fairness"><span>${escapeHtml(counter.fairness.verdict)}</span><span>${escapeHtml(counter.fairness.gap)}</span></div><p class="kt-counter-message">${escapeHtml(counter.message)}</p><button class="kt-btn kt-btn-sm kt-btn-secondary kt-counter-copy" type="button" data-counter-copy="${index}">Copy counter-offer message</button></article>`).join('')}</div>`;
     freshness('#war-counter-freshness', result);
   } catch (error) {
-    document.querySelector('#war-counter-results').innerHTML = `<p class="kt-muted">${escapeHtml(error.message)}</p>`;
+    document.querySelector('#war-counter-results').innerHTML = `<p class="kt-muted">${escapeHtml(friendlyError(error, 'Counter-offers are unavailable right now. Try again shortly.'))}</p>`;
   } finally {
     loading = false;
     setBusy(button, false, '#war-counter-results');
@@ -303,7 +304,7 @@ async function load() {
     if (now.getDay() === 2 && now.getHours() >= 18) runWaiver();
     else document.querySelector('#war-waiver-note').textContent = 'Auto-generates Tuesday at 6pm. Build a board anytime with your current data.';
   } catch (error) {
-    document.querySelector('#war-freshness').textContent = error.message || 'The War Room could not load your league.';
+    document.querySelector('#war-freshness').textContent = friendlyError(error, 'The War Room could not reach your league. Check your connection and try again.');
   } finally {
     document.querySelector('#war-loading').hidden = true;
     setActionLoading(false);

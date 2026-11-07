@@ -1,6 +1,6 @@
-import { mountNavigation } from '../ui/navigation.js?v=2';
+import { mountNavigation } from '../ui/navigation.js';
 import { mountPageTransitions } from '../ui/page-transitions.js';
-import { openCommandPalette } from '../ui/command-palette.js?v=6';
+import { openCommandPalette } from '../ui/command-palette.js';
 
 mountNavigation({ active: 'more' });
 mountPageTransitions();

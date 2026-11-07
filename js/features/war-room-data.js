@@ -6,18 +6,9 @@ import { VALUES_SOURCE, normalizePlayers } from '../data/player-values.js';
 import { SCOREBOARD_SOURCE, normalizeGames } from '../data/espn.js';
 import { subscribeGameWeather, playerWeatherImpact } from '../data/weather.js';
 
+// One-shot read: fresh cache or a fresh network result (stale cache only as a fallback).
 function waitForSource(key) {
-  return new Promise(resolve => {
-    let settled = false;
-    let unsubscribe;
-    unsubscribe = liveData.subscribe(key, snapshot => {
-      if (!snapshot.data && snapshot.status !== 'error') return;
-      settled = true;
-      resolve(snapshot.data || null);
-      if (typeof unsubscribe === 'function') unsubscribe();
-    });
-    if (settled && typeof unsubscribe === 'function') unsubscribe();
-  });
+  return liveData.get(key);
 }
 
 function weatherForPlayers(games, players) {

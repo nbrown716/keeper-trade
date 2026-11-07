@@ -11,7 +11,7 @@
 .trade-desk-hero h1 { margin: 0 0 var(--kt-space-2); font-family: var(--kt-font-display); font-size: clamp(3rem, 7vw, 5.5rem); font-weight: 800; letter-spacing: -0.025em; line-height: 0.85; text-transform: uppercase; }
 .trade-desk-hero p { max-width: 44rem; margin: 0; color: var(--kt-text-secondary); font-size: var(--kt-text-sm); }
 .trade-desk-actions { display: flex; flex-wrap: wrap; gap: var(--kt-space-2); }
-.trade-desk-body .league, .trade-desk-body .settings { margin-bottom: var(--kt-space-5); border-color: var(--kt-border-subtle); background: rgb(17 24 39 / 72%); box-shadow: var(--kt-inner-glow); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.trade-desk-body .league, .trade-desk-body .settings { margin-bottom: var(--kt-space-5); border-color: var(--kt-border-subtle); background: rgb(17 24 39 / 90%); box-shadow: var(--kt-inner-glow); }
 .trade-desk-body .chip { border-color: var(--kt-border-subtle); background: var(--kt-surface-2); color: var(--kt-text-secondary); }
 .trade-desk-body .chip b { color: var(--kt-text-primary); }
 .trade-desk-body .pcard .mt, .trade-desk-body .res .mt, .trade-desk-body .frow .k, .trade-desk-body .field label { color: var(--kt-text-secondary); }
@@ -93,7 +93,7 @@
   .trade-desk-body .tglbtn { width: var(--kt-tap); height: var(--kt-tap); }
   .trade-desk-body .site-nav a { min-height: var(--kt-tap); }
   .trade-desk-body.is-searching .adder > input { position: fixed; z-index: 1502; right: var(--kt-space-3); bottom: 60dvh; left: var(--kt-space-3); width: auto; }
-  .trade-desk-body.is-searching .results.open { position: fixed; right: 0; bottom: 0; left: 0; max-height: 60dvh; border-radius: var(--kt-radius-xl) var(--kt-radius-xl) 0 0; }
+  .trade-desk-body.is-searching .results.open { position: fixed; top: auto; right: 0; bottom: 0; left: 0; max-height: 60dvh; border-radius: var(--kt-radius-xl) var(--kt-radius-xl) 0 0; }
   .kt-trade-panel { inset: auto 0 0; width: 100%; max-height: 86dvh; border: 1px solid var(--kt-border); border-bottom: 0; border-radius: var(--kt-radius-xl) var(--kt-radius-xl) 0 0; }
 }
 

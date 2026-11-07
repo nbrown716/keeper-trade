@@ -94,7 +94,7 @@ function announceScore(game, previous) {
   const scoringTeam = game.away.score !== away ? game.away : game.home;
   const announcement = document.querySelector('#kt-score-announcement');
   announcement.textContent = `${scoringTeam.name} scores. ${game.away.abbreviation} ${game.away.score}, ${game.home.abbreviation} ${game.home.score}.`;
-  if (coarsePointer.matches && 'vibrate' in navigator && !reducedMotion.matches) navigator.vibrate([25, 45, 25]);
+  if (coarsePointer.matches && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false && !reducedMotion.matches) navigator.vibrate([25, 45, 25]);
 }
 
 function scrollToPriority() {
@@ -123,13 +123,15 @@ function render(snapshot) {
     ? 'Debug date'
     : status === 'refreshing' || (status === 'stale' && error) ? 'Updating…'
       : status === 'stale' ? 'Cached' : status === 'error' ? 'Reconnecting' : 'ESPN';
-  if (!data) return;
+  const announce = () => window.dispatchEvent(new CustomEvent('kt:scores-update', { detail: { games, status, week: games[0]?.week || data?.week?.number || 0 } }));
+  if (!data) { if (status === 'error') announce(); return; }
 
   games = normalizeGames(data);
   syncWeather();
   if (!games.length) {
     track.innerHTML = '<div class="kt-score-empty">No NFL games on this date.</div>';
     updateMarquee();
+    announce();
     return;
   }
 
@@ -151,7 +153,7 @@ function render(snapshot) {
   updateMarquee();
   scrollToPriority();
   if (focusedGame) track.querySelector(`[data-game-id="${CSS.escape(focusedGame)}"]`)?.focus({ preventScroll: true });
-  window.dispatchEvent(new CustomEvent('kt:scores-update', { detail: { games, status, week: games[0]?.week || 0 } }));
+  announce();
 }
 
 function openGameDay(game) {

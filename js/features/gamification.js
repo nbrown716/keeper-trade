@@ -146,11 +146,15 @@ function flyingXp(amount) {
   window.setTimeout(() => particle.remove(), 1200);
 }
 
+let rewardAudio;
 function playRewardSound() {
   if (!state.preferences.sound) return;
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const context = new AudioContext();
+    // One shared context: browsers cap live AudioContexts, and a new one per reward was never closed.
+    rewardAudio = rewardAudio || new AudioContext();
+    const context = rewardAudio;
+    if (context.state === 'suspended') context.resume();
     [440, 660].forEach((frequency, index) => {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
@@ -167,7 +171,7 @@ function playRewardSound() {
 
 function rewardFeedback(amount) {
   flyingXp(amount);
-  if (window.matchMedia('(pointer: coarse)').matches && !reducedMotion.matches && 'vibrate' in navigator) navigator.vibrate([20, 35, 35]);
+  if (window.matchMedia('(pointer: coarse)').matches && !reducedMotion.matches && 'vibrate' in navigator && navigator.userActivation?.hasBeenActive !== false) navigator.vibrate([20, 35, 35]);
   playRewardSound();
 }
 

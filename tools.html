@@ -283,7 +283,7 @@
       var pc={}; adpList.forEach(function(p){pc[p.pos]=(pc[p.pos]||0)+1;p.posRank=pc[p.pos];});
       var tier=1,top=null; adpList.forEach(function(p){if(p.val){if(top==null)top=p.val;else if(p.val<top*0.85){tier++;top=p.val;}}p.tier=tier;});
       setAdpStatus("live"); renderADP();
-    }).catch(function(){setAdpStatus("offline");document.getElementById("adpRows").innerHTML='<tr><td colspan="7"><div class="skel">Couldn\'t reach FantasyCalc — reopen the tab to retry.</div></td></tr>';});
+    }).catch(function(){adpLoaded=false;setAdpStatus("offline");document.getElementById("adpRows").innerHTML='<tr><td colspan="7"><div class="skel">Couldn\'t reach FantasyCalc — reopen the tab to retry.</div></td></tr>';});
   }
   function renderADP(){
     document.getElementById("adpHead").innerHTML='<th>ADP</th><th>Player</th><th>Pos</th><th>Team</th><th>Tier</th><th>Dyn Value</th><th>Value</th>';

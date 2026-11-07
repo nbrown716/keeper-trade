@@ -1,11 +1,12 @@
 # NOTES.md — Project Memory
 
-> Kimi Code: read this at the start of every session, and update it (append a new dated entry) after every completed task.
+> Read this at the start of every session (Claude Code took over from Kimi Code on 2026-11-06), and append a dated entry after every completed task.
 
 ## Current status
 
 - **Prompts 00–18, the adversarial audit, feature restoration, and production verification are complete.** The hotfix is published at `https://keeper-trade.pages.dev`, with client code deployed through commit `084825e` and offline shell v55. Production League, ESPN, AI, dashboard, mascot, and cold-offline workflows pass. No feature flag remains disabled.
 - **Deployment history:** `d2587ae` delivered the audited hotfix; `d365b62` and `66c6181` stabilized dashboard edit controls; `cac79f3` protected them from sticky headers; `084825e` fixed canonical-home offline navigation. Follow-up commits were made only after production tests exposed the specific issues.
+- **Active local state (2026-11-06, Claude Code):** performance/reliability overhaul plus the multi-league/Yahoo connector are implemented and verified locally (see the latest dated entry). Everything is **uncommitted and undeployed**; production is still client `084825e` / shell v55. The Yahoo connector is verified only against fixtures and a mocked Worker. It needs owner-approved Worker deployment with Yahoo credentials and a real-account acceptance test before anyone calls it live.
 - **Performance result:** local JavaScript source is 397.5 KiB across 50 page-isolated files. Latest measured payloads are 173.2 KiB on the fully loaded homepage, 55.1 KiB on Mock Draft, and 122.6 KiB on The Drive, within the 200 KB route budget.
 - **External setup:** the deployed Cloudflare Worker is healthy with a validated **non-expiring Anthropic key**, a scoped Cloudflare token, production-only CORS, KV bindings, preflight $1 daily-budget enforcement, and keyless ESPN proxy routes. No credentials are stored in the repository. The native SVG mascot needs no external asset or runtime. Physical iOS/Android native sharing remains the only device-only unverified workflow; desktop video and Story Pack exports are verified.
 
@@ -234,10 +235,109 @@
 - Offline production now supports the exact `index.html#league` link that failed before the canonical-root fallback. With browser networking fully offline and local storage cleared, v55 mounted the League form and completed a 96-pick/12-grade local-ECR draft with zero errors.
 - **Current boundary:** the production client and Worker are live and verified. Physical iOS/Android native sharing remains untested on actual devices. No calculator business logic changed and no credentials entered the repository.
 
+### 2026-11-06 — Multi-league/Yahoo checkpoint & Claude Code handoff
+
+- Began a provider-neutral multi-league implementation with saved/active connections, Sleeper migration, Yahoo OAuth through the Worker, Yahoo-to-Sleeper data normalization, provider switching UI, and secure deployment prompts. This is a checkpoint, **not a completion claim**.
+- Current uncommitted implementation files: `css/league.css`, `js/data/sleeper.js`, `js/features/league.js`, `worker/deploy.py`, `worker/worker.js`, plus new `js/data/league-connections.js` and `js/data/yahoo.js`.
+- No syntax/import, fixture, UI, accessibility, regression, or real Yahoo tests have run on this new code. `sw.js`, `worker/DEPLOY.md`, and `AGENTS.md` have not yet been updated for it. Known cleanup remains for a duplicate power-history assignment and an unused normalizer variable. Yahoo-specific throttling and realistic fixtures are still required.
+- Production remains at client `084825e`/documentation `c59de26` with shell v55 and the previously verified Worker. No Cloudflare or Yahoo credentials are available in the current environment. Yahoo requires OAuth and may require application review.
+- Created `CLAUDE-HANDOFF.md`: complete repository/deployment state, non-secret IDs, storage schemas, verified evidence, exact file responsibilities, OAuth/data flow, known unfinished issues, and an ordered resume/deployment checklist. Secret values are deliberately excluded; the file names their secure Cloudflare locations instead.
+
+### 2026-11-06 — Claude Code takeover: performance & reliability overhaul, multi-league/Yahoo completion
+
+**Why the site felt slow (measured on 390px mobile, 4× CPU throttle, 4G):**
+- The homepage ran at **~13 fps even when idle**. Two 42rem hero blobs used `filter: blur(7rem)` and animated forever, so they re-rasterized every frame. Backdrop blurs on every glass card, the sticky header, the score dock and the bottom nav re-blurred on every scroll frame.
+- Every module page hid `<body>` (`opacity: 0`) until all ES modules executed, with a 1.2–1.5s fallback timer. Every link click was also delayed 160ms.
+- LiveData cached every response in localStorage with no eviction. One Sunday visit reached about 5.0M characters (the quota), after which saves silently failed. Every page then synchronously parsed megabytes of JSON on load.
+- `maxAge` defaulted to 0, so cached data was never fresh and every page load re-fetched everything. One-shot reads resolved with the previous visit's cache, which caused wrong-week renders and duplicate reloads.
+- The service worker served same-origin assets cache-first forever (ignoring `?v=`), so deploys did not reach returning users. A clone-after-consume bug also broke runtime caching. Mixed `?v=` import specifiers loaded `sleeper.js` and `navigation.js` twice.
+
+**Fixes (no feature removed; visuals checked against production screenshots):**
+- Hero blobs are radial gradients with a transform-only drift. In-flow glass cards have no backdrop blur. Sticky chrome is frosted only on fine-pointer desktops and near-opaque on touch.
+- Bodies paint immediately. Page motion uses native cross-document view transitions; `page-transitions.js` only marks the page ready.
+- `js/data/live-data.js` rebuilt:
+  - IndexedDB (`kt-livedata`) is the durable cache. localStorage keeps only a small mirror: each entry at most 64K characters, about 1M total, oldest evicted first.
+  - Oversized legacy entries are purged on load, and IDB records older than 14 days are pruned.
+  - Freshness follows the source cadence or `maxAge`.
+  - New `liveData.get(key)`: a one-shot read that waits for the network and falls back to stale cache after 6s or on error.
+  - 20s fetch timeout.
+  - Status-only "refreshing" emits carry `statusOnly` so heavy views skip re-rendering.
+- The six copied one-shot helpers now use `liveData.get`. `getNflState` falls back to a calendar estimate and never returns undefined.
+- The player DB load is shared per page (no parallel 5MB downloads) and falls back to a stale IDB copy when offline.
+- Service worker **v56**: stale-while-revalidate with one cache key per path, the clone bug fixed, and the new modules added to the shell. All `?v=` import specifiers removed.
+- Dashboard: the streak widget re-renders only on change (it was every 10s and stole focus), the countdown caches the next kickoff (it re-normalized the scoreboard every second), and the timer is skipped while hidden. Shared reward AudioContext.
+- New `js/ui/friendly-error.js`: runtime error text (for example "Cannot read properties of undefined (reading 'display_week')", seen on Sunday, War Room and Season Sim with APIs down) never reaches the screen.
+- Haptics are gated on `navigator.userActivation.hasBeenActive`. This removes the "Blocked call to navigator.vibrate" console errors on load.
+
+**Bugs fixed (found by browser-driven review, each reproduced first):**
+- Home "Now" strip stuck on "ESPN · Connecting" on no-game days. The ticker never announced empty or error states.
+- Keeper:
+  - Every card's value box was blank: `8,746` was written into `type=number`.
+  - Live Dynasty Dealer refreshes overwrote user-typed values and keeper rounds, including on every tab return. `setMarketValue` now respects edits.
+  - Trade history kept only one trade (array check on a `{A,B}` object). Re-opened trades now get fresh uids.
+  - **Mobile search results were 2px tall, so players could not be added on phones.**
+  - Live-feed-only players were unsearchable.
+  - `TradeEngine.players()` threw a ReferenceError.
+  - Team names and feed strings were injected as HTML. They are now escaped.
+  - Drag between sides never bound on keeper cards and leaked listeners on redraft.
+  - The lopsided-trade threshold used the wrong scale.
+  - The verdict animation replayed on every team-name keystroke.
+  - History is written once per pause (350ms debounce), not on every keystroke.
+- Redraft/Rankings: out-of-order FantasyCalc responses could show the wrong format. Tools: ADP can be retried after a failure. Sunday: the League settings link gets a full 44px target.
+- Research:
+  - `?player=` deep links from the command palette were ignored.
+  - With no saved theme it rendered a mixed light/dark page with failing contrast. Research and Keeper now default to dark like the other pages.
+  - Duplicate player loads are deduplicated.
+- League:
+  - Power-ranking arrows were always "—" because every render overwrote "previous". History is now keyed by league and week.
+  - Rapid league switching could render a stale league (load-generation guard added).
+- Worker:
+  - `/espn/athletes/:id/overview` returned **502 in production** (`/nfl/espn/...` path), so Research never got live player detail.
+  - Haiku 4.5 budget pricing was $0.80/$4. Corrected to $1/$5.
+
+**Multi-league / Yahoo (handoff checklist steps 1–11):**
+- All 54 modules, including `worker/worker.js`, import cleanly in Chromium. The handoff cleanups (duplicate `powerHistory`, unused `rosterByKey`) are done.
+- Design bug fixed: real Yahoo keys are `{numeric game}.l.{id}` (e.g. `461.l.12345`), not `nfl.l.*`. Every regex rejected them, so a real account would have seen "no leagues". Both forms are now accepted everywhere.
+- Parser fixes:
+  - Yahoo player names (`name.full`) rendered as "[object Object]".
+  - Weekly matchup points were always 0.
+  - Team abbreviations were mixed case.
+  - Transaction types are now mapped to trade/waiver/free_agent.
+- Worker:
+  - `;week=N` matrix params (Yahoo ignores `?week=`).
+  - One `/teams/roster` call instead of one request per team, so a bundle is 5 calls.
+  - Parallel requests share a single token refresh.
+  - Per-session rate limit and 60s edge cache.
+  - The callback always redirects (never raw JSON). The state format is validated.
+  - Session tokens expire after 90 days.
+- Client: Yahoo code is dynamically imported only when used. Week-independent Yahoo resources are cached once across weeks.
+- Verification (Python Playwright, inline):
+  - Yahoo fixture normalization: **18/18**.
+  - Mocked Worker OAuth (KV double): **27/27**. Covers state TTL/replay, token exchange, Basic auth, matrix weeks, refresh dedupe and rotation, typed 401/400/404/429, disconnect, 403 origin, and that no token or secret ever appears in a client response.
+  - Connection store plus real-Sleeper UI with both owner leagues: **25/25**. Covers migration, dedupe, malformed storage, add/switch/rapid-switch/reload/remove/fallback, Season Sim reading the active league, and the mocked Yahoo picker/standings/matchups/trade wire/attribution/config-missing message.
+
+**Regression results:**
+- **14/14 routes × dark and light** at 390px: no page errors, local asset failures, overflow, duplicate IDs, sub-24px targets, raw error text or stuck busy states. **Zero axe WCAG 2.1 AA violations.**
+- **14/14 routes with every third-party host blocked:** no page errors and no raw error text.
+- Keeper/redraft interaction checks, the research deep link, a Mock Draft run with every API down (12 grades), storage bounds (0.56M characters after Sunday, Drive and six other pages; 75 IDB records), fresh-cache reuse (0 market re-downloads), SW v56 caching every shell asset, every route offline, and offline League standings (12 rows) all pass.
+- Sacred `adjustedOf`, `sideTotals`, `impliedRound`, `keeperSurplus`, `valueOf` and `sideEffective` are **byte-identical** to the legacy pages and HEAD.
+
+**Measured impact, committed `084825e` vs now (same machine and throttling):**
+- First paint, cold load: Home 2.29s→0.63s, Sunday 2.00s→0.54s, War Room 1.96s→0.46s, Mock Draft 1.94s→0.50s, Season Sim 2.03s→0.50s, Pulse 1.97s→0.52s.
+- Returning visit: Home 612→68ms, Sunday 1603→48ms, War Room 2154→328ms, Season Sim 1602→41ms. External requests on Season Sim return visits fell 37→4.
+- Homepage frame time 44–86ms → 16.6ms, idle and while scrolling.
+- JS per route stays under budget: Home 139 KiB, Drive 178 KiB.
+
+**Still not done or not verifiable here:**
+- Nothing is committed or deployed. The Worker changes (Yahoo routes, ESPN athlete fix, pricing) need the owner's private `deploy.py` run.
+- Real Yahoo OAuth and data are unverified without an approved Yahoo app.
+- Yahoo per-player weekly points are not requested (rosters omit stats), so Yahoo bench/awards math shows 0 for player points until a stats sub-resource is added and verified against real data.
+- Physical iOS/Android native sharing is still untested.
+
 ## Architecture summary
 
 - **UI:** static HTML + CSS tokens/components + ES modules; shared navigation, command palette, transitions, ticker, trade panels, game day, dashboard, clubhouse, league.
-- **Data:** one `LiveData` registry for ESPN/Sleeper/values/news with in-flight deduplication, cadence control, subscribers, stale cache, and status states. IndexedDB holds Sleeper players; localStorage holds preferences/layout/rewards/history.
+- **Data:** one `LiveData` registry (register/subscribe/get/refresh) with in-flight deduplication, cadence-based freshness, subscribers, stale fallback, and status states. Durable cache in IndexedDB `kt-livedata`; bounded small mirror in localStorage. IndexedDB `kt-keeper-store` holds Sleeper players; localStorage holds preferences/layout/rewards/history.
 - **Engines:** original keeper/redraft calculation functions remain intact behind UI-only bridge APIs.
 - **PWA:** versioned service-worker shell with offline fallback; external live APIs fail gracefully to cached data.
 
