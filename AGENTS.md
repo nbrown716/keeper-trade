@@ -70,4 +70,8 @@
 2. One task brief at a time (they live in `/prompts`). Don't build ahead.
 3. After every task: summarize what changed, list the files touched, tell the owner exactly how to see it working, and update `NOTES.md`.
 4. Never commit or push unless the owner explicitly says to.
+   - **Release gate:** before asking to commit, run `python -I -X utf8 tests/run_all.py` (Playwright + Chromium). It must end in `RELEASE GATE: ALL PASS`. `--quick` is fine while iterating; a push needs a full run.
+   - A new feature or fix ships **with** its test: add it to an existing suite or as a new suite in `tests/run_all.py`. A bug that reached the owner gets a regression check that would have caught it.
+   - Never hardcode values that change every release in a test (for example the service-worker version): read them from the source.
+   - Canvas features must pass the off-canvas text detector in `tests/wr_audit.py` (or an equivalent). Data features must be checked against an independent recomputation from the raw API data, not against themselves.
 5. If something is ambiguous, ask ONE clear question rather than guessing.

@@ -33,6 +33,7 @@
 .kt-trivia-answer:disabled { cursor: default; opacity: 0.55; }
 .kt-trivia-answer[data-correct="true"] { border-color: var(--kt-success); background: var(--kt-success-soft); color: var(--kt-success); opacity: 1; }
 .kt-trivia-result { margin: var(--kt-space-3) 0 0; color: var(--kt-accent); font-size: var(--kt-text-sm); font-weight: 650; }
+.kt-wrapped-actions { display: flex; flex-wrap: wrap; gap: var(--kt-space-2); }
 .kt-wrapped-card { background: radial-gradient(circle at 100% 0, var(--kt-secondary-soft), transparent 60%), var(--kt-surface-1); }
 .kt-sound-toggle { display: flex; min-height: var(--kt-tap); align-items: center; gap: var(--kt-space-2); margin-top: var(--kt-space-4); color: var(--kt-text-secondary); font-size: var(--kt-text-xs); }
 .kt-sound-toggle input { width: 1.25rem; height: 1.25rem; accent-color: var(--kt-accent); }

@@ -127,3 +127,7 @@
   .kt-league-shortcuts { scroll-snap-type: none; }
   .kt-league-shortcuts a:hover, .kt-feed-card:hover { transform: none; }
 }
+
+.kt-wrapped-prompt { display: flex; flex-wrap: wrap; gap: var(--kt-space-3); align-items: center; margin: 0 0 var(--kt-space-4); padding: var(--kt-space-3) var(--kt-space-4); border: 1px solid color-mix(in srgb, var(--kt-accent) 40%, transparent); border-radius: var(--kt-radius-lg); background: color-mix(in srgb, var(--kt-accent) 8%, var(--kt-surface-1)); }
+.kt-wrapped-prompt > span { font-size: 1.5rem; }
+.kt-wrapped-prompt p { flex: 1 1 16rem; margin: 0; font-size: var(--kt-text-sm); }

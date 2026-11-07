@@ -214,6 +214,15 @@ async function ensureLineageSnapshots(lineage, playerMap) {
   }
 }
 
+// Regular-season week snapshots of every PREVIOUS season in a league's lineage (for all-time rivalries).
+export async function lineageSnapshots(lineage, playerMap) {
+  await ensureLineageSnapshots(lineage, playerMap);
+  const previous = lineage.slice(1);
+  const playoffStart = new Map(previous.map(league => [String(league.league_id), Number(league.settings?.playoff_week_start || 15)]));
+  const stored = await readSnapshots(previous.map(league => String(league.league_id)));
+  return stored.filter(snapshot => snapshot.week < (playoffStart.get(String(snapshot.leagueId)) || 15));
+}
+
 function powerTable(snapshots, season, week) {
   const teams = new Map();
   snapshots.filter(snapshot => snapshot.season === String(season) && snapshot.week <= week).forEach(snapshot => {

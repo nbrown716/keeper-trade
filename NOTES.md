@@ -464,6 +464,68 @@ The third Drive mode, "The map", is now **Home Of**: a night-lights flyover of t
 - With the map file blocked, the fallback plays cleanly.
 - Score text stays clear of the page mascot (bottom-right).
 
+### 2026-11-07 — Phase 5: Season engine + Season Wrapped 2.0 (spec §2.2, §3)
+
+**Season engine (`js/data/season-stats.js`)**
+- `computeSeason(raw)` is pure; `loadSeason(leagueId)` fetches the inputs.
+- Weeks covered: completed regular-season weeks only. The live week and playoffs are excluded (`completedWeeks`).
+- Per manager it computes:
+  - record, PF/PA and ranks
+  - all-play, luck (actual wins − all-play expected), close games (<10), streaks, best/worst week with that week's league rank
+  - MVP, most reliable (lowest CV), boom king (20+ games), worst performer (points per start vs the league's average starter at that position)
+  - bench points and bench regret (only bench points that would have made that week's best legal lineup)
+  - Lineup IQ: started points ÷ optimal lineup. The optimal lineup is a greedy fill, most-restrictive slot first, which is exact for Sleeper's nested FLEX/SUPER_FLEX slots.
+  - worst lineup call, best pickup, the one that got away, trade ledger, draft steal, moves
+  - all-time nemesis and victim (lineage, regular season, min 2 meetings), archetype with proof stats, top-3 badges, all-time record stamp
+- "For you" means points scored in your starting lineup.
+- Trade ledger: post-trade starter points per side. Picks are listed, not valued. A trade with no games played since shows "Too early to call".
+- `pulse-data.js` now exports `lineageSnapshots()`: previous seasons, regular-season weeks only.
+
+**Verified against the raw Sleeper JSON**
+- An independent Python recomputation matches 204/204 KPI values plus 64/64 second-pass checks (draft steal, all-time H2H, best-week ranks, positional baselines, worst-call legality).
+- Engine optimal totals equal Sleeper's own `ppts` (max potential points) for all 12 teams to the cent. PF equals Sleeper `fpts`.
+
+**Wrapped 2.0**
+- Files: `wrapped.html`, `js/features/wrapped.js`, `js/features/wrapped-slides.js`, `css/wrapped.css`.
+- Landing page: "Whose season?" picker, headline facts, poster preview, a league table for every manager and a methodology note.
+- Story player: 14 canvas slides with segmented progress bars.
+  - Tap right/left to move, hold to pause, swipe down to close.
+  - Keyboard: ←/→, Space and Esc.
+  - Focus is trapped; each slide's alt text goes to the canvas label and a live region.
+  - Hidden tabs pause.
+- Slides: cold open, record, luck meter, week of weeks, MVP ring, reliable vs boom, worst performer (roasts the player, never the manager), bench regret, Lineup IQ plus toughest call, front office (draft steal, best pickup, got away), trade ledger, rivals, archetype card flip, summary poster.
+- Under 3 weeks played it shows a 5-slide mini version. Mid-season it shows "Season so far, weeks 1–N".
+- Exports: share this slide (1080×1920 PNG), save all slides, and an MP4 (about 36 s at 2.6 s per slide, about 1.7 MB). The spec said 30 s; 36 s was kept so the slides stay readable.
+- Entry points: the Clubhouse card ("Play my Wrapped") and the command palette. The SW shell is now v61.
+- Yahoo leagues get an honest "not yet" message, because there are no per-player weekly points.
+
+**Skeptic audit**
+- Automated off-canvas text detector: 12 managers × 13–14 slides × 3 timepoints at 720×1280 and 1080×1920. It found 0 overflows after fixes; 2 real ones were caught and fixed.
+- Raw-value leak scan: clean.
+- 24/24 interaction, export, edge and failure tests pass.
+- Video-export hang fixed: a rAF timestamp earlier than the start time produced a negative time on the first frame.
+
+### 2026-11-07 — Release gate + failure prevention log
+
+The whole test suite used to live in a temporary session folder. It now lives in the repo:
+- Gate: `tests/run_all.py`. Run `python -I -X utf8 tests/run_all.py`, or add `--quick` to skip the export suites.
+- It starts the local server, runs 10 suites and exits non-zero on any failure.
+- Output goes to `tests/output/`, which is git-ignored.
+- AGENTS.md now requires `RELEASE GATE: ALL PASS` before any commit request, and requires every fix to ship with its regression check.
+
+Every failure this phase, its root cause, and the safeguard now in place:
+
+| Failure | Root cause | Safeguard |
+|---|---|---|
+| Wrapped video export hung | The rAF timestamp predates `performance.now()` at start, so the first frame got a negative time and slide index −1 | Code clamps time ≥ 0 and index ≥ 0. `wr_audit.py` exports a real MP4 and checks size. |
+| Two slide headlines ran off-canvas | Long dynamic text with no fitting; one was hidden by `fillText` maxWidth squashing it | All dynamic text goes through `fit`/`fitDisplay`. An automated off-canvas detector checks every slide × every manager × 3 timepoints × 2 sizes. |
+| Bench regret credited a backup QB | The definition counted all bench points, including players who couldn't legally start | Redefined as points that would have made the optimal lineup. The Python verifier checks it independently (removal changes the optimum). |
+| A trade showed "+0.0" | Made after the last scored game | An `early` flag shows "Too early to call". |
+| Mixed precision (90.2% vs 90%) | Ad-hoc formatting per slide | Shared `iq()` and `signed()` formatters. |
+| A last-place team labelled "Steady Hand" | Fallback archetype ignored the record | Record-aware fallback (Rebuild / Steady Hand / Contender). |
+| Unlabelled scrollable table (axe) | `overflow-x` region not focusable | `tabindex=0` plus a labelled region. Matrix axe scans every route. |
+| Features suite failed on the SW version | The test hardcoded `v58` | The test reads the version from `sw.js`. Rule: never hardcode per-release values in tests. |
+
 ## Architecture summary
 
 - **UI:** static HTML + CSS tokens/components + ES modules; shared navigation, command palette, transitions, ticker, trade panels, game day, dashboard, clubhouse, league.

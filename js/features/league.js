@@ -125,7 +125,7 @@ function renderLeague() {
   }]));
   const standings = [...rosters.values()].sort((a, b) => b.wins - a.wins || b.fp - a.fp);
   setLeagueSnapshot({ league: bundle.league, week: bundle.week, standings, provider: active?.provider || 'sleeper', leagueId: active?.id || '' });
-  section.innerHTML = `<div class="kt-section-header"><div><span class="kt-eyebrow">${escapeHtml(bundle.league.name)}</span><h2 class="kt-display">Your league is live.</h2></div><div class="kt-league-week-actions"><a class="kt-btn kt-btn-sm kt-btn-secondary" href="pulse.html">League Pulse</a><a class="kt-btn kt-btn-sm kt-btn-secondary" href="war-room.html">War Room</a></div></div>${leagueSwitcherMarkup(active)}<div class="kt-league-grid"><section class="kt-league-card kt-standings-card"><div class="kt-league-card-head"><h3>Standings</h3><span class="kt-badge">Week ${bundle.week}</span></div>${standings.map((roster, index) => `<div class="kt-standing-row"><span>${index + 1}</span><strong>${escapeHtml(roster.name)}</strong><b>${roster.wins}–${roster.losses}</b><span>${roster.fp.toFixed(1)}</span></div>`).join('')}</section><section class="kt-league-card kt-matchups-card"><div class="kt-league-card-head"><h3>This week</h3><div class="kt-league-week-actions"><span class="kt-badge kt-badge-accent">Live scores</span><a class="kt-btn kt-btn-sm kt-btn-primary kt-watch-week" href="drive.html"><span aria-hidden="true">▶</span> Watch your week</a></div></div><div class="kt-matchup-grid">${matchupMarkup(rosters)}</div></section><section class="kt-league-card"><div class="kt-league-card-head"><h3>Power rankings</h3><span class="kt-badge kt-badge-blue">Score + record</span></div>${powerMarkup(rosters)}</section><section class="kt-league-card kt-wire-card"><div class="kt-league-card-head"><h3>Trade wire</h3><span class="kt-badge kt-badge-accent">One-tap grade</span></div>${wireMarkup(rosters)}</section></div>${active?.provider === 'yahoo' ? yahooAttribution() : ''}`;
+  section.innerHTML = `<div class="kt-section-header"><div><span class="kt-eyebrow">${escapeHtml(bundle.league.name)}</span><h2 class="kt-display">Your league is live.</h2></div><div class="kt-league-week-actions"><a class="kt-btn kt-btn-sm kt-btn-secondary" href="pulse.html">League Pulse</a><a class="kt-btn kt-btn-sm kt-btn-secondary" href="war-room.html">War Room</a>${active?.provider === 'yahoo' ? '' : '<a class="kt-btn kt-btn-sm kt-btn-secondary" href="wrapped.html">Season Wrapped</a>'}</div></div>${wrappedPromptMarkup(active)}${leagueSwitcherMarkup(active)}<div class="kt-league-grid"><section class="kt-league-card kt-standings-card"><div class="kt-league-card-head"><h3>Standings</h3><span class="kt-badge">Week ${bundle.week}</span></div>${standings.map((roster, index) => `<div class="kt-standing-row"><span>${index + 1}</span><strong>${escapeHtml(roster.name)}</strong><b>${roster.wins}–${roster.losses}</b><span>${roster.fp.toFixed(1)}</span></div>`).join('')}</section><section class="kt-league-card kt-matchups-card"><div class="kt-league-card-head"><h3>This week</h3><div class="kt-league-week-actions"><span class="kt-badge kt-badge-accent">Live scores</span><a class="kt-btn kt-btn-sm kt-btn-primary kt-watch-week" href="drive.html"><span aria-hidden="true">▶</span> Watch your week</a></div></div><div class="kt-matchup-grid">${matchupMarkup(rosters)}</div></section><section class="kt-league-card"><div class="kt-league-card-head"><h3>Power rankings</h3><span class="kt-badge kt-badge-blue">Score + record</span></div>${powerMarkup(rosters)}</section><section class="kt-league-card kt-wire-card"><div class="kt-league-card-head"><h3>Trade wire</h3><span class="kt-badge kt-badge-accent">One-tap grade</span></div>${wireMarkup(rosters)}</section></div>${active?.provider === 'yahoo' ? yahooAttribution() : ''}`;
   section.querySelector('#league-active').addEventListener('change', event => {
     const [provider, id] = event.target.value.split(/:(.*)/);
     setActiveLeagueConnection(provider, id);
@@ -162,6 +162,20 @@ function renderLeague() {
 
 // Weather badges follow the league week (Thursday to Monday), not today's scoreboard.
 let weatherWeek = '';
+// One-time Wrapped prompt after the championship (Sleeper marks the league "complete"). Dismissible, never repeated.
+const WRAPPED_KEY = 'kt-wrapped:v1';
+function wrappedPromptKey() { return `prompted:${bundle?.league?.league_id}:${bundle?.league?.season}`; }
+function wrappedPromptMarkup(active) {
+  if (active?.provider === 'yahoo' || bundle?.league?.status !== 'complete') return '';
+  try { if (JSON.parse(localStorage.getItem(WRAPPED_KEY) || '{}')[wrappedPromptKey()]) return ''; } catch (_) { return ''; }
+  return `<aside class="kt-wrapped-prompt" role="status"><span aria-hidden="true">🏆</span><p><strong>The ${escapeHtml(bundle.league.season)} season is in the books.</strong> Your Wrapped is ready: record, luck, MVP, trades, rivals and your archetype.</p><a class="kt-btn kt-btn-sm kt-btn-primary" href="wrapped.html?play=1" data-wrapped-dismiss>Play my Wrapped</a><button class="kt-btn kt-btn-sm kt-btn-ghost" type="button" data-wrapped-dismiss aria-label="Dismiss Wrapped prompt">Not now</button></aside>`;
+}
+function dismissWrappedPrompt() {
+  try { localStorage.setItem(WRAPPED_KEY, JSON.stringify({ ...JSON.parse(localStorage.getItem(WRAPPED_KEY) || '{}'), [wrappedPromptKey()]: true })); } catch (_) {}
+  document.querySelector('.kt-wrapped-prompt')?.remove();
+}
+document.addEventListener('click', event => { if (event.target.closest('[data-wrapped-dismiss]')) dismissWrappedPrompt(); });
+
 async function syncWeather() {
   if (!bundle) return;
   const key = `${bundle.league?.season}:${bundle.week}`;

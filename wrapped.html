@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="kt-js">
+<head>
+      <meta charset="utf-8">
+  <!-- kt:share-meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Keeper Trade">
+  <meta property="og:title" content="Season Wrapped">
+  <meta property="og:description" content="Your fantasy season as a story: record, luck, MVP, Lineup IQ, trades, rivals and your archetype.">
+  <meta property="og:url" content="https://keeper-trade.pages.dev/wrapped.html">
+  <meta property="og:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keeper Trade: your edge on draft day and every trade.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Keeper Trade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- /kt:share-meta -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="description" content="Season Wrapped: your fantasy football season as a shareable story, computed from your real league data.">
+  <title>Season Wrapped — Keeper Trade</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/wrapped.css">
+</head>
+<body>
+  <main class="wr-shell">
+    <section class="wr-hero" aria-labelledby="wr-title">
+      <div class="wr-copy">
+        <span class="kt-eyebrow" id="wr-eyebrow">Season Wrapped</span>
+        <h1 id="wr-title">YOUR SEASON, WRAPPED.</h1>
+        <p>Record, luck, your MVP, the bench you’ll never forget, Lineup IQ, the trades, your rivals and your archetype. Every number comes from your league’s real data.</p>
+        <div class="wr-controls">
+          <label for="wr-manager">Whose season?</label>
+          <select class="kt-control" id="wr-manager" disabled><option>Loading league…</option></select>
+          <button class="kt-btn kt-btn-primary wr-play" type="button" id="wr-play" disabled>▶ Play Wrapped</button>
+        </div>
+        <p class="wr-status" id="wr-status" role="status" aria-live="polite">Crunching every week of your season…</p>
+        <ul class="wr-facts" id="wr-facts" aria-label="Season at a glance"></ul>
+      </div>
+      <figure class="wr-preview">
+        <div class="wr-preview-frame kt-skeleton" id="wr-preview-frame"><canvas id="wr-preview" width="360" height="640" role="img" aria-label="Season summary poster"></canvas></div>
+        <figcaption>Your summary poster. Play the story for the full reveal.</figcaption>
+      </figure>
+    </section>
+    <section class="wr-league" id="wr-league" aria-labelledby="wr-league-title" hidden>
+      <div class="kt-section-header"><div><span class="kt-eyebrow">League table</span><h2 id="wr-league-title" class="kt-display">EVERY MANAGER, ONE TABLE</h2></div></div>
+      <div class="wr-table-wrap" tabindex="0" role="region" aria-labelledby="wr-league-title"><table class="wr-table" id="wr-table"></table></div>
+      <p class="wr-method">How it’s measured: completed regular-season weeks only. All-play = your score against every team, every week. Luck = actual wins minus all-play expected wins. Lineup IQ = points you started ÷ your best legal lineup each week (matches Sleeper’s “max potential points”). Pickup, drop and trade values count only points scored in a starting lineup after the move.</p>
+    </section>
+  </main>
+  <div class="wr-story" id="wr-story" role="dialog" aria-modal="true" aria-label="Season Wrapped story" hidden>
+    <div class="wr-stage" id="wr-stage">
+      <div class="wr-progress" id="wr-progress" aria-hidden="true"></div>
+      <canvas id="wr-canvas" role="img" aria-label=""></canvas>
+      <button class="wr-zone wr-zone-prev" type="button" id="wr-prev" aria-label="Previous slide"></button>
+      <button class="wr-zone wr-zone-next" type="button" id="wr-next" aria-label="Next slide"></button>
+      <div class="wr-toolbar">
+        <span class="wr-count" id="wr-count" aria-hidden="true"></span>
+        <button class="wr-tool" type="button" id="wr-pause" aria-label="Pause" aria-pressed="false">❚❚</button>
+        <button class="wr-tool" type="button" id="wr-more" aria-label="Share" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="wr-tool" type="button" id="wr-close" aria-label="Close Wrapped">✕</button>
+        <div class="wr-menu" id="wr-menu" role="menu" hidden>
+          <button type="button" role="menuitem" id="wr-share-slide">Share this slide</button>
+          <button type="button" role="menuitem" id="wr-save-all">Save all slides</button>
+          <button type="button" role="menuitem" id="wr-video">Export video</button>
+        </div>
+      </div>
+      <p class="wr-export" id="wr-export" role="status" aria-live="polite" hidden></p>
+    </div>
+    <p class="kt-sr-only" id="wr-live" aria-live="polite"></p>
+  </div>
+  <script type="module" src="js/features/wrapped.js"></script>
+  <script type="module" src="js/pwa.js"></script>
+</body>
+</html>
