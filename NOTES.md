@@ -650,6 +650,17 @@ We studied market.qlinch.co's features as a user. We built our own versions; no 
 
 **Tests added:** `market_parity.py`, `market_read.py`, `deals_test.py` (24 checks), `worker_votes.py` (7). Deals is also in the matrix (16 → 17 routes).
 
+### 2026-11-07 — How releases are verified now
+
+1. **Snapshot gate.** Commit locally and check the commit out in the `../kt-gate` worktree. Run `KT_PORT=4174 python -I -X utf8 tests/run_all.py` on that frozen copy, so work can continue in the main tree. Push only on `RELEASE GATE: ALL PASS`.
+2. **Production audit after every push.** Run `KT_REMOTE=https://keeper-trade.pages.dev/ python -I -X utf8 tests/run_all.py`, which is the same 18 suites against the live site. The "third-party down" patterns follow the host under test.
+3. **Harness lessons from this phase**, now built into the tests:
+   - Classify console errors on the full text, not the 140-character preview.
+   - Relay Worker calls with the production origin.
+   - Check overflow on every tab, not just the last one visited.
+   - Fixed timers can fire a second before a cache expires: use force refresh or `liveData.invalidate()`.
+   - Assert that the saved theme actually applied.
+
 ## Architecture summary
 
 - **UI:** static HTML + CSS tokens/components + ES modules; shared navigation, command palette, transitions, ticker, trade panels, game day, dashboard, clubhouse, league.

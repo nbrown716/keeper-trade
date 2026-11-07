@@ -84,7 +84,7 @@ async def run(only):
             opened = await pg.evaluate("!!document.querySelector('.kt-command-dialog[open], .kt-command-palette:not([hidden]), [role=dialog][aria-modal=true]')")
             check(opened, 'Command palette opens with Ctrl+K')
             await pg.keyboard.type('pulse'); await pg.wait_for_timeout(400); await pg.keyboard.press('Enter'); await pg.wait_for_timeout(2500)
-            check('pulse.html' in pg.url, f'Command palette: search + Enter navigates ({pg.url[-30:]})')
+            check(re.search(r'/pulse(\.html)?($|[?#])', pg.url), f'Command palette: search + Enter navigates ({pg.url[-30:]})')
             await pg.goto(BASE + 'index.html'); await pg.wait_for_timeout(5000)
             # theme toggle x10
             tog = pg.locator('[data-theme-toggle], .kt-theme-toggle, button[aria-label*="theme" i]').first

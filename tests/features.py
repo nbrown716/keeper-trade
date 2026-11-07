@@ -12,7 +12,7 @@ def check(cond, msg): results.append((bool(cond), msg)); print(('PASS ' if cond 
 async def ctx_for(b, mobile=True, league=True, down=False, sw='block'):
     c = await b.new_context(viewport={'width': 390, 'height': 844} if mobile else {'width': 1440, 'height': 900}, is_mobile=mobile, has_touch=mobile, service_workers=sw)
     if league: await c.add_init_script(M.LEAGUE)
-    if down: await c.route(re.compile(r'^https?://(?!127\.0\.0\.1).*'), lambda r: r.abort())
+    if down: await c.route(M.THIRD_PARTY, lambda r: r.abort())
     else: await c.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/espn/.*'), M.espn_proxy)
     return c
 
@@ -112,7 +112,7 @@ async def main():
         await pg.route(re.compile(r'https://www\.dynastydealer\.com/.*'), lambda r: r.abort())
         await pg.goto(BASE + 'mock-draft.html'); await pg.wait_for_timeout(5000)
         await pg.unroute(re.compile(r'https://www\.dynastydealer\.com/.*'))
-        await c.route(re.compile(r'^https?://(?!127\.0\.0\.1).*'), lambda r: r.abort())
+        await c.route(M.THIRD_PARTY, lambda r: r.abort())
         await pg.reload(); await pg.wait_for_timeout(3000)
         label = await pg.inner_text('#draft-available-count')
         await pg.select_option('#draft-speed', '12')

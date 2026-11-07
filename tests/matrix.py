@@ -7,6 +7,8 @@ from playwright.async_api import async_playwright
 BASE = _os.environ.get('KT_BASE', 'http://127.0.0.1:4173/')  # KT_BASE=https://keeper-trade.pages.dev/ audits production
 ROUTES = ['deals.html', 'wrapped.html', 'weather.html', 'index.html', 'keeper.html', 'redraft.html', 'rankings.html', 'research.html', 'tools.html', 'game.html',
           'sunday.html', 'war-room.html', 'mock-draft.html', 'season-sim.html', 'pulse.html', 'drive.html', 'command.html']
+# 'third-party down' = everything except the site under test (local server or the live site)
+THIRD_PARTY = re.compile(r'^https?://(?!' + re.escape(BASE.split('/')[2]) + r'/).*')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'mobile'   # mobile | down
 AXE = 'https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.2/axe.min.js'
 LEAGUE = "try{localStorage.setItem('kt-sleeper-league:v1',JSON.stringify({id:'1370223929452433408',savedAt:1790000000000}))}catch(e){}"
@@ -56,7 +58,7 @@ async def audit(browser, route, theme):
     await ctx.add_init_script(LEAGUE)
     if theme == 'light': await ctx.add_init_script("try{localStorage.setItem('gi-theme','light')}catch(e){}")
     if MODE == 'down':
-        await ctx.route(re.compile(r'^https?://(?!127\.0\.0\.1).*'), lambda r: r.abort())
+        await ctx.route(THIRD_PARTY, lambda r: r.abort())
     else:
         await ctx.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/espn/.*'), espn_proxy)
         await ctx.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/votes.*'), worker_relay)

@@ -10,7 +10,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 OUT = os.path.join(HERE, 'output')
 PORT = os.environ.get('KT_PORT', '4173')  # run a frozen snapshot on its own port: KT_PORT=4174
-BASE = f'http://127.0.0.1:{PORT}/'
+# KT_REMOTE=https://keeper-trade.pages.dev/ runs the whole suite against the live site (no local server)
+REMOTE = os.environ.get('KT_REMOTE', '')
+BASE = REMOTE or f'http://127.0.0.1:{PORT}/'
 os.environ['KT_BASE'] = BASE
 # (script, marker that must appear in its output, slow?)
 SUITES = [
@@ -49,7 +51,7 @@ def main():
     os.makedirs(os.path.join(OUT, 'review'), exist_ok=True)
     os.makedirs(os.path.join(OUT, 'sleeper_raw'), exist_ok=True)
     server = None
-    if not server_up():
+    if not REMOTE and not server_up():
         server = subprocess.Popen([sys.executable, '-m', 'http.server', PORT, '--bind', '127.0.0.1'], cwd=REPO, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(30):
             if server_up(): break
