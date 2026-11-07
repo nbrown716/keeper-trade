@@ -116,3 +116,13 @@
   .trade-desk-actions { flex-wrap: wrap; overflow: visible; }
   .trade-desk-actions #dealer-status { flex: 0 0 100%; justify-content: flex-start; min-height: 0; padding: 0; border: 0; background: none; letter-spacing: 0.08em; }
 }
+
+/* Market read: values in picks + what evens the deal (display only) */
+.kt-market-read { display: grid; gap: var(--kt-space-1); margin: var(--kt-space-3) 0 0; padding: var(--kt-space-3); border: 1px solid var(--kt-border-subtle); border-radius: var(--kt-radius-md); background: var(--kt-surface-2); color: var(--kt-text-secondary); font-size: var(--kt-text-xs); line-height: 1.5; text-align: left; }
+.kt-market-read[hidden] { display: none; }
+.kt-market-read p { margin: 0; }
+.kt-market-eyebrow { color: var(--kt-text-muted); font-size: 0.625rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.kt-market-units { display: flex; flex-wrap: wrap; gap: var(--kt-space-1) var(--kt-space-3); color: var(--kt-text-primary); }
+.kt-market-units b { font-family: var(--kt-font-display); font-size: var(--kt-text-base); font-weight: 800; }
+.kt-market-link { display: inline-flex; align-items: center; min-height: var(--kt-tap); color: var(--kt-accent); font-weight: 800; text-decoration: none; }
+.kt-market-link:hover { text-decoration: underline; }

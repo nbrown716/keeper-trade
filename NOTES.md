@@ -602,6 +602,54 @@ What changed:
 - pill score/%/link/fit/axe/dismiss, and no pill without a team;
 - live follow: +6 Sleeper points appear in about 60 s with no reload.
 
+### 2026-11-07 — Deals (Qlinch-inspired) + calculator Market read
+
+We studied market.qlinch.co's features as a user. We built our own versions; no Qlinch code, assets or private APIs were used. Features that repeat what we already have were skipped:
+- Start/Sit → War Room
+- Matchup / Game Hub → Sunday
+- Simulations → Season Sim
+- Stats → Research
+- Redraft board → Mock Draft / Rankings
+- Guide → command palette
+- Ask → Pulse / War Room AI
+- King of the Hill / Dynasty Duel need a shared leaderboard backend → deferred
+
+**Deals (`deals.html`, `js/features/deals.js`, `js/data/trade-market.js`, `css/deals.css`)**
+- **Call it:**
+  - Every real 2-team trade in every season of the league lineage, from Sleeper transactions.
+  - Values stay hidden until you vote (A / Even / B).
+  - The reveal shows:
+    - every asset's value today and in "≈1sts";
+    - the model read: the keeper 1,000-point house band = even, otherwise the bigger side wins, with the margin;
+    - what each side's new players scored in their starting lineup since the trade;
+    - whether your call matches the model.
+  - Plus "Change my call", and "Open in the Keeper calculator" (prefills via `kt-pending-trade:v1`).
+- **Database:** search by player/manager, filter by season/manager, deep link with `?tab=database&q=`.
+- **Market:**
+  - Risers/fallers by size of the 30-day move, among players worth 1,500+ before it, so fringe +70,000% jumps are excluded.
+  - Most traded in your league.
+- **Teams:** team value rankings = rostered players + owned next-draft picks (traded picks follow their owner), a profile tag and the value-weighted age.
+- **Binder:** your saved Keeper-calculator trades re-priced live, then → now.
+- **Your record:** calls, agreement with the model, streak.
+- **League votes:** the Worker `/votes` route (see `worker/DEPLOY.md`). It's hidden until the route is deployed, then shows "League calls · N votes".
+
+**Values = the Keeper calculator's, exactly**
+- Players: Dealer + FantasyCalc, the same normalization and rounding.
+- Keeper picks: the calculator's own rule, with the real keeper count (2 × 12 = 24). Rank = keepersGone + (round − 0.5) × teams on the same live curve, −8% per year out.
+- Dynasty picks: the live rookie-pick market (rounds 1–4).
+- Redraft picks: listed, not valued.
+- `tests/market_parity.py`: 120 players identical, 45 keeper picks 0.0% off the real calculator.
+- **Why we can't use the market's rookie-pick values for keeper picks:** keeper-draft picks are full-draft picks after keepers, a different asset from dynasty rookie picks. The calculator's rule is the pick structure and stays unchanged.
+
+**Calculator Market read (`trade-desk.js`, display only)**
+- Keeper: each side in 1st-round-pick units (the calculator's own `assetValue`), "to even it: ≈X more on <side>'s side", and the closest single balancing pick with an inside/outside-the-band check.
+- Redraft: players worth about the gap (within 15%).
+- Both: "Real trades with <top player> →" into Deals.
+- `tests/market_read.py` recomputes every number from the engines.
+- Note for the owner: the Keeper calculator's column tags say "Gives A/B" (original legacy wording), but its verdict treats each column as that team's haul. We left your labels untouched; our wording is neutral ("more on <side>'s side").
+
+**Tests added:** `market_parity.py`, `market_read.py`, `deals_test.py` (24 checks), `worker_votes.py` (7). Deals is also in the matrix (16 → 17 routes).
+
 ## Architecture summary
 
 - **UI:** static HTML + CSS tokens/components + ES modules; shared navigation, command palette, transitions, ticker, trade panels, game day, dashboard, clubhouse, league.

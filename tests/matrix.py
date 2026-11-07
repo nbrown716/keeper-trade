@@ -5,7 +5,7 @@ import asyncio, json, re, sys
 from playwright.async_api import async_playwright
 
 BASE = _os.environ.get('KT_BASE', 'http://127.0.0.1:4173/')  # KT_BASE=https://keeper-trade.pages.dev/ audits production
-ROUTES = ['wrapped.html', 'weather.html', 'index.html', 'keeper.html', 'redraft.html', 'rankings.html', 'research.html', 'tools.html', 'game.html',
+ROUTES = ['deals.html', 'wrapped.html', 'weather.html', 'index.html', 'keeper.html', 'redraft.html', 'rankings.html', 'research.html', 'tools.html', 'game.html',
           'sunday.html', 'war-room.html', 'mock-draft.html', 'season-sim.html', 'pulse.html', 'drive.html', 'command.html']
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'mobile'   # mobile | down
 AXE = 'https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.2/axe.min.js'

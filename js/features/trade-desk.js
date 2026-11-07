@@ -59,14 +59,60 @@ function mountGauge() {
   const verdict = document.querySelector('.verdict');
   verdict.insertAdjacentHTML('afterbegin', '<div class="trade-gauge" aria-hidden="true"><svg viewBox="0 0 200 120"><defs><linearGradient id="trade-gauge-gradient"><stop offset="0" stop-color="#72a7ff"/><stop offset="1" stop-color="#c6ff4a"/></linearGradient></defs><path class="trade-gauge-track" d="M20 100 A80 80 0 0 1 180 100"/><path class="trade-gauge-value" d="M20 100 A80 80 0 0 1 180 100" stroke-dasharray="251.2" stroke-dashoffset="125.6"/><line class="trade-gauge-threshold" x1="100" y1="12" x2="100" y2="28"/><line class="trade-gauge-needle" x1="100" y1="54" x2="100" y2="31"/><circle class="trade-gauge-pivot" cx="100" cy="100" r="4"/><text class="trade-gauge-center" x="100" y="94">50%</text></svg></div>');
   verdict.querySelector('.scale')?.insertAdjacentHTML('beforeend', '<span class="trade-threshold-marker" aria-hidden="true"></span>');
+  if (!document.querySelector('#kt-market-read')) document.querySelector('#vStamp')?.insertAdjacentHTML('afterend', '<div class="kt-market-read" id="kt-market-read" hidden></div>');
   const character = document.createElement('div');
   character.className = 'kt-mascot-inline';
   verdict.append(character);
   mascot.mount(character);
 }
 
+// Market read (display only): each side in 1st-round-pick units, what it takes to even the deal, and the closest
+// balancing piece. Keeper: the calculator's OWN pick values (TradeEngine.assetValue) and the 1,000-point band.
+// Redraft: live players worth about the gap. Plus a link to similar real trades in Deals.
+function marketRead(detail) {
+  const host = document.querySelector('#kt-market-read');
+  if (!host) return;
+  const A = detail.sides.A || [];
+  const B = detail.sides.B || [];
+  if (!A.length || !B.length) { host.hidden = true; return; }
+  const names = [...document.querySelectorAll('.team-name')].map(input => input.value || input.placeholder || '');
+  const nameA = names[0] || 'Team A';
+  const nameB = names[1] || 'Team B';
+  const gap = detail.totals.A - detail.totals.B;
+  const short = gap > 0 ? nameB : nameA;
+  const fmt = value => Math.round(value).toLocaleString();
+  const label = asset => asset?.ref?.n || asset?.ref?.name || '';
+  const top = [...A, ...B].map(asset => ({ name: label(asset), pick: asset?.ref?.pick, value: Number(asset?.mv ?? asset?.ref?.val ?? 0) })).filter(asset => asset.name && !asset.pick).sort((a, b) => b.value - a.value)[0];
+  const similar = top ? `<a class="kt-market-link" href="deals.html?tab=database&q=${encodeURIComponent(top.name)}">Real trades with ${escapeHtml(top.name)} →</a>` : '';
+  let body = '';
+  if (kind === 'keeper' && engine.assetValue) {
+    const unit = engine.assetValue({ pick: true, round: 1, yr: 0 }); // mid 1st of the next draft, calculator's own value
+    const inPicks = value => (unit ? (value / unit).toFixed(value / unit < 1 ? 2 : 1) : '—');
+    const display = Math.abs(gap) * 100;
+    let balance = 'Inside the 1,000-point band: it already auto-approves.';
+    if (display > 1000) {
+      let best = null;
+      for (let round = 1; round <= 15; round += 1) {
+        const value = engine.assetValue({ pick: true, round, yr: 0 });
+        if (!best || Math.abs(value - Math.abs(gap)) < Math.abs(best.value - Math.abs(gap))) best = { round, value };
+      }
+      balance = `To even it: ≈${fmt(display)} more on ${escapeHtml(short)}’s side (≈${inPicks(Math.abs(gap))} of a 1st). Closest single pick: a Round ${best.round} (${fmt(best.value * 100)}), which would land it ${Math.abs(Math.abs(gap) - best.value) * 100 <= 1000 ? 'inside' : 'still outside'} the 1,000 band.`;
+    }
+    body = `<p class="kt-market-units"><span>${escapeHtml(nameA)} ≈ <b>${inPicks(detail.totals.A)}</b> 1sts</span><span>${escapeHtml(nameB)} ≈ <b>${inPicks(detail.totals.B)}</b> 1sts</span></p><p>${balance}</p>`;
+  } else {
+    const inTrade = new Set([...A, ...B].map(label));
+    const want = Math.abs(gap);
+    const close = (engine.players?.() || []).filter(player => player?.name && !inTrade.has(player.name) && player.val > 0)
+      .map(player => ({ player, off: Math.abs(player.val - want) })).filter(item => item.off <= want * 0.15).sort((a, b) => a.off - b.off).slice(0, 3);
+    body = want < 1 ? '<p>Dead even.</p>' : `<p>To even it: ≈${fmt(want)} more on ${escapeHtml(short)}’s side.${close.length ? ` Players worth about that: ${close.map(item => `${escapeHtml(item.player.name)} (${fmt(item.player.val)})`).join(', ')}.` : ''}</p>`;
+  }
+  host.hidden = false;
+  host.innerHTML = `<span class="kt-market-eyebrow">Market read</span>${body}${similar}`;
+}
+
 function updateVerdict(detail) {
   latest = detail;
+  marketRead(detail);
   const total = detail.totals.A + detail.totals.B;
   const percent = total ? detail.totals.A / total : 0.5;
   const gauge = document.querySelector('.trade-gauge-value');

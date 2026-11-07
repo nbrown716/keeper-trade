@@ -13,6 +13,7 @@ const pages = [
   { id: 'mock-draft', type: 'Pages', title: 'Mock Draft Arena', meta: 'Snake draft against 11 AI personalities', icon: 'spark', url: 'mock-draft.html', keywords: 'draft simulator mock claude' },
   { id: 'season-sim', type: 'Pages', title: 'Season Sim', meta: 'Monte Carlo playoff odds and what-if scenarios', icon: 'spark', url: 'season-sim.html', keywords: 'playoffs monte carlo odds simulation magic number' },
   { id: 'pulse', type: 'Pages', title: 'League Pulse', meta: 'Storylines, awards, newsletter, trophies, and records', icon: 'news', url: 'pulse.html', keywords: 'league stories commissioner awards record book' },
+  { id: 'deals', type: 'Pages', title: 'Deals', meta: 'Call your league’s real trades, then see the model’s read, market and team values', icon: 'spark', url: 'deals.html', keywords: 'trades vote call market risers fallers team values binder record trade database' },
   { id: 'wrapped', type: 'Pages', title: 'Season Wrapped', meta: 'Your season as a story: record, luck, MVP, Lineup IQ, trades, rivals', icon: 'spark', url: 'wrapped.html', keywords: 'wrapped recap season story year review archetype' },
   { id: 'weather', type: 'Pages', title: 'Weather Center', meta: 'Thursday-to-Monday kickoff weather for every game', icon: 'spark', url: 'weather.html', keywords: 'wind rain snow forecast cold' },
   { id: 'tools', type: 'Pages', title: 'Tools', meta: 'Draft-pick values and depth charts', icon: 'tools', url: 'tools.html', keywords: 'picks teams' }

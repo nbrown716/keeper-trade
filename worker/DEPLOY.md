@@ -173,3 +173,18 @@ Real acceptance test after deployment:
 
 - `/espn/athletes/:id/overview` previously proxied to `.../nfl/espn/athletes/...` and returned **502 in production**, so Research player detail never loaded live ESPN data. Fixed with `url.pathname.slice(5)`.
 - Haiku 4.5 budget pricing corrected to $1/$5 per MTok (was $0.80/$4, which undercounted spend by 20% against the $1 daily cap).
+
+## League votes for Deals (added 2026-11-07, awaiting the next deploy)
+
+`worker.js` now serves `/votes`:
+- `GET /votes?league=ID&trades=id1,id2` returns `{ status: 'ok', counts: { id: { A, E, B } } }`.
+- `POST /votes` with `{ league, trade, pick: 'A' | 'E' | 'B', voter }` returns the updated counts.
+
+How it works:
+- **Storage:** the existing `AI_CACHE` KV namespace, so there are no new bindings or secrets. A normal private `deploy.py` run turns it on.
+- **Privacy:** one vote per device per trade, and re-voting replaces the old vote. Device IDs are random and stored only as SHA-256 hashes.
+- **Abuse limits:** 30 votes a minute per device. Other origins are refused.
+- **Tested** in a browser against an in-memory KV: `tests/worker_votes.py`, 7 checks.
+- **Until deployed**, the route answers "resting" and Deals simply doesn't show the league split. Nothing breaks.
+
+After deploying, check `deals.html`: vote on a trade and a "League calls · N votes" line appears under the model read.

@@ -26,6 +26,7 @@ export function mountNavigation({ active = 'home' } = {}) {
     ['draft', 'Mock Draft', 'mock-draft.html'],
     ['sim', 'Season Sim', 'season-sim.html'],
     ['pulse', 'Pulse', 'pulse.html'],
+    ['deals', 'Deals', 'deals.html'],
     ['weather', 'Weather', 'weather.html'],
     ['trade', 'Keeper', 'keeper.html'],
     ['redraft', 'Redraft', 'redraft.html'],

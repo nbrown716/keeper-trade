@@ -25,6 +25,10 @@ SUITES = [
     ('values_live.py', 'passed', False),               # live-only value sources, <=6 h cadence, open-page refresh, baselines
     ('winprob_calibration.py', 'passed', False),       # win probability: backtest vs real results + sanity laws
     ('live_mode.py', 'passed', False),                 # Drive live mode + Matchup Pill on an in-progress week
+    ('market_parity.py', 'passed', False),             # Deals prices players + keeper picks exactly like the Keeper calculator
+    ('market_read.py', 'passed', False),               # calculator Market read numbers = the calculators' own engines
+    ('deals_test.py', 'passed', False),                # Deals: every real trade vs raw Sleeper, model math, tabs, binder, votes
+    ('worker_votes.py', 'passed', False),              # Worker /votes: origin, validation, counting, dedupe, rate limit, hashing
     ('wrapped_entry.py', 'passed', False),             # Wrapped entry points + one-time championship prompt
     ('wr_audit.py', 'passed', True),                  # Wrapped: overflow detector, interactions, exports, edge cases
     ('deep.py', 'DEEP ALL PASS', True),                       # animations, Drive exports, AI features, Pulse

@@ -296,6 +296,39 @@ async function handleYahoo(request, env, url) {
   }
 }
 
+// ---- Deals: league votes on real trades (who came out ahead). Stored in the existing AI_CACHE KV namespace, so a
+// normal deploy enables it (no new bindings). One vote per device per trade (re-voting replaces it).
+const VOTE_PICKS = new Set(['A', 'E', 'B']);
+async function handleVotes(request, env, url) {
+  if (request.method === 'GET') {
+    const league = url.searchParams.get('league') || '';
+    const trades = (url.searchParams.get('trades') || '').split(',').filter(Boolean).slice(0, 60);
+    if (!/^\d{6,25}$/.test(league) || !trades.every(id => /^\d{6,25}$/.test(id))) return respond(request, env, { status: 'resting', reason: 'votes-input' }, 200);
+    const counts = {};
+    await Promise.all(trades.map(async id => { counts[id] = (await env.AI_CACHE.get(`votes:c:${league}:${id}`, 'json')) || { A: 0, E: 0, B: 0 }; }));
+    return respond(request, env, { status: 'ok', counts });
+  }
+  if (request.method !== 'POST') return respond(request, env, { status: 'resting', reason: 'route' }, 200);
+  let body;
+  try { const raw = await request.text(); if (raw.length > 400) throw new Error('large'); body = JSON.parse(raw); } catch (_) { return respond(request, env, { status: 'resting', reason: 'payload' }, 200); }
+  const { league, trade, pick, voter } = body || {};
+  if (!/^\d{6,25}$/.test(String(league)) || !/^\d{6,25}$/.test(String(trade)) || !VOTE_PICKS.has(pick) || !/^[a-z0-9]{16,40}$/.test(String(voter))) return respond(request, env, { status: 'resting', reason: 'votes-input' }, 200);
+  const voterHash = await digest(voter); // device IDs are never stored raw
+  const limitKey = `votes:rl:${voterHash}:${minute()}`;
+  const used = Number(await env.AI_CACHE.get(limitKey) || 0);
+  if (used >= 30) return respond(request, env, { status: 'resting', reason: 'rate' }, 429);
+  await env.AI_CACHE.put(limitKey, String(used + 1), { expirationTtl: 120 });
+  const voterKey = `votes:v:${league}:${trade}:${voterHash}`;
+  const previous = await env.AI_CACHE.get(voterKey);
+  const countKey = `votes:c:${league}:${trade}`;
+  const counts = (await env.AI_CACHE.get(countKey, 'json')) || { A: 0, E: 0, B: 0 };
+  if (previous && VOTE_PICKS.has(previous)) counts[previous] = Math.max(0, counts[previous] - 1);
+  counts[pick] += 1;
+  await env.AI_CACHE.put(voterKey, pick);
+  await env.AI_CACHE.put(countKey, JSON.stringify(counts));
+  return respond(request, env, { status: 'ok', counts });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -308,6 +341,7 @@ export default {
     if (!cors(request, env)) return new Response('Origin not allowed', { status: 403 });
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request, env) });
     if (url.pathname.startsWith('/yahoo/')) return handleYahoo(request, env, url);
+    if (url.pathname === '/votes') return handleVotes(request, env, url);
     if (request.method !== 'POST' || !url.pathname.startsWith('/ai/')) {
       return respond(request, env, { status: 'resting', reason: 'route' }, 200);
     }

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="kt-js">
+<head>
+      <meta charset="utf-8">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('gi-theme')==='light'?'light':'dark'}catch(e){}</script>
+  <!-- kt:share-meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Keeper Trade">
+  <meta property="og:title" content="Deals · Keeper Trade">
+  <meta property="og:description" content="Call your league’s real trades, then see the model’s read, the market, team values and how your calls hold up.">
+  <meta property="og:url" content="https://keeper-trade.pages.dev/deals.html">
+  <meta property="og:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keeper Trade: your edge on draft day and every trade.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Keeper Trade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- /kt:share-meta -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="description" content="Deals: every real trade in your league. Call who won, then see live values, values in picks, production since, team values, risers and fallers.">
+  <title>Deals — Keeper Trade</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/deals.css">
+</head>
+<body>
+  <main class="dl-shell">
+    <header class="dl-heading">
+      <span class="kt-eyebrow" id="dl-eyebrow">Real trades · your league</span>
+      <h1>DEALS</h1>
+      <p>Every real trade in your league. Call who came out ahead, then see the model’s read with today’s values, what each side has scored since, and how your calls hold up.</p>
+      <p class="dl-status" id="dl-status" role="status" aria-live="polite">Loading your league’s trades…</p>
+    </header>
+    <div class="dl-tabs" role="tablist" aria-label="Deals sections" hidden>
+      <button role="tab" type="button" data-tab="call" id="dl-tab-call" aria-controls="dl-panel-call" aria-selected="true">Call it</button>
+      <button role="tab" type="button" data-tab="database" id="dl-tab-database" aria-controls="dl-panel-database" aria-selected="false" tabindex="-1">Database</button>
+      <button role="tab" type="button" data-tab="market" id="dl-tab-market" aria-controls="dl-panel-market" aria-selected="false" tabindex="-1">Market</button>
+      <button role="tab" type="button" data-tab="teams" id="dl-tab-teams" aria-controls="dl-panel-teams" aria-selected="false" tabindex="-1">Teams</button>
+      <button role="tab" type="button" data-tab="binder" id="dl-tab-binder" aria-controls="dl-panel-binder" aria-selected="false" tabindex="-1">Binder</button>
+      <button role="tab" type="button" data-tab="record" id="dl-tab-record" aria-controls="dl-panel-record" aria-selected="false" tabindex="-1">Your record</button>
+    </div>
+    <section role="tabpanel" id="dl-panel-call" aria-labelledby="dl-tab-call" tabindex="0"><div class="dl-skel"><span class="kt-skeleton"></span><span class="kt-skeleton"></span></div></section>
+    <section role="tabpanel" id="dl-panel-database" aria-labelledby="dl-tab-database" tabindex="0" hidden></section>
+    <section role="tabpanel" id="dl-panel-market" aria-labelledby="dl-tab-market" tabindex="0" hidden></section>
+    <section role="tabpanel" id="dl-panel-teams" aria-labelledby="dl-tab-teams" tabindex="0" hidden></section>
+    <section role="tabpanel" id="dl-panel-binder" aria-labelledby="dl-tab-binder" tabindex="0" hidden></section>
+    <section role="tabpanel" id="dl-panel-record" aria-labelledby="dl-tab-record" tabindex="0" hidden></section>
+  </main>
+  <script type="module" src="js/features/deals.js"></script>
+  <script type="module" src="js/pwa.js"></script>
+</body>
+</html>
