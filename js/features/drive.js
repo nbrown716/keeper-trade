@@ -1,11 +1,11 @@
 import { loadDriveRecap, defaultDriveWeek, DRIVE_DURATION } from './drive-data.js';
 import { friendlyError } from '../ui/friendly-error.js';
 import { createFieldRenderer } from './drive-field.js';
-import { createMapRenderer } from './drive-map.js';
+import { createFlyoverRenderer } from './drive-flyover.js';
 import { createRaceRenderer } from './drive-race.js';
 import { renderSummary } from './drive-summary.js';
 
-const rendererFor = name => name === 'race' ? createRaceRenderer() : name === 'map' ? createMapRenderer() : createFieldRenderer();
+const rendererFor = name => name === 'race' ? createRaceRenderer() : name === 'map' ? createFlyoverRenderer() : createFieldRenderer();
 import { askAI } from '../data/ai.js';
 import { getSleeperLeagueId } from '../data/sleeper.js';
 import { renderDriveVideo, renderStoryPack, renderScoreCard, shareOrDownload, shareStoryPack, copyRecapLink, ShareError } from './share.js';

@@ -1,5 +1,5 @@
 import { createFieldRenderer } from './drive-field.js';
-import { createMapRenderer } from './drive-map.js';
+import { createFlyoverRenderer } from './drive-flyover.js';
 import { createRaceRenderer } from './drive-race.js';
 import { drawBackdrop, drawBrand, rounded } from './drive-cards.js';
 
@@ -25,7 +25,7 @@ export function negotiateVideoCodec() {
 }
 
 function rendererFor(mode) {
-  return mode === 'race' ? createRaceRenderer() : mode === 'map' ? createMapRenderer() : createFieldRenderer();
+  return mode === 'race' ? createRaceRenderer() : mode === 'map' ? createFlyoverRenderer() : createFieldRenderer();
 }
 
 function canvasBlob(canvas) {

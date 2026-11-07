@@ -434,6 +434,36 @@ Shell **v58** (adds replay, race, summary, friendly-error). Phases 4-6 (Flyover,
 - Deep flows: ALL PASS, including live AI, race-mode MP4 (50 s, 1080×1920, 9.9 MB), Story Pack and poster.
 - Crawl: only verified false positives remain. Sacred math identical. Not committed.
 
+### 2026-11-07 — Phase 4: The Drive "Home Of" flyover (spec §5)
+
+The third Drive mode, "The map", is now **Home Of**: a night-lights flyover of the US. It runs slot by slot (QB vs QB, RB vs RB and so on).
+- Both managers' players launch as spinning footballs from their previous stadium. They land on the **same frame**: there is one shared flight clock, so long trips fly faster.
+- Each landing gets a shockwave and a bounce. The frame then splits like a broadcast: you on top, the opponent below.
+- Each half zooms to its stadium with a "CITY / home of the / PLAYER" card. The card shows the player's points and best play, and a centre chip shows "QB DUEL · 17.0 – 10.3".
+- The finale shows both full routes (volt and coral), the winner and the head-to-head slot record. `?mode=map` still selects this mode.
+
+**Files:**
+- New `data/us-states-albers.json` is us-atlas@3 `states-albers-10m` (ISC, US Census), pre-projected and 82 KB.
+- New `js/data/us-map.js`:
+  - Decodes the TopoJSON with no library.
+  - `albers()` is the same conic equal-area projection as d3.geoAlbersUsa, verified at 0 px error for every stadium.
+  - Provides `onMainland()` and a `METROS` list for city lights.
+- New `js/features/drive-flyover.js` is the pure renderer.
+  - The map layer (land, state lines, coast and seeded city lights) is built once at 3× and cached.
+  - International venues land as edge beacons.
+  - Bye or empty slots show "BYE WEEK".
+- `drive-data.js` `buildFlyover()` attaches `race.flyover = {map, beats}`. Slots come from the league's `roster_positions`, venues from `resolveVenue`, and the best play is the player's biggest replay event (approximate fill-ins are excluded).
+- `drive.js`, `share.js` and `drive.html` use the "Home Of" label and the flyover renderer.
+- The SW shell is now v60.
+- If the map file can't load, the original stadium map renderer still plays.
+
+**Checks:**
+- Live Week 8, plus Weeks 3 and 7, render with no errors.
+- At 4× CPU throttle: 16.7 ms average, 33 ms worst, 0 frames over 50 ms.
+- Reduced motion shows the landed split for each beat.
+- With the map file blocked, the fallback plays cleanly.
+- Score text stays clear of the page mascot (bottom-right).
+
 ## Architecture summary
 
 - **UI:** static HTML + CSS tokens/components + ES modules; shared navigation, command palette, transitions, ticker, trade panels, game day, dashboard, clubhouse, league.

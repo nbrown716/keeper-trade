@@ -1,6 +1,8 @@
 import { liveData } from '../data/live-data.js';
 import { getNflState, getLeagueBundle, leagueUsers, rosterOwner } from '../data/sleeper.js';
 import { buildReplay, filmTimeline } from '../data/replay.js';
+import { resolveVenue } from '../data/weather-week.js';
+import { loadUsMap, albers, onMainland } from '../data/us-map.js';
 import { getPlayerDatabase } from '../data/player-db.js';
 import { normalizeGames, summarySource } from '../data/espn.js';
 import { resolveStadium, weatherImpacts } from '../data/weather.js';
@@ -144,6 +146,7 @@ export async function loadDriveRecap(leagueId, week, rosterId) {
   const total = Number(matchup.points || 0);
   const opponentTotal = Number(opponent?.points || 0);
   const race = buildRace({ bundle, matchup, opponent, playerMap, teamGames, summaries, managers, selected });
+  if (race) race.flyover = await buildFlyover({ bundle, matchup, opponent, playerMap, teamGames, race }).catch(() => null);
   const rank = bundle.matchups.slice().sort((a, b) => Number(b.points || 0) - Number(a.points || 0)).findIndex(item => item.roster_id === selected) + 1;
   return {
     leagueId,
@@ -224,4 +227,35 @@ function buildRace({ bundle, matchup, opponent, playerMap, teamGames, summaries,
     approximate,
     accuracy: replay.accuracy
   };
+}
+
+// Home Of flyover: slot-by-slot duels (QB vs QB, RB vs RB...) with each starter's real stadium.
+async function buildFlyover({ bundle, matchup, opponent, playerMap, teamGames, race }) {
+  if (!opponent) return null;
+  const map = await loadUsMap();
+  const slots = (bundle.league.roster_positions || []).filter(slot => !['BN', 'IR', 'TAXI'].includes(slot));
+  const best = new Map();
+  race.events.forEach(event => { if (event.kind === 'approx') return; if (!best.has(event.playerId) || event.delta > best.get(event.playerId).delta) best.set(event.playerId, event); });
+  const venueCache = new Map();
+  const side = async entry => Promise.all((entry.starters || []).map(async (id, index) => {
+    const player = playerMap.get(id) || { id, name: id === '0' ? 'Empty slot' : `Player ${id}`, team: '', position: '' };
+    const game = teamGames.get(player.team);
+    let venue = null;
+    if (game) {
+      if (!venueCache.has(game.id)) venueCache.set(game.id, resolveVenue(game).catch(() => null));
+      venue = await venueCache.get(game.id);
+    }
+    const mainland = venue ? onMainland(venue.lat, venue.lng) : false;
+    const top = best.get(id);
+    return {
+      id, slot: slots[index] || player.position || 'FLEX', name: player.name, team: player.team, position: player.position,
+      points: Number(entry.players_points?.[id] || 0),
+      play: top && top.delta > 0.5 ? top.label : '',
+      bye: !game || id === '0',
+      venue: venue ? { name: venue.venue, city: venue.city || game?.venueCity || '', lat: venue.lat, lng: venue.lng, mainland, xy: mainland ? albers(venue.lng, venue.lat) : null } : null
+    };
+  }));
+  const [a, b] = await Promise.all([side(matchup), side(opponent)]);
+  const beats = a.map((player, index) => ({ slot: player.slot, a: player, b: b[index] || null })).filter(beat => beat.a || beat.b);
+  return { map, beats };
 }
