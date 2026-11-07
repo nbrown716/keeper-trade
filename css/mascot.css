@@ -66,6 +66,8 @@
 @keyframes kt-mascot-confetti { from { opacity: 0; transform: translateY(12px) scale(.7); } 35% { opacity: 1; } to { opacity: 0; transform: translateY(-18px) scale(1.1); } }
 @media (max-width: 48rem) {
   .kt-mascot-dock { right: var(--kt-space-2); bottom: calc(5.5rem + env(safe-area-inset-bottom)); width: 5rem; }
+  /* Pages with the docked mobile score bar: sit above it instead of half behind it. */
+  body:has(.kt-score-dock) .kt-mascot-dock { bottom: calc(8.25rem + env(safe-area-inset-bottom)); }
   .kt-mascot-bubble { right: 50%; width: 11rem; }
   #drive-mascot { bottom: var(--kt-space-3); width: 4.5rem; }
   .verdict .kt-mascot { width: 4rem; }

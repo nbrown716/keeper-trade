@@ -1,7 +1,26 @@
 <!doctype html>
 <html lang="en" data-theme="dark" class="kt-js">
 <head>
-  <meta charset="utf-8">
+      <meta charset="utf-8">
+  <!-- kt:share-meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Keeper Trade">
+  <meta property="og:title" content="The War Room">
+  <meta property="og:description" content="AI start/sit calls, waiver adds that fit your roster, and counter-offers built on real league math.">
+  <meta property="og:url" content="https://keeper-trade.pages.dev/war-room.html">
+  <meta property="og:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keeper Trade: your edge on draft day and every trade.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Keeper Trade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- /kt:share-meta -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b0f1a">
   <meta name="description" content="AI Start/Sit, personalized waiver targets, and engine-verified trade counter-offers.">
@@ -24,20 +43,20 @@
     <div class="kt-war-meta"><span id="war-freshness">Real roster data. Grounded AI. Original calculator math.</span><button class="kt-btn kt-btn-sm kt-btn-ghost" id="war-share" type="button">Share current cards</button></div>
 
     <section class="kt-war-panel" data-war-panel="start" aria-label="Start and sit oracle">
-      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Haiku · lineup confidence</span><h2>Make the call.</h2><p>Pick two players for a dilemma, or analyze the full starting lineup.</p></div><div class="kt-war-actions"><button class="kt-btn kt-btn-secondary" id="war-lineup" type="button">Full lineup report</button><button class="kt-btn kt-btn-primary" id="war-oracle" type="button">Ask the Oracle</button></div></div>
+      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Start/Sit · confidence scores</span><h2>Make the call.</h2><p>Pick two players for a dilemma, or analyze the full starting lineup.</p></div><div class="kt-war-actions"><button class="kt-btn kt-btn-secondary" id="war-lineup" type="button">Full lineup report</button><button class="kt-btn kt-btn-primary" id="war-oracle" type="button">Ask the Oracle</button></div></div>
       <div class="kt-war-roster" id="war-roster"></div>
       <div class="kt-war-results" id="war-start-results" aria-live="polite"></div>
       <div class="kt-war-footer"><span id="war-start-freshness"></span><button class="kt-btn kt-btn-sm kt-btn-ghost" id="war-start-regenerate" type="button">Regenerate</button></div>
     </section>
 
     <section class="kt-war-panel" data-war-panel="waiver" aria-label="Waiver Wire Wednesday" hidden>
-      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Haiku · 24h cache</span><h2>Three adds. Actual fits.</h2><p id="war-waiver-note">Ranked by roster holes, value movement, and availability.</p></div><button class="kt-btn kt-btn-primary" id="war-waiver-run" type="button">Build my board</button></div>
+      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Waiver wire · updated daily</span><h2>Three adds. Actual fits.</h2><p id="war-waiver-note">Ranked by roster holes, value movement, and availability.</p></div><button class="kt-btn kt-btn-primary" id="war-waiver-run" type="button">Build my board</button></div>
       <div class="kt-war-results" id="war-waiver-results" aria-live="polite"></div>
       <div class="kt-war-footer"><span id="war-waiver-freshness"></span><button class="kt-btn kt-btn-sm kt-btn-ghost" id="war-waiver-regenerate" type="button">Regenerate</button></div>
     </section>
 
     <section class="kt-war-panel" data-war-panel="counter" aria-label="Trade counter-builder" hidden>
-      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Sonnet · original engine verdicts</span><h2>Never just say no.</h2><p>Get a verdict and two concrete counters, then check every counter with the real calculator.</p></div></div>
+      <div class="kt-war-panel-heading"><div><span class="kt-eyebrow">Counter-offers · your league’s math</span><h2>Never just say no.</h2><p>Get a verdict and two concrete counters, then check every counter with the real calculator.</p></div></div>
       <div class="kt-war-offer"><label for="war-offer-text">Describe the offer</label><textarea id="war-offer-text" rows="4" placeholder="Example: Joe Burrow for Jaxon Smith-Njigba + a 2027 1st"></textarea><div class="kt-war-offer-row"><select id="war-offer-select" aria-label="Load a Sleeper trade"><option value="">Load a real trade from the activity feed…</option></select><button class="kt-btn kt-btn-primary" id="war-counter-run" type="button">Build counters</button></div></div>
       <div class="kt-war-results" id="war-counter-results" aria-live="polite"></div>
       <div class="kt-war-footer"><span id="war-counter-freshness"></span><button class="kt-btn kt-btn-sm kt-btn-ghost" id="war-counter-regenerate" type="button">Regenerate</button></div>

@@ -41,6 +41,7 @@
 .trade-gauge-value { fill: none; stroke: url(#trade-gauge-gradient); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 600ms var(--kt-ease-out); }
 .trade-gauge-needle { stroke: var(--kt-text-primary); stroke-width: 3; stroke-linecap: round; transform-origin: 100px 100px; transition: transform 600ms var(--kt-ease-spring); }
 .trade-gauge-threshold { stroke: var(--kt-accent); stroke-width: 3; }
+.trade-gauge-pivot { fill: var(--kt-text-muted); }
 .trade-gauge-center { fill: var(--kt-text-primary); font-family: var(--kt-font-display); font-size: 28px; font-weight: 700; text-anchor: middle; }
 .trade-desk-body .verdict .stamp { position: relative; z-index: 1; margin-bottom: var(--kt-space-3); font-size: 1.25rem; }
 .trade-desk-body .verdict .stamp.ok { color: var(--kt-success); text-shadow: 0 0 24px var(--kt-success-soft); }
@@ -84,8 +85,14 @@
 
 @media (max-width: 48rem) {
   .trade-desk-body .wrap { padding: var(--kt-space-4) var(--kt-space-3) var(--kt-space-7); }
-  .trade-desk-hero { align-items: flex-start; flex-direction: column; }
-  .trade-desk-hero h1 { font-size: 3.5rem; }
+  .trade-desk-hero { align-items: flex-start; flex-direction: column; gap: var(--kt-space-3); margin-bottom: var(--kt-space-4); }
+  .trade-desk-hero h1 { font-size: 2.75rem; }
+  /* Phones: the calculator, not the pitch, belongs above the fold. */
+  .trade-desk-hero p { display: none; }
+  .trade-desk-actions { display: flex; width: 100%; flex-wrap: nowrap; gap: var(--kt-space-2); overflow-x: auto; scrollbar-width: none; }
+  .trade-desk-actions::-webkit-scrollbar { display: none; }
+  .trade-desk-actions > * { flex: none; }
+  .trade-desk-actions #dealer-status { font-size: 0.625rem; }
   .trade-desk-body .desk { grid-template-columns: 1fr; }
   .trade-desk-body .verdict { grid-column: 1; }
   .trade-desk-body .seg button, .trade-desk-body .reset, .trade-desk-body .x, .trade-desk-body .ctl input { min-height: var(--kt-tap); }
@@ -99,4 +106,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .trade-gauge-value, .trade-gauge-needle { transition: none; }
+}
+
+/* Round 1 panel fixes */
+/* The verdict card clips overflow, so the mascot's speech bubble opens downward inside it instead of above it. */
+.trade-desk-body .verdict .kt-mascot-bubble { top: 96%; right: 20%; bottom: auto; z-index: 2; width: 12rem; border-radius: var(--kt-radius-lg) 0 var(--kt-radius-lg) var(--kt-radius-lg); text-align: left; }
+@media (max-width: 47.99rem) {
+  /* Every desk action fits on a phone: the values-source line gets its own row, the three buttons share the next. */
+  .trade-desk-actions { flex-wrap: wrap; overflow: visible; }
+  .trade-desk-actions #dealer-status { flex: 0 0 100%; justify-content: flex-start; min-height: 0; padding: 0; border: 0; background: none; letter-spacing: 0.08em; }
 }

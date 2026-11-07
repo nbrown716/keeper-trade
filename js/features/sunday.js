@@ -165,10 +165,15 @@ function renderPlayers() {
   previousPlayerPoints = new Map(userStarters().map(player => [player.id, Number(matchup.players_points?.[player.id] || 0)]));
 }
 
+let scoreStatus = 'loading';
 function render() {
   renderQueued = false;
   if (!games.length) {
-    mosaic.innerHTML = '<div class="kt-sunday-empty">No NFL games on this date. Your next Sunday is already queued.</div>';
+    // Only claim "no games" when ESPN actually answered; a failed or pending feed says so honestly.
+    mosaic.innerHTML = scoreStatus === 'error'
+      ? '<div class="kt-sunday-empty">Live scores are reconnecting. Your games will appear here the moment ESPN answers.</div>'
+      : scoreStatus === 'loading' ? '<div class="kt-sunday-empty"><span class="kt-skeleton kt-skeleton-text"></span><span class="kt-skeleton kt-skeleton-text"></span></div>'
+      : '<div class="kt-sunday-empty">No NFL games on this date. Your next Sunday is already queued.</div>';
     playersRail.innerHTML = '';
     return;
   }
@@ -345,6 +350,7 @@ mascot.mountDock();
 liveData.subscribe(SCOREBOARD_SOURCE, snapshot => {
   if (snapshot.statusOnly) return;
   games = normalizeGames(snapshot.data);
+  scoreStatus = snapshot.data ? 'live' : snapshot.status;
   syncSummaries();
   syncWeather();
   scheduleRender();

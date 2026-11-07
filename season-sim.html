@@ -1,7 +1,26 @@
 <!doctype html>
 <html lang="en" data-theme="dark" class="kt-js">
 <head>
-  <meta charset="utf-8">
+      <meta charset="utf-8">
+  <!-- kt:share-meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Keeper Trade">
+  <meta property="og:title" content="Season Sim">
+  <meta property="og:description" content="Ten thousand futures for your league: playoff odds, magic numbers, and a what-if machine.">
+  <meta property="og:url" content="https://keeper-trade.pages.dev/season-sim.html">
+  <meta property="og:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keeper Trade: your edge on draft day and every trade.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Keeper Trade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- /kt:share-meta -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b0f1a">
   <meta name="description" content="Monte Carlo playoff odds, seed distributions, championship probabilities, and what-if scenarios from your real Sleeper league.">
@@ -17,7 +36,7 @@
 </head>
 <body>
   <main class="kt-season-shell">
-    <header class="kt-season-heading"><div><span class="kt-eyebrow">Monte Carlo · 10,000 futures</span><h1>SEASON SIM</h1><p>Every remaining game, every possible path, zero AI calls.</p></div><div class="kt-season-selects"><label>Manager<select id="season-manager" aria-label="Manager"></select></label><label>Rival<select id="season-rival" aria-label="Rival"></select></label></div></header>
+    <header class="kt-season-heading"><div><span class="kt-eyebrow">Monte Carlo · 10,000 futures</span><h1>SEASON SIM</h1><p>Every remaining game. Every possible path. Pure math.</p></div><div class="kt-season-selects"><label>Manager<select id="season-manager" aria-label="Manager"></select></label><label>Rival<select id="season-rival" aria-label="Rival"></select></label></div></header>
     <div class="kt-season-league" id="season-league">Loading your league…</div>
     <section class="kt-season-scenarios" aria-label="What-if machine"><div><span class="kt-eyebrow">The what-if machine</span><strong>Change one thing. Watch every future move.</strong></div><div class="kt-season-scenario-buttons"><button type="button" data-scenario="winOut" aria-pressed="false">If I win out</button><button type="button" data-scenario="loseWeek" aria-pressed="false">If I lose this week</button><button type="button" data-scenario="rivalTwice" aria-pressed="false">If rival loses twice</button><button type="button" data-scenario="reset" aria-pressed="true">Reset futures</button></div></section>
     <div class="kt-season-meta" id="season-meta" role="status" aria-live="polite">Preparing 10,000 simulations…</div>

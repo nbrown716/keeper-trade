@@ -1,6 +1,7 @@
 import { liveData } from './live-data.js';
 
-export const SCOREBOARD_SOURCE = 'nfl-scoreboard';
+// Date-scoped key: a fresh cached scoreboard from another day (midnight rollover, ?debugdate) must never be reused.
+export const SCOREBOARD_SOURCE = `nfl-scoreboard:${scoreboardDate()}`;
 const scoreboardBase = 'https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/scoreboard';
 
 function localDateString(date = new Date()) {
@@ -20,6 +21,9 @@ liveData.register(SCOREBOARD_SOURCE, {
   cadence: data => normalizeGames(data).some(game => game.state === 'in') ? 30000 : 300000
 });
 
+// ESPN team codes → the Sleeper codes every player record uses (players on WAS never matched ESPN's WSH).
+const SLEEPER_TEAM = { WSH: 'WAS' };
+
 export function normalizeGames(data) {
   return (data?.events || []).map(event => {
     const competition = event.competitions?.[0] || {};
@@ -32,7 +36,7 @@ export function normalizeGames(data) {
     const normalizeTeam = team => ({
       id: team.id,
       name: team.team?.displayName || team.team?.name || '',
-      abbreviation: team.team?.abbreviation || 'TBD',
+      abbreviation: SLEEPER_TEAM[team.team?.abbreviation] || team.team?.abbreviation || 'TBD',
       logo: team.team?.logo || team.team?.logos?.[0]?.href || '',
       score: Number(team.score || 0),
       winner: Boolean(team.winner),
@@ -51,6 +55,9 @@ export function normalizeGames(data) {
       redZone: Boolean(situation.isRedZone),
       lastPlay: situation.lastPlay?.text || '',
       venue: competition.venue?.fullName || '',
+      venueCity: competition.venue?.address?.city || '',
+      venueCountry: competition.venue?.address?.country || competition.venue?.address?.state || '',
+      venueIndoor: competition.venue?.indoor === true,
       broadcast: competition.broadcasts?.map(item => item.names?.join(', ')).filter(Boolean).join(', ') || '',
       week: data.week?.number || 0
     };

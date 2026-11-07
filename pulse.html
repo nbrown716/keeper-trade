@@ -1,7 +1,26 @@
 <!doctype html>
 <html lang="en" data-theme="dark" class="kt-js">
 <head>
-  <meta charset="utf-8">
+      <meta charset="utf-8">
+  <!-- kt:share-meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Keeper Trade">
+  <meta property="og:title" content="League Pulse">
+  <meta property="og:description" content="Your league, written up: weekly storylines, awards, the Commissioner’s newsletter, and the all-time record book.">
+  <meta property="og:url" content="https://keeper-trade.pages.dev/pulse.html">
+  <meta property="og:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keeper Trade: your edge on draft day and every trade.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Keeper Trade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- /kt:share-meta -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b0f1a">
   <meta name="description" content="Your league's storylines, weekly awards, Commissioner newsletter, trophy case, and all-time record book.">
@@ -18,10 +37,10 @@
 <body>
   <main class="kt-pulse-shell">
     <header class="kt-pulse-heading">
-      <div><span class="kt-eyebrow">The social/narrative layer</span><h1>LEAGUE PULSE</h1><p>Every score becomes a storyline. Every storyline becomes lore.</p></div>
+      <div><span class="kt-eyebrow">Your league, written up</span><h1>LEAGUE PULSE</h1><p>Every score becomes a storyline. Every storyline becomes lore.</p></div>
       <label>Rewind the season<select id="pulse-week" aria-label="League Pulse week"><option>Loading…</option></select></label>
     </header>
-    <div class="kt-pulse-meta"><span id="pulse-league">Reading the league office…</span><span id="pulse-status" role="status" aria-live="polite">Statistics are computed locally. AI only writes the prose.</span></div>
+    <div class="kt-pulse-meta"><span id="pulse-league">Reading the league office…</span><span id="pulse-status" role="status" aria-live="polite">Real stats from your league. AI only writes the prose.</span></div>
     <div class="kt-pulse-celebration" id="pulse-celebration" role="status" hidden></div>
     <nav class="kt-pulse-tabs" aria-label="League Pulse views" role="tablist">
       <button type="button" role="tab" id="pulse-tab-feed" aria-controls="pulse-panel-feed" aria-selected="true" data-pulse-tab="feed">The Bottom Line</button>
@@ -31,7 +50,7 @@
     </nav>
 
     <section class="kt-pulse-panel" id="pulse-panel-feed" role="tabpanel" aria-labelledby="pulse-tab-feed" data-pulse-panel="feed">
-      <div class="kt-pulse-section-heading"><div><span class="kt-eyebrow">Monday morning, in bold</span><h2>THE BOTTOM LINE</h2></div><span class="kt-badge kt-badge-blue">One batched Haiku</span></div>
+      <div class="kt-pulse-section-heading"><div><span class="kt-eyebrow">Monday morning, in bold</span><h2>THE BOTTOM LINE</h2></div><span class="kt-badge kt-badge-blue">Fresh every Tuesday</span></div>
       <div class="kt-pulse-stories" id="pulse-stories" aria-busy="true"><div class="kt-pulse-story-skeleton kt-skeleton"></div><div class="kt-pulse-story-skeleton kt-skeleton"></div><div class="kt-pulse-story-skeleton kt-skeleton"></div></div>
       <div class="kt-pulse-section-heading kt-pulse-awards-heading"><div><span class="kt-eyebrow">Computed first, narrated second</span><h2>WEEKLY AWARDS</h2></div><span class="kt-badge">5 citations</span></div>
       <div class="kt-pulse-awards" id="pulse-awards" aria-busy="true"><div class="kt-pulse-award-skeleton kt-skeleton"></div><div class="kt-pulse-award-skeleton kt-skeleton"></div><div class="kt-pulse-award-skeleton kt-skeleton"></div></div>
@@ -48,11 +67,11 @@
     </section>
 
     <section class="kt-pulse-panel" id="pulse-panel-records" role="tabpanel" aria-labelledby="pulse-tab-records" data-pulse-panel="records" hidden>
-      <div class="kt-pulse-section-heading"><div><span class="kt-eyebrow">Saved across seasons in IndexedDB</span><h2>ALL-TIME RECORD BOOK</h2></div><span class="kt-badge kt-badge-accent">Local league history</span></div>
+      <div class="kt-pulse-section-heading"><div><span class="kt-eyebrow">Every season, kept forever</span><h2>ALL-TIME RECORD BOOK</h2></div><span class="kt-badge kt-badge-accent">Local league history</span></div>
       <div class="kt-pulse-records" id="pulse-records"><div class="kt-pulse-award-skeleton kt-skeleton"></div></div>
       <p class="kt-pulse-storage-note">Records accumulate as weeks are loaded on this device. Clearing site data clears this local history; Sleeper remains the source of truth.</p>
     </section>
-    <footer class="kt-pulse-footer"><strong>Facts before flourishes.</strong><span>Scores, awards, streaks, trades, and records come from Sleeper. Storylines and award citations share one cached Haiku call; the Commissioner uses one cached Sonnet call per weekly snapshot.</span></footer>
+    <footer class="kt-pulse-footer"><strong>Facts before flourishes.</strong><span>Every score, award, streak, trade, and record comes straight from your Sleeper league. The writing is AI; the numbers never are.</span></footer>
   </main>
   <script type="module" src="js/features/pulse.js"></script>
   <script type="module" src="js/pwa.js"></script>

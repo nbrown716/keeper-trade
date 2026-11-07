@@ -59,7 +59,7 @@ function animateNumber(element, target) {
 }
 
 function espnLabel(status) {
-  return !navigator.onLine ? 'ESPN · Offline' : status === 'stale' ? 'ESPN · Cached' : status === 'live' || status === 'refreshing' ? 'ESPN · Live data' : status === 'error' ? 'ESPN · Unavailable' : 'ESPN · Connecting';
+  return !navigator.onLine ? 'ESPN · Offline' : status === 'stale' ? 'ESPN · Last update' : status === 'live' || status === 'refreshing' ? 'ESPN · Live data' : status === 'error' ? 'ESPN · Unavailable' : 'ESPN · Connecting';
 }
 
 async function renderNow() {
@@ -106,19 +106,24 @@ function mountLazyFeatures() {
   const load = async () => {
     if (loaded) return;
     loaded = true;
-    slots.forEach(slot => document.getElementById(slot)?.remove());
-    for (const [path, mount] of [['./dashboard.js', 'mountDashboard'], ['./league.js', 'mountLeague']]) {
+    // Each lazy section replaces its own placeholder in place (no layout jump, stable section order).
+    for (const [path, mount, slotId] of [['./dashboard.js', 'mountDashboard', 'dashboard-slot'], ['./league.js', 'mountLeague', 'league-slot']]) {
       try { (await import(path))[mount](); }
       catch (_) {
         const section = document.createElement('section');
         section.className = 'kt-container kt-section';
         section.innerHTML = '<div class="kt-card kt-feed-empty"><strong>This widget is catching its breath.</strong><p class="kt-muted">The rest of your command center is still ready.</p></div>';
-        document.querySelector('.kt-home-footer')?.before(section);
+        const slot = document.getElementById(slotId);
+        if (slot) slot.replaceWith(section); else document.querySelector('.kt-home-footer')?.before(section);
       }
     }
   };
   window.addEventListener('hashchange', () => { if (window.location.hash === '#league') load(); });
   if (window.location.hash === '#league' || !('IntersectionObserver' in window)) { load(); return; }
+  // Mount during the first idle moment after paint, so a fast fling or deep scroll never lands on content
+  // that then jumps when ~6,000px of dashboard/league appears above it. The observer stays as a backstop.
+  if ('requestIdleCallback' in window) window.requestIdleCallback(load, { timeout: 2500 });
+  else window.setTimeout(load, 1200);
   const observer = new IntersectionObserver(entries => {
     if (!entries.some(entry => entry.isIntersecting)) return;
     observer.disconnect();

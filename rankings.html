@@ -1,7 +1,26 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
+  <!-- kt:share-meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Keeper Trade">
+  <meta property="og:title" content="Rankings · Keeper Trade">
+  <meta property="og:description" content="Keeper, redraft, and dynasty boards shaped by your league’s exact scoring.">
+  <meta property="og:url" content="https://keeper-trade.pages.dev/rankings.html">
+  <meta property="og:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keeper Trade: your edge on draft day and every trade.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Keeper Trade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- /kt:share-meta -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>NFL Fantasy Rankings — Keeper, Redraft &amp; Dynasty · Keeper Trade</title>
 <meta name="theme-color" content="#0A0E16">
@@ -75,8 +94,13 @@
   .foot-note{max-width:900px;margin:24px auto 40px;color:var(--ink-faint);font-size:11.5px;line-height:1.6;text-align:center}
   .foot-note b{color:var(--ink-soft)}
   @media (max-width:48rem){.tglbtn{width:44px;height:44px}.seg button{min-width:44px;min-height:44px}.tab{min-height:44px}select,.search input{min-height:44px}.site-nav a{min-height:44px}}
+
+  /* press feedback */
+  button,.tab,a.card,.rk-row,[role=button]{-webkit-tap-highlight-color:transparent}
+  button:active:not(:disabled),.tab:active,[role=button]:active{transform:scale(.96);transition:transform 90ms ease-out}
+  @media (prefers-reduced-motion:reduce){button:active,.tab:active,[role=button]:active{transform:none}}
 </style>
-</head>
+    </head>
 <body>
 <header class="site-header">
   <div class="wrap">

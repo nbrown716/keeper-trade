@@ -31,7 +31,7 @@ async function request(path, { method = 'GET', allowStatuses = [] } = {}) {
   if (allowStatuses.includes(response.status)) return null;
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}));
-    if (response.status === 503 || detail.reason === 'yahoo-config') throw new Error('Yahoo OAuth needs the Worker’s Yahoo app credentials and approved API access.');
+    if (response.status === 503 || detail.reason === 'yahoo-config') throw new Error('Yahoo leagues are coming soon. Sleeper leagues work today.');
     if (response.status === 401) throw new Error('Yahoo authorization expired. Reconnect Yahoo to renew it.');
     throw new Error('Yahoo data is unavailable right now. Try again shortly.');
   }

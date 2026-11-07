@@ -51,7 +51,7 @@ function renderNewsletter(result) {
   article = result.article;
   const container = document.querySelector('#pulse-newsletter');
   container.setAttribute('aria-busy', 'false');
-  container.innerHTML = `<header class="kt-pulse-article-header"><span class="kt-pulse-article-brand">THE COMMISSIONER</span><span class="kt-pulse-article-issue">${escapeHtml(data.leagueName)} · Week ${data.week} · ${escapeHtml(data.season)}</span><h2>${escapeHtml(article.title)}</h2><p>${escapeHtml(article.dek)}</p></header><div class="kt-pulse-article-body">${article.sections.map((section, index) => `<section><div class="kt-pulse-article-section-number">${String(index + 1).padStart(2, '0')}</div><div><h3>${escapeHtml(section.heading)}</h3>${section.paragraphs.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join('')}</div></section>`).join('')}</div><footer class="kt-pulse-article-footer"><span>${result.source === 'ai' ? 'Sonnet narration' : result.source === 'guarded' ? 'AI + computed fact guardrails' : 'Computed edition · AI narration unavailable'}</span><span>${result.createdAt ? `${result.cached ? 'Cached' : 'Fresh'} · ${new Date(result.createdAt).toLocaleDateString()}` : 'No API call required'}</span></footer>`;
+  container.innerHTML = `<header class="kt-pulse-article-header"><span class="kt-pulse-article-brand">THE COMMISSIONER</span><span class="kt-pulse-article-issue">${escapeHtml(data.leagueName)} · Week ${data.week} · ${escapeHtml(data.season)}</span><h2>${escapeHtml(article.title)}</h2><p>${escapeHtml(article.dek)}</p></header><div class="kt-pulse-article-body">${article.sections.map((section, index) => `<section><div class="kt-pulse-article-section-number">${String(index + 1).padStart(2, '0')}</div><div><h3>${escapeHtml(section.heading)}</h3>${section.paragraphs.map(paragraph => `<p>${escapeHtml(paragraph)}</p>`).join('')}</div></section>`).join('')}</div><footer class="kt-pulse-article-footer"><span>${result.source === 'ai' ? 'Written by The Commissioner' : result.source === 'guarded' ? 'Written by The Commissioner · fact-checked' : 'Straight facts edition'}</span><span>${result.createdAt ? `Filed ${new Date(result.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : `Week ${data.week} final`}</span></footer>`;
   document.querySelector('#pulse-copy-newsletter').disabled = false;
 }
 
@@ -116,7 +116,7 @@ async function loadWeek(week) {
     }
     renderStories(narrative.stories, narrative.source);
     renderAwards(narrative.awards, narrative.source);
-    if (narrative.source !== 'ai') status(week === latestWeek ? 'Computed edition. AI narration is unavailable, but every fact and award is here.' : 'Historical computed edition. AI calls are reserved for the latest completed week.');
+    if (narrative.source !== 'ai') status(week === latestWeek ? 'The Commissioner is off the clock, so this week runs as the straight-facts edition. Every stat and award is here.' : 'Archive edition: the facts and awards from that week, exactly as they happened.');
     const newsletter = await writeNewsletter(data, narrative, { allowAI: week === latestWeek });
     renderNewsletter(newsletter);
   } catch (error) {

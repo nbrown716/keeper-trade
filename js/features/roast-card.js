@@ -108,7 +108,7 @@ async function generate(event) {
       status('Fresh from the league office. Two sentences, maximum damage.');
     } else status('AI is resting. Try again in a moment.');
   } catch (error) {
-    status(error.code === 'config' ? 'AI needs its Cloudflare connection. Add the Worker URL below.' : 'AI is resting. Your league is still right here.');
+    status('The writers’ room is on a break. Try again in a minute; your league is still right here.');
   } finally {
     section.querySelector('.kt-roast-loading').hidden = true;
     button.disabled = false;
@@ -122,7 +122,9 @@ export function mountRoastCard() {
   section.id = 'roast-lab';
   section.dataset.aiFeature = 'roast';
   section.setAttribute('aria-label', 'League roast and hype cards');
-  section.innerHTML = `<div class="kt-section-header"><div><span class="kt-eyebrow">The group-chat department</span><h2 class="kt-display">Say it with a score bug.</h2></div><span class="kt-badge kt-badge-blue">Haiku · 2 sentences</span></div><div class="kt-roast-layout"><form class="kt-roast-form" id="roast-form"><label for="roast-manager">Manager</label><select id="roast-manager">${managerOptions()}</select><div class="kt-roast-modes" role="group" aria-label="Card tone"><button class="kt-chip" type="button" data-mode="roast" aria-pressed="true">Roast them</button><button class="kt-chip" type="button" data-mode="hype" aria-pressed="false">Hype them</button></div><button class="kt-btn kt-btn-primary" id="roast-generate" type="submit">Generate card</button><p class="kt-roast-status" aria-live="polite">Real league data. No cheap jokes about bad Wi‑Fi.</p><details class="kt-ai-setup"><summary>AI setup</summary><div id="ai-endpoint-form"><label for="ai-endpoint">Cloudflare Worker URL</label><input class="kt-control" id="ai-endpoint" type="url" placeholder="https://keeper-trade-ai....workers.dev" required><button class="kt-btn kt-btn-sm" type="button">Save Worker URL</button><small>Only the Worker URL. Never paste an API key.</small></div></details></form><div class="kt-roast-stage"><div class="kt-roast-empty"><span>KT</span><strong>Your next legendary call-out goes here.</strong></div><img class="kt-roast-preview" alt="Generated league roast or hype card" hidden><div class="kt-roast-loading kt-skeleton" hidden></div><div class="kt-roast-actions"><button class="kt-btn kt-btn-sm" type="button" data-roast-download hidden>Download</button><button class="kt-btn kt-btn-sm" type="button" data-roast-copy hidden>Copy image</button></div></div></div>`;
+  // Worker override is an owner/dev tool only (index.html?dev=1); visitors use the default Worker.
+  const devTools = new URLSearchParams(window.location.search).has('dev');
+  section.innerHTML = `<div class="kt-section-header"><div><span class="kt-eyebrow">The group-chat department</span><h2 class="kt-display">Say it with a score bug.</h2></div><span class="kt-badge kt-badge-blue">Two sentences. No mercy.</span></div><div class="kt-roast-layout"><form class="kt-roast-form" id="roast-form"><label for="roast-manager">Manager</label><select id="roast-manager">${managerOptions()}</select><div class="kt-roast-modes" role="group" aria-label="Card tone"><button class="kt-chip" type="button" data-mode="roast" aria-pressed="true">Roast them</button><button class="kt-chip" type="button" data-mode="hype" aria-pressed="false">Hype them</button></div><button class="kt-btn kt-btn-primary" id="roast-generate" type="submit">Generate card</button><p class="kt-roast-status" aria-live="polite">Real league data. No cheap jokes about bad Wi‑Fi.</p>${devTools ? '<details class="kt-ai-setup"><summary>AI setup</summary><div id="ai-endpoint-form"><label for="ai-endpoint">Cloudflare Worker URL</label><input class="kt-control" id="ai-endpoint" type="url" placeholder="https://keeper-trade-ai....workers.dev" required><button class="kt-btn kt-btn-sm" type="button">Save Worker URL</button><small>Only the Worker URL. Never paste an API key.</small></div></details>' : ''}</form><div class="kt-roast-stage"><div class="kt-roast-empty"><span>KT</span><strong>Your next legendary call-out goes here.</strong></div><img class="kt-roast-preview" alt="Generated league roast or hype card" hidden><div class="kt-roast-loading kt-skeleton" hidden></div><div class="kt-roast-actions"><button class="kt-btn kt-btn-sm" type="button" data-roast-download hidden>Download</button><button class="kt-btn kt-btn-sm" type="button" data-roast-copy hidden>Copy image</button></div></div></div>`;
   const forYou = document.querySelector('#for-you-title')?.closest('.kt-section');
   if (forYou) forYou.before(section);
   section.querySelector('#roast-manager').addEventListener('change', event => { currentManager = event.target.value; });
@@ -133,6 +135,7 @@ export function mountRoastCard() {
   section.querySelector('#roast-form').addEventListener('submit', event => event.preventDefault());
   section.querySelector('#roast-generate').addEventListener('click', generate);
   const endpointForm = section.querySelector('#ai-endpoint-form');
+  if (endpointForm) {
   const saveEndpoint = () => {
     try {
       configureAIEndpoint(section.querySelector('#ai-endpoint').value);
@@ -143,6 +146,7 @@ export function mountRoastCard() {
   endpointForm.querySelector('input').addEventListener('keydown', event => {
     if (event.key === 'Enter') { event.preventDefault(); saveEndpoint(); }
   });
+  }
   section.querySelector('[data-roast-download]').addEventListener('click', () => {
     if (!canvas) return;
     const link = document.createElement('a');

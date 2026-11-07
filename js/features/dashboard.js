@@ -3,7 +3,9 @@ import { SCOREBOARD_SOURCE, normalizeGames, scoreboardDate } from '../data/espn.
 import { NEWS_SOURCE, normalizeNews, timeAgo } from '../data/news.js';
 import { VALUES_SOURCE, normalizePlayers, playerPhoto } from '../data/player-values.js';
 import { dealerSource, dealerMovers } from '../data/dynasty-dealer.js';
-import { subscribeGameWeather, playerWeatherImpact } from '../data/weather.js';
+import { playerWeatherImpact } from '../data/weather.js';
+import { getWeekSlate, getWeekWeather } from '../data/weather-week.js';
+import { getNflState } from '../data/sleeper.js';
 import { weatherBadge, weatherGlyph } from '../ui/weather-ui.js';
 import { getGamificationState } from './gamification.js';
 import { levels } from '../data/gamification-data.js';
@@ -100,35 +102,44 @@ function renderScores() {
   body.innerHTML = games.slice(0, 4).map(game => `<a class="kt-mini-game" href="game.html?id=${game.id}"><span>${escapeHtml(game.detail)}</span><div><strong>${escapeHtml(game.away.abbreviation)}</strong><b class="kt-num">${game.away.score}</b></div><div><strong>${escapeHtml(game.home.abbreviation)}</strong><b class="kt-num">${game.home.score}</b></div></a>`).join('');
 }
 
+// The weather widget follows the whole NFL WEEK (Thursday to Monday), not just today's scoreboard,
+// which is empty on most days. Same data as the Weather Center (one batched Open-Meteo request).
+let weekGames = [];
+let weekLabel = '';
+let weatherLoaded = false;
+
+async function loadWeekWeather() {
+  try {
+    const nfl = await getNflState();
+    const week = Math.min(18, Math.max(1, Number(nfl.display_week || nfl.week) || 1));
+    const games = await getWeekSlate(String(nfl.season || new Date().getFullYear()), week);
+    const conditions = await getWeekWeather(games);
+    weekGames = games;
+    weekLabel = `Week ${week}`;
+    weatherByGame = Object.fromEntries([...conditions].filter(([, weather]) => weather && (weather.dome || weather.status === 'forecast' || weather.status === 'recorded')));
+  } catch (_) {}
+  weatherLoaded = true;
+  renderWeather();
+  renderWatchlist();
+}
+
 function renderWeather() {
   const body = grid?.querySelector('[data-widget-body="weather"]');
   if (!body) return;
-  const games = normalizeGames(scoreSnapshot.data);
-  const outdoor = games.map(game => ({ game, weather: weatherByGame[game.id] })).filter(item => item.weather && !item.weather.dome).sort((a, b) => b.weather.severity - a.weather.severity || b.weather.wind - a.weather.wind);
+  if (!weatherLoaded) { body.innerHTML = skeleton(); return; }
+  const upcoming = weekGames.filter(game => new Date(game.date).getTime() + 3.5 * 3600000 > Date.now());
+  const pool = upcoming.length ? upcoming : weekGames;
+  const outdoor = pool.map(game => ({ game, weather: weatherByGame[game.id] })).filter(item => item.weather && !item.weather.dome).sort((a, b) => b.weather.severity - a.weather.severity || b.weather.wind - a.weather.wind).slice(0, 5);
+  const more = `<p class="kt-weather-attribution"><a href="weather.html">Full ${escapeHtml(weekLabel || 'week')} outlook →</a> · <a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a></p>`;
   if (!outdoor.length) {
-    const loading = games.length && Object.values(weatherStates).some(state => state === 'loading' || state === 'refreshing');
-    body.innerHTML = loading ? skeleton() : emptyState('☀', 'Clear skies, clear decisions', games.length ? 'No outdoor forecasts or weather impacts on this slate.' : 'Outdoor game forecasts will appear on the next NFL slate.');
+    body.innerHTML = emptyState('☀', 'Clear skies, clear decisions', weekGames.length ? 'No outdoor kickoffs with forecasts yet this week.' : 'Kickoff forecasts appear once the week’s schedule is posted.') + more;
     return;
   }
-  body.innerHTML = `<div class="kt-weather-board">${outdoor.map(({ game, weather }) => `<a class="kt-weather-game${weather.severity ? ' has-impact' : ''}" href="game.html?id=${escapeHtml(game.id)}"><span class="kt-weather-game-glyph" aria-hidden="true">${weatherGlyph(weather)}</span><div class="kt-weather-game-copy"><div><strong>${escapeHtml(game.away.abbreviation)} at ${escapeHtml(game.home.abbreviation)}</strong>${weather.impacts.map(weatherBadge).join('')}</div><span>${escapeHtml(weather.city)} · Wind ${Math.round(weather.wind)} mph · ${Math.round(weather.precipitation)}% precip</span></div><b class="kt-weather-game-temp">${Math.round(weather.temperature)}°</b></a>`).join('')}</div><p class="kt-weather-attribution"><a href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo.com</a> · Ranked by impact</p>`;
+  const flagged = outdoor.filter(item => item.weather.severity).length;
+  body.innerHTML = `<span class="kt-widget-label">${escapeHtml(weekLabel)} · ${flagged ? `${flagged} weather game${flagged === 1 ? '' : 's'}` : 'no weather flags'}</span><div class="kt-weather-board">${outdoor.map(({ game, weather }) => `<a class="kt-weather-game${weather.severity ? ' has-impact' : ''}" href="weather.html?week=${encodeURIComponent(weekLabel.replace('Week ', ''))}"><span class="kt-weather-game-glyph" aria-hidden="true">${weatherGlyph(weather)}</span><div class="kt-weather-game-copy"><div><strong>${escapeHtml(game.away.abbreviation)} at ${escapeHtml(game.home.abbreviation)}</strong>${weather.impacts.map(weatherBadge).join('')}</div><span>${escapeHtml(weather.city)} · Wind ${Math.round(weather.wind)} mph · ${weather.status === 'recorded' ? 'Final' : `${Math.round(weather.precipitation)}% precip`}</span></div><b class="kt-weather-game-temp">${Math.round(weather.temperature)}°</b></a>`).join('')}</div>${more}`;
 }
 
-function syncWeather() {
-  const games = normalizeGames(scoreSnapshot.data);
-  const key = games.map(game => `${game.id}:${game.venue}:${game.date}`).join('|');
-  if (key === weatherScheduleKey) return;
-  weatherScheduleKey = key;
-  weatherCleanup();
-  weatherByGame = {};
-  weatherStates = {};
-  if (!games.length) { renderWeather(); return; }
-  weatherCleanup = subscribeGameWeather(games, (conditions, states) => {
-    weatherByGame = conditions;
-    weatherStates = states;
-    renderWeather();
-    renderWatchlist();
-  });
-}
+function syncWeather() {}
 
 function sparkline(player) {
   const points = Array.from({ length: 8 }, (_, index) => {
@@ -161,7 +172,7 @@ function renderWatchlist() {
   const available = players.length ? players : watched.map(name => ({ name, position: 'NFL', team: '—', value: 0, trend: 0 }));
   const rows = watched.map(name => available.find(player => player.name === name) || { name, position: 'NFL', team: '—', value: 0, trend: 0 });
   const suggestions = players.filter(player => !watched.includes(player.name)).slice(0, 30);
-  body.innerHTML = `${rows.length ? rows.map(player => `<div class="kt-watch-row"><div><strong>${escapeHtml(player.name)}${playerWeatherImpact(player, normalizeGames(scoreSnapshot.data), weatherByGame) ? `<span class="kt-watch-weather">${weatherBadge(playerWeatherImpact(player, normalizeGames(scoreSnapshot.data), weatherByGame))}</span>` : ''}</strong><span>${escapeHtml(player.position)} · ${escapeHtml(player.team)} · <b class="kt-num">${player.value.toLocaleString()}</b></span></div><button type="button" data-watch-remove="${escapeHtml(player.name)}" aria-label="Remove ${escapeHtml(player.name)} from watchlist">×</button></div>`).join('') : emptyState('☆', 'Your board is wide open', 'Add a player below and start tracking his value.')}${suggestions.length ? `<div class="kt-watch-add"><select aria-label="Player to add">${suggestions.map(player => `<option value="${escapeHtml(player.name)}">${escapeHtml(player.name)} · ${escapeHtml(player.position)}</option>`).join('')}</select><button class="kt-btn kt-btn-sm" type="button" data-watch-add>Add</button></div>` : ''}`;
+  body.innerHTML = `${rows.length ? rows.map(player => `<div class="kt-watch-row"><div><strong>${escapeHtml(player.name)}${playerWeatherImpact(player, weekGames, weatherByGame) ? `<span class="kt-watch-weather">${weatherBadge(playerWeatherImpact(player, weekGames, weatherByGame))}</span>` : ''}</strong><span>${escapeHtml(player.position)} · ${escapeHtml(player.team)} · <b class="kt-num">${player.value.toLocaleString()}</b></span></div><button type="button" data-watch-remove="${escapeHtml(player.name)}" aria-label="Remove ${escapeHtml(player.name)} from watchlist">×</button></div>`).join('') : emptyState('☆', 'Your board is wide open', 'Add a player below and start tracking his value.')}${suggestions.length ? `<div class="kt-watch-add"><select aria-label="Player to add">${suggestions.map(player => `<option value="${escapeHtml(player.name)}">${escapeHtml(player.name)} · ${escapeHtml(player.position)}</option>`).join('')}</select><button class="kt-btn kt-btn-sm" type="button" data-watch-add>Add</button></div>` : ''}`;
   body.querySelectorAll('[data-watch-remove]').forEach(button => button.addEventListener('click', () => saveWatchlist(watched.filter(name => name !== button.dataset.watchRemove))));
   body.querySelector('[data-watch-add]')?.addEventListener('click', () => {
     const select = body.querySelector('select');
@@ -261,6 +272,9 @@ function renderGrid() {
   const removed = definitions.filter(definition => !layout.some(item => item.id === definition.id));
   addSelect.innerHTML = removed.map(definition => `<option value="${definition.id}">${definition.name}</option>`).join('');
   section.querySelector('#widget-add').disabled = !removed.length;
+  // Nothing to add: hide the empty picker instead of showing a collapsed dropdown and a dead button.
+  addSelect.hidden = !removed.length;
+  section.querySelector('#widget-add').hidden = !removed.length;
 }
 
 function setEditing(value) {
@@ -429,7 +443,10 @@ export function mountDashboard() {
   section.innerHTML = '<div class="kt-section-header"><div><span class="kt-eyebrow">Your Sunday dashboard</span><h2 class="kt-display">Your field. Your formation.</h2></div><div class="kt-dashboard-actions"><button class="kt-btn kt-btn-sm" type="button" id="widget-edit" aria-pressed="false">Customize</button><select id="widget-add-select" aria-label="Widget to add"></select><button class="kt-btn kt-btn-sm kt-btn-primary" type="button" id="widget-add">Add widget</button></div></div><div class="kt-widget-grid" aria-live="polite"></div><p class="kt-dashboard-hint">Customize to drag, resize, or remove. Long-press any card on touch.</p>';
   grid = section.querySelector('.kt-widget-grid');
   const forYou = document.querySelector('#for-you-title')?.closest('.kt-section');
-  if (forYou) forYou.before(section);
+  // Take the placeholder's exact spot so nothing above the reader jumps when this lazy section mounts.
+  const slot = document.getElementById('dashboard-slot');
+  if (slot) slot.replaceWith(section);
+  else if (forYou) forYou.before(section);
   section.querySelector('#widget-edit').addEventListener('click', () => setEditing(!editing));
   section.querySelector('#widget-add').addEventListener('click', () => {
     const id = section.querySelector('#widget-add-select').value;
@@ -445,6 +462,8 @@ export function mountDashboard() {
   liveData.subscribe(VALUES_SOURCE, snapshot => { if (snapshot.statusOnly) return; valueSnapshot = snapshot; renderTrending(); renderWatchlist(); });
   liveData.subscribe(NEWS_SOURCE, snapshot => { if (snapshot.statusOnly) return; newsSnapshot = snapshot; renderNews(); });
   liveData.subscribe(dealerSource(), snapshot => { if (!snapshot.statusOnly) renderMovers(snapshot); });
+  loadWeekWeather();
+  window.setInterval(() => { if (!document.hidden) loadWeekWeather(); }, 1800000);
   window.addEventListener('kt:gamification', () => renderStreak(false));
   window.setInterval(() => renderStreak(false), 10000);
   countdownTimer = window.setInterval(() => {

@@ -220,9 +220,48 @@ function updateRewardNav() {
   nav.setAttribute('aria-label', `${state.streak.count}-day streak, ${state.xp} XP, ${level.name}. Open clubhouse.`);
 }
 
+// Rewards earned passively (the daily check-in, time-of-day badges) arrive before the visitor has
+// touched anything. A full-screen modal there hijacks the first impression, so they surface as a
+// quiet toast with a "View" button; rewards that follow a real tap still get the full celebration.
+let quietToast;
+let quietRewards = [];
+function quietCelebrate(reward) {
+  quietRewards.push(reward);
+  if (!quietToast) {
+    const region = document.createElement('div');
+    region.className = 'kt-toast-region';
+    region.innerHTML = '<div class="kt-toast kt-toast-success kt-reward-toast" role="status" aria-live="polite"><span class="kt-reward-toast-icon" aria-hidden="true"></span><span class="kt-reward-toast-copy"></span><button class="kt-btn kt-btn-sm kt-btn-primary" type="button" data-reward-view>View</button><button class="kt-reward-toast-close" type="button" aria-label="Dismiss">×</button></div>';
+    document.body.append(region);
+    quietToast = region;
+    const dismiss = () => {
+      const toast = region.querySelector('.kt-toast');
+      toast.classList.add('is-leaving');
+      window.setTimeout(() => region.remove(), reducedMotion.matches ? 0 : 160);
+      quietToast = null;
+    };
+    region.querySelector('[data-reward-view]').addEventListener('click', () => {
+      const rewards = quietRewards;
+      quietRewards = [];
+      dismiss();
+      celebrationQueue.push(...rewards);
+      if (!celebrationOpen) showNextCelebration();
+    });
+    region.querySelector('.kt-reward-toast-close').addEventListener('click', () => { quietRewards = []; dismiss(); });
+    region.dataset.timer = String(window.setTimeout(() => { if (quietToast === region) { quietRewards = []; dismiss(); } }, 9000));
+  }
+  const first = quietRewards[0];
+  quietToast.querySelector('.kt-reward-toast-icon').textContent = first.icon;
+  quietToast.querySelector('.kt-reward-toast-copy').innerHTML = '';
+  const strong = document.createElement('strong');
+  strong.textContent = first.title;
+  quietToast.querySelector('.kt-reward-toast-copy').append(strong, document.createTextNode(` · ${first.subtitle}${quietRewards.length > 1 ? ` +${quietRewards.length - 1} more` : ''}`));
+}
+
 function celebrate(title, subtitle, icon = '★', milestone = false, description = '') {
   window.dispatchEvent(new CustomEvent('kt:gamification', { detail: { title, subtitle, milestone, description } }));
-  celebrationQueue.push({ title, subtitle, icon, milestone, description });
+  const reward = { title, subtitle, icon, milestone, description };
+  if (navigator.userActivation && !navigator.userActivation.hasBeenActive) { quietCelebrate(reward); return; }
+  celebrationQueue.push(reward);
   if (!celebrationOpen) showNextCelebration();
 }
 

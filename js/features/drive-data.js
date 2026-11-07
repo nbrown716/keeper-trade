@@ -1,5 +1,6 @@
 import { liveData } from '../data/live-data.js';
 import { getNflState, getLeagueBundle, leagueUsers, rosterOwner } from '../data/sleeper.js';
+import { buildReplay, filmTimeline } from '../data/replay.js';
 import { getPlayerDatabase } from '../data/player-db.js';
 import { normalizeGames, summarySource } from '../data/espn.js';
 import { resolveStadium, weatherImpacts } from '../data/weather.js';
@@ -101,7 +102,9 @@ export async function loadDriveRecap(leagueId, week, rosterId) {
     teamGames.set(game.away.abbreviation, game);
   });
   const starterIds = (matchup.starters || []).filter(id => id !== '0');
-  const gameIds = [...new Set(starterIds.map(id => teamGames.get(playerMap.get(id)?.team)?.id).filter(Boolean))];
+  const opponentIds = (opponent?.starters || []).filter(id => id !== '0');
+  // Both lineups' games: the Head-to-Head race replays the opponent too.
+  const gameIds = [...new Set([...starterIds, ...opponentIds].map(id => teamGames.get(playerMap.get(id)?.team)?.id).filter(Boolean))];
   const summaries = new Map(await Promise.all(gameIds.map(async id => [id, await waitForSource(summarySource(id))])));
 
   const positionPoints = {};
@@ -140,6 +143,7 @@ export async function loadDriveRecap(leagueId, week, rosterId) {
 
   const total = Number(matchup.points || 0);
   const opponentTotal = Number(opponent?.points || 0);
+  const race = buildRace({ bundle, matchup, opponent, playerMap, teamGames, summaries, managers, selected });
   const rank = bundle.matchups.slice().sort((a, b) => Number(b.points || 0) - Number(a.points || 0)).findIndex(item => item.roster_id === selected) + 1;
   return {
     leagueId,
@@ -159,6 +163,65 @@ export async function loadDriveRecap(leagueId, week, rosterId) {
     teams: bundle.matchups.length,
     duration: DRIVE_DURATION,
     beatDuration: 40 / Math.max(1, starters.length),
+    race,
     cacheKey: `drive:${leagueId}:${week}:${selected}:${total}:${opponentTotal}`
+  };
+}
+
+// Head-to-Head race data: a chronological replay of both lineups on the film clock (0…DRIVE_DURATION).
+function buildRace({ bundle, matchup, opponent, playerMap, teamGames, summaries, managers, selected }) {
+  if (!opponent) return null;
+  const sideFor = entry => (entry.starters || []).filter(id => id !== '0').map(id => {
+    const player = playerMap.get(id) || { id, name: `Player ${id}`, team: 'FA', position: '' };
+    return { id, name: player.name, team: player.team, position: player.position, rosterId: entry.roster_id, official: Number(entry.players_points?.[id] || 0) };
+  });
+  const starters = [...sideFor(matchup), ...sideFor(opponent)];
+  const replay = buildReplay({ starters, games: teamGames, summaries, scoring: bundle.league.scoring_settings || {} });
+  const film = filmTimeline(replay, { duration: DRIVE_DURATION, intro: 3, outro: 6.5, wipe: 0.7 });
+  const A = selected;
+  const B = opponent.roster_id;
+  const finalA = Number(matchup.points || 0);
+  const finalB = Number(opponent.points || 0);
+  // Lead changes and the moment the result became final (winner ahead for good).
+  let a = 0;
+  let b = 0;
+  let leader = 0;
+  const leadChanges = [];
+  let clinchedAt = film.playEnd;
+  film.events.forEach(event => {
+    if (event.rosterId === A) a += event.delta; else b += event.delta;
+    const now = a > b + 0.005 ? A : b > a + 0.005 ? B : 0;
+    if (now && leader && now !== leader) leadChanges.push({ ft: event.ft, leader: now, a, b });
+    if (now) leader = now;
+  });
+  const winner = finalA > finalB ? A : finalB > finalA ? B : 0;
+  for (let index = leadChanges.length - 1; index >= 0; index -= 1) { if (leadChanges[index].leader === winner) { clinchedAt = leadChanges[index].ft; break; } }
+  if (!leadChanges.length && film.events.length) clinchedAt = film.events.find(event => event.rosterId === winner)?.ft ?? film.playEnd;
+  const best = film.events.reduce((top, event) => (!top || event.delta > top.delta ? event : top), null);
+  const perPlayer = new Map();
+  starters.forEach(player => perPlayer.set(player.id, player));
+  const windowWinners = film.segments.map(segment => {
+    const inWindow = film.events.filter(event => event.window === segment.id);
+    const sa = inWindow.filter(event => event.rosterId === A).reduce((sum, event) => sum + event.delta, 0);
+    const sb = inWindow.filter(event => event.rosterId === B).reduce((sum, event) => sum + event.delta, 0);
+    return { id: segment.id, label: segment.label, a: sa, b: sb, winner: sa > sb ? A : sb > sa ? B : 0, filmStart: segment.filmStart, filmEnd: segment.filmEnd, realStart: segment.start, realEnd: segment.end };
+  });
+  const approximate = replay.sources.some(source => source !== 'plays') || replay.events.some(event => event.kind === 'approx');
+  return {
+    A, B,
+    nameA: managers.find(manager => manager.id === A)?.name || 'You',
+    nameB: managers.find(manager => manager.id === B)?.name || 'Opponent',
+    finalA, finalB, winner,
+    events: film.events,
+    segments: windowWinners,
+    filmToReal: film.filmToReal,
+    intro: film.intro,
+    playEnd: film.playEnd,
+    leadChanges,
+    clinchedAt,
+    bestPlay: best,
+    players: perPlayer,
+    approximate,
+    accuracy: replay.accuracy
   };
 }

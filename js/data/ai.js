@@ -28,8 +28,12 @@ function hash(value) {
   return (result >>> 0).toString(36);
 }
 
+// The production Worker URL is public configuration (no secret). Without this default, AI only worked
+// in browsers where someone had manually saved an endpoint, so real visitors never got AI features.
+const DEFAULT_ENDPOINT = 'https://keeper-trade-ai.nicholas-brown00.workers.dev';
+
 function endpoint() {
-  try { return localStorage.getItem(ENDPOINT_KEY) || ''; } catch (_) { return ''; }
+  try { return localStorage.getItem(ENDPOINT_KEY) || DEFAULT_ENDPOINT; } catch (_) { return DEFAULT_ENDPOINT; }
 }
 
 export function configureAIEndpoint(url) {

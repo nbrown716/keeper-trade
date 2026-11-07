@@ -107,22 +107,24 @@ function scrollToPriority() {
   }
 }
 
+let lastStatus = 'loading';
 function updateMarquee() {
   const marquee = dock.querySelector('.kt-score-marquee');
   const game = games.find(item => item.state === 'in') || games.find(item => item.state === 'pre') || games[0];
   marquee.hidden = expanded;
   marquee.querySelector('span').textContent = game
     ? `${game.away.abbreviation} ${game.away.score} — ${game.home.abbreviation} ${game.home.score} · ${statusLabel(game)}`
-    : 'NFL scores · Schedule loading';
+    : lastStatus === 'error' ? 'NFL scores · Reconnecting' : lastStatus === 'loading' ? 'NFL scores · Loading' : 'NFL · No games today';
 }
 
 function render(snapshot) {
   const { data, status, error } = snapshot;
   dock.dataset.status = status;
+  lastStatus = data ? 'live' : status;
   dock.querySelector('.kt-score-sync').textContent = isDebugDate()
     ? 'Debug date'
     : status === 'refreshing' || (status === 'stale' && error) ? 'Updating…'
-      : status === 'stale' ? 'Cached' : status === 'error' ? 'Reconnecting' : 'ESPN';
+      : status === 'stale' ? 'Last update' : status === 'error' ? 'Reconnecting' : 'ESPN';
   const announce = () => window.dispatchEvent(new CustomEvent('kt:scores-update', { detail: { games, status, week: games[0]?.week || data?.week?.number || 0 } }));
   if (!data) { if (status === 'error') announce(); return; }
 

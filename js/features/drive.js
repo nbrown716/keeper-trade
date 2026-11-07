@@ -2,6 +2,10 @@ import { loadDriveRecap, defaultDriveWeek, DRIVE_DURATION } from './drive-data.j
 import { friendlyError } from '../ui/friendly-error.js';
 import { createFieldRenderer } from './drive-field.js';
 import { createMapRenderer } from './drive-map.js';
+import { createRaceRenderer } from './drive-race.js';
+import { renderSummary } from './drive-summary.js';
+
+const rendererFor = name => name === 'race' ? createRaceRenderer() : name === 'map' ? createMapRenderer() : createFieldRenderer();
 import { askAI } from '../data/ai.js';
 import { getSleeperLeagueId } from '../data/sleeper.js';
 import { renderDriveVideo, renderStoryPack, renderScoreCard, shareOrDownload, shareStoryPack, copyRecapLink, ShareError } from './share.js';
@@ -16,8 +20,8 @@ const status = document.querySelector('#drive-status');
 const loading = document.querySelector('#drive-loading');
 const modeButtons = [...document.querySelectorAll('[data-drive-mode]')];
 let recap;
-let renderer = createFieldRenderer();
-let mode = 'field';
+let mode = ['race', 'field', 'map'].includes(new URLSearchParams(window.location.search).get('mode')) ? new URLSearchParams(window.location.search).get('mode') : 'race';
+let renderer = rendererFor(mode);
 let timeline;
 let playhead = { time: 0 };
 let canvasWidth = 0;
@@ -27,6 +31,7 @@ let currentBeat = -1;
 let soundEnabled = false;
 let audioContext;
 let loadSequence = 0;
+let summary = null;
 
 function setStatus(message) {
   status.textContent = message;
@@ -37,7 +42,9 @@ function renderFrame() {
   context.clearRect(0, 0, canvasWidth, canvasHeight);
   renderer(context, recap, canvasWidth, canvasHeight, playhead.time, reducedMotion.matches);
   progress.value = String(playhead.time);
+  summary?.update(playhead.time);
   progress.setAttribute('aria-valuetext', `${playhead.time.toFixed(0)} seconds of ${DRIVE_DURATION}`);
+  if (mode === 'race' && recap.race) { raceStatus(); return; }
   const beat = playhead.time < 3 ? -1 : playhead.time >= 43 ? recap.starters.length : Math.floor((playhead.time - 3) / recap.beatDuration);
   if (beat !== currentBeat) {
     currentBeat = beat;
@@ -47,6 +54,22 @@ function renderFrame() {
     if (beat === recap.starters.length) window.dispatchEvent(new CustomEvent('kt:drive-finale', { detail: { result: recap.result, rank: recap.rank, manager: recap.manager } }));
     if (soundEnabled && !reducedMotion.matches) playSting(beat === recap.starters.length);
   }
+}
+
+let raceBeat = '';
+function raceStatus() {
+  const race = recap.race;
+  const t = playhead.time;
+  const segment = race.segments.find(item => t >= item.filmStart && t <= item.filmEnd);
+  const key = t >= race.playEnd ? 'final' : t < race.intro ? 'intro' : segment?.id || 'gap';
+  if (key === raceBeat) return;
+  raceBeat = key;
+  const result = race.winner === race.A ? `${race.nameA} wins` : race.winner === race.B ? `${race.nameB} wins` : 'Tie game';
+  const label = key === 'final' ? `${result}, ${race.finalA.toFixed(2)} to ${race.finalB.toFixed(2)}. ${race.leadChanges.length} lead changes.` : key === 'intro' ? `${race.nameA} versus ${race.nameB}` : segment ? `${segment.label} window` : 'Between windows';
+  canvas.setAttribute('aria-label', `The Drive head-to-head race. ${label}`);
+  setStatus(key === 'final' ? `Final · ${result}` : key === 'intro' ? 'Kickoff: both lineups, every play in real order.' : segment ? `${segment.label} · the race is on` : 'Time-lapse to the next window…');
+  if (key === 'final') window.dispatchEvent(new CustomEvent('kt:drive-finale', { detail: { result: recap.result, rank: recap.rank, manager: recap.manager } }));
+  if (soundEnabled && !reducedMotion.matches) playSting(key === 'final');
 }
 
 function resizeCanvas() {
@@ -141,7 +164,7 @@ export async function generatePoster(recapData, posterMode = 'field') {
   poster.width = 1080;
   poster.height = 1920;
   const posterContext = poster.getContext('2d');
-  const draw = posterMode === 'map' ? createMapRenderer() : createFieldRenderer();
+  const draw = rendererFor(posterMode);
   draw(posterContext, recapData, 1080, 1920, DRIVE_DURATION, true);
   return new Promise(resolve => poster.toBlob(resolve, 'image/png'));
 }
@@ -175,6 +198,8 @@ async function load() {
   timeline?.kill();
   timeline = null;
   recap = null;
+  summary = null;
+  document.querySelector('#drive-summary').hidden = true;
   loading.hidden = false;
   loading.setAttribute('aria-busy', 'true');
   document.querySelector('#drive-error').hidden = true;
@@ -207,8 +232,10 @@ async function load() {
     loading.hidden = true;
     loading.setAttribute('aria-busy', 'false');
     currentBeat = -2;
+    raceBeat = '';
     resizeCanvas();
     makeTimeline(0, true);
+    summary = renderSummary(document.querySelector('#drive-summary'), recap, { onSeek: time => seek(time) }) || null;
     if (reducedMotion.matches) setStatus('Reduced motion is on. Scrub or skip through the static recap.');
     loadVerdict(sequence);
   } catch (error) {
@@ -220,6 +247,7 @@ async function load() {
   }
 }
 
+modeButtons.forEach(item => item.setAttribute('aria-pressed', String(item.dataset.driveMode === mode)));
 playButton.addEventListener('click', togglePlay);
 document.querySelector('#drive-skip').addEventListener('click', skipBeat);
 canvas.addEventListener('click', skipBeat);
@@ -227,8 +255,10 @@ document.querySelector('#drive-replay').addEventListener('click', () => { seek(0
 progress.addEventListener('input', () => seek(progress.value));
 modeButtons.forEach(button => button.addEventListener('click', () => {
   mode = button.dataset.driveMode;
-  renderer = mode === 'map' ? createMapRenderer() : createFieldRenderer();
+  renderer = rendererFor(mode);
   modeButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+  raceBeat = '';
+  currentBeat = -2;
   renderFrame();
 }));
 document.querySelector('#drive-sound').addEventListener('click', async event => {

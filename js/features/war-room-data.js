@@ -4,24 +4,20 @@ import { getPlayerDatabase } from '../data/player-db.js';
 import { dealerSource, normalizeDealerPlayers } from '../data/dynasty-dealer.js';
 import { VALUES_SOURCE, normalizePlayers } from '../data/player-values.js';
 import { SCOREBOARD_SOURCE, normalizeGames } from '../data/espn.js';
-import { subscribeGameWeather, playerWeatherImpact } from '../data/weather.js';
+import { playerWeatherImpact } from '../data/weather.js';
+import { getWeekSlate, getWeekWeather } from '../data/weather-week.js';
 
 // One-shot read: fresh cache or a fresh network result (stale cache only as a fallback).
 function waitForSource(key) {
   return liveData.get(key);
 }
 
-function weatherForPlayers(games, players) {
-  return new Promise(resolve => {
-    let cleanup = () => {};
-    cleanup = subscribeGameWeather(games, (conditions, states) => {
-      const complete = games.length && games.every(game => states[game.id] && !['loading', 'refreshing'].includes(states[game.id]));
-      if (!complete) return;
-      cleanup();
-      resolve(new Map(players.map(player => [player.id, playerWeatherImpact(player, games, conditions)])));
-    });
-    if (!games.length) { cleanup(); resolve(new Map()); }
-  });
+async function weatherForPlayers(games, players) {
+  if (!games.length) return new Map();
+  try {
+    const conditions = Object.fromEntries(await getWeekWeather(games));
+    return new Map(players.map(player => [player.id, playerWeatherImpact(player, games, conditions)]));
+  } catch (_) { return new Map(); }
 }
 
 export async function loadWarRoomData(leagueId, week, rosterId) {
@@ -40,7 +36,7 @@ export async function loadWarRoomData(leagueId, week, rosterId) {
   const userMatchup = bundle.matchups.find(item => item.roster_id === selected);
   const opponentMatchup = bundle.matchups.find(item => item.matchup_id === userMatchup?.matchup_id && item.roster_id !== selected);
   const opponentRoster = bundle.rosters.find(item => item.roster_id === opponentMatchup?.roster_id);
-  const games = normalizeGames(liveData.sources.get(SCOREBOARD_SOURCE)?.data);
+  const games = await getWeekSlate(String(bundle.league?.season || new Date().getFullYear()), week).catch(() => normalizeGames(liveData.sources.get(SCOREBOARD_SOURCE)?.data));
   const allPlayers = [...playerMap.values()];
   const weather = await weatherForPlayers(games, allPlayers.filter(player => (roster?.players || []).includes(player.id) || (opponentRoster?.players || []).includes(player.id)));
   const enrich = id => {

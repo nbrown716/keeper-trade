@@ -26,6 +26,7 @@ export function mountNavigation({ active = 'home' } = {}) {
     ['draft', 'Mock Draft', 'mock-draft.html'],
     ['sim', 'Season Sim', 'season-sim.html'],
     ['pulse', 'Pulse', 'pulse.html'],
+    ['weather', 'Weather', 'weather.html'],
     ['trade', 'Keeper', 'keeper.html'],
     ['redraft', 'Redraft', 'redraft.html'],
     ['rankings', 'Rankings', 'rankings.html'],
@@ -38,12 +39,14 @@ export function mountNavigation({ active = 'home' } = {}) {
 
   document.body.insertAdjacentHTML('afterbegin', `<header class="kt-site-header" data-site-header><div class="kt-container kt-site-header-inner"><a class="kt-site-brand" href="index.html" aria-label="Keeper Trade home"><span class="kt-site-mark" aria-hidden="true">KT</span><span>Keeper <em>Trade</em></span></a><nav class="kt-desktop-nav" aria-label="Primary navigation">${pageLinks.map(([id, label, url]) => `<a href="${url}"${id === active ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav><div class="kt-header-actions"><a class="kt-btn kt-btn-ghost kt-command-trigger" href="command.html" data-command-open aria-label="Open command palette">${icon('search')}<span>Search anything</span><kbd class="kt-key">⌘K</kbd></a><button class="kt-btn kt-btn-ghost kt-icon-btn kt-theme-toggle" type="button" aria-label="Switch color theme">${icon('sun')}</button></div></div></header>`);
 
-  document.body.insertAdjacentHTML('beforeend', `<nav class="kt-bottom-nav kt-site-tabs" aria-label="Mobile navigation" style="--kt-active-tab:${activeTab}"><span class="kt-tab-indicator" aria-hidden="true"></span>${destinations.map(destination => {
+  document.body.insertAdjacentHTML('beforeend', `<nav class="kt-bottom-nav kt-site-tabs" aria-label="Mobile navigation" style="--kt-active-tab:${activeTab}"><span class="kt-tab-indicator" aria-hidden="true"></span>${destinations.map((destination, index) => {
     const current = destination.id === active ? ' aria-current="page"' : '';
+    // The tab under the indicator reads as active (accent), including "More" for pages that live in it.
+    const highlighted = index === activeTab ? ' is-active' : '';
     const content = `${icon(destination.icon)}<span>${destination.label}</span>`;
     return destination.id === 'more'
-      ? `<a class="kt-site-tab" href="command.html" data-command-open aria-label="More — open command palette"${current}>${content}</a>`
-      : `<a class="kt-site-tab${destination.id === 'trade' ? ' kt-site-tab-trade' : ''}" href="${destination.url}"${current}>${content}</a>`;
+      ? `<a class="kt-site-tab${highlighted}" href="command.html" data-command-open aria-label="More — open command palette"${current}>${content}</a>`
+      : `<a class="kt-site-tab${destination.id === 'trade' ? ' kt-site-tab-trade' : ''}${highlighted}" href="${destination.url}"${current}>${content}</a>`;
   }).join('')}</nav>`);
 
   document.querySelectorAll('[data-command-open]').forEach(link => {

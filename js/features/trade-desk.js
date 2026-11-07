@@ -51,13 +51,13 @@ function mountHero() {
   const wrap = document.querySelector('main.wrap') || document.querySelector('.wrap');
   const hero = document.createElement('section');
   hero.className = 'trade-desk-hero';
-  hero.innerHTML = `<div><span class="kt-eyebrow">${kind === 'keeper' ? 'Keeper league · War room' : 'Trade analyzer · War room'}</span><h1>${kind === 'keeper' ? 'The trade desk' : 'Redraft trade desk'}</h1><p>${kind === 'keeper' ? 'Build both sides. Audit every keeper cost. Know exactly when the 1,000-point rule clears your deal.' : 'Tune the league. Build both sides. Get a clear verdict with transparent values and a card worth sending to the chat.'}</p></div><div class="trade-desk-actions"><span class="kt-badge kt-badge-blue" id="dealer-status">Dynasty Dealer · 24h cache</span><button class="kt-btn kt-btn-sm" type="button" data-open-history>History</button><button class="kt-btn kt-btn-sm kt-btn-secondary" type="button" data-open-breakdown>Breakdown</button><button class="kt-btn kt-btn-sm kt-btn-primary" type="button" data-open-share>Share card</button></div>`;
+  hero.innerHTML = `<div><span class="kt-eyebrow">${kind === 'keeper' ? 'Keeper league · War room' : 'Trade analyzer · War room'}</span><h1>${kind === 'keeper' ? 'The trade desk' : 'Redraft trade desk'}</h1><p>${kind === 'keeper' ? 'Build both sides. Audit every keeper cost. Know exactly when the 1,000-point rule clears your deal.' : 'Tune the league. Build both sides. Get a clear verdict with transparent values and a card worth sending to the chat.'}</p></div><div class="trade-desk-actions"><span class="kt-badge kt-badge-blue" id="dealer-status">Dynasty Dealer · Loading values</span><button class="kt-btn kt-btn-sm" type="button" data-open-history>History</button><button class="kt-btn kt-btn-sm kt-btn-secondary" type="button" data-open-breakdown>Breakdown</button><button class="kt-btn kt-btn-sm kt-btn-primary" type="button" data-open-share>Share card</button></div>`;
   wrap.prepend(hero);
 }
 
 function mountGauge() {
   const verdict = document.querySelector('.verdict');
-  verdict.insertAdjacentHTML('afterbegin', '<div class="trade-gauge" aria-hidden="true"><svg viewBox="0 0 200 120"><defs><linearGradient id="trade-gauge-gradient"><stop offset="0" stop-color="#72a7ff"/><stop offset="1" stop-color="#c6ff4a"/></linearGradient></defs><path class="trade-gauge-track" d="M20 100 A80 80 0 0 1 180 100"/><path class="trade-gauge-value" d="M20 100 A80 80 0 0 1 180 100" stroke-dasharray="251.2" stroke-dashoffset="125.6"/><line class="trade-gauge-threshold" x1="100" y1="12" x2="100" y2="28"/><line class="trade-gauge-needle" x1="100" y1="100" x2="100" y2="36"/><text class="trade-gauge-center" x="100" y="88">50%</text></svg></div>');
+  verdict.insertAdjacentHTML('afterbegin', '<div class="trade-gauge" aria-hidden="true"><svg viewBox="0 0 200 120"><defs><linearGradient id="trade-gauge-gradient"><stop offset="0" stop-color="#72a7ff"/><stop offset="1" stop-color="#c6ff4a"/></linearGradient></defs><path class="trade-gauge-track" d="M20 100 A80 80 0 0 1 180 100"/><path class="trade-gauge-value" d="M20 100 A80 80 0 0 1 180 100" stroke-dasharray="251.2" stroke-dashoffset="125.6"/><line class="trade-gauge-threshold" x1="100" y1="12" x2="100" y2="28"/><line class="trade-gauge-needle" x1="100" y1="54" x2="100" y2="31"/><circle class="trade-gauge-pivot" cx="100" cy="100" r="4"/><text class="trade-gauge-center" x="100" y="94">50%</text></svg></div>');
   verdict.querySelector('.scale')?.insertAdjacentHTML('beforeend', '<span class="trade-threshold-marker" aria-hidden="true"></span>');
   const character = document.createElement('div');
   character.className = 'kt-mascot-inline';
@@ -321,7 +321,7 @@ function subscribeDealer() {
     if (statusOnly) return;
     const players = normalizeDealerPlayers(data);
     const badge = document.querySelector('#dealer-status');
-    if (badge) badge.textContent = status === 'stale' ? 'Dynasty Dealer · Cached 24h' : 'Dynasty Dealer · Live values';
+    if (badge) badge.textContent = status === 'stale' ? 'Dynasty Dealer · Today’s values' : 'Dynasty Dealer · Live values';
     if (!players.length) return;
     const byName = new Map(players.map(player => [player.name.toLowerCase(), player]));
     ['A', 'B'].forEach(side => {

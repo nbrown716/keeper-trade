@@ -334,6 +334,106 @@
 - Yahoo per-player weekly points are not requested (rosters omit stats), so Yahoo bench/awards math shows 0 for player points until a stats sub-resource is added and verified against real data.
 - Physical iOS/Android native sharing is still untested.
 
+### 2026-11-07 — Round 1 first-impression polish (persona review panel)
+
+- **AI was off for every real visitor.** `js/data/ai.js` only called the Worker when `kt-ai-endpoint:v1` was saved manually in that browser, which is why Pulse showed "AI narration is unavailable" in production. It now defaults to the production Worker (public config, no secret). The visitor-facing "Cloudflare Worker URL" form in the roast card is hidden behind `?dev=1`.
+- First-visit hijack fixed: passive rewards (daily check-in, time-of-day badges) earned before any user tap now show a quiet toast with View/Dismiss, not a full-screen modal. Real actions still get the full celebration. Toast styles live in `design-system.css`.
+- Copy sweep in the league-insider voice. Removed internal jargon ("One batched Haiku", "social/narrative layer", "LiveData loop", "Computed edition", "IndexedDB", model names, Worker/OAuth wording), and "Cached" became "Last update".
+- Trade desk: the gauge needle is now an outer pointer and no longer crosses the %. On phones the hero is compact and all actions fit, with Share card visible. The mascot bubble opens inside the verdict card, which used to clip it.
+- Share and install:
+  - New PNG `og-image` (1200×630), apple-touch-icon, 192/512/maskable icons and a 32px favicon, rendered from the brand fonts.
+  - All 14 main pages carry per-page og/twitter/apple tags, placed right after `<meta charset>`.
+  - Manifest PNG icons and shortcuts. Shell **v57**.
+- Press feedback (90ms scale) on cards and legacy controls, disabled under reduced motion.
+- Verified:
+  - Syntax: 54 modules.
+  - Mobile matrix: clean except the expected localhost CORS on `/ai/*`, which proves AI calls now fire.
+  - Third-party-down matrix: PASS.
+  - Features: ALL PASS. Yahoo: 18/18. League: 25/25.
+  - Sacred math identical; `git diff --check` clean; no secrets.
+
+### 2026-11-07 — Full top-to-bottom audit + Phases 1-3 of the next-level features
+
+**Audit method:**
+- **Click-everything crawler:** every visible button, link, select and checkbox on all 14 routes at 390px and 1440px. It records page/console errors, newly appearing raw error text, dead clicks (DOM + canvas hash), broken links and covered tap targets. A real touch tap re-checks anything flagged.
+- **Deep flows:** Drive (play/pause/scrub/mode/poster/score card/Story Pack/MP4 export/copy link), all 9 mascot states, Ctrl+K palette navigation, 10× theme toggle, dashboard keyboard reorder plus persistence, roast card (live AI), Wrapped image, War Room Start/Sit, waivers and counters (live AI), Pulse AI narration, tabs, Commissioner copy and week switch, a live-AI Mock Draft to 12 grades, Game Day on a real final, Sunday mosaic, Season Sim, and keeper panels/share.
+- AI was exercised through the real Worker as the production origin.
+
+**Defects found and fixed:**
+- **Phone layout was 449px wide on a 390px screen.** The dashboard Trending widget used `1fr 1fr` with unshrinkable names, so phones zoomed out and the fixed score bar and its × slid partly off-screen (the score panel could not be collapsed). Now `minmax(0,1fr)` with ellipsis, plus a global `html{overflow-x:clip}` guard. The matrix overflow check was itself blind to this (layout viewport grows under emulation); it now compares against the visual viewport.
+- **Homepage layout jump:** lazy dashboard/league removed their placeholders above the roast card and inserted below it, so content jumped about 257px. They now replace their placeholders in place and mount at first idle, so a fast fling cannot land on content that then moves about 6,000px.
+- **Mascot dock hidden behind the mobile score bar** (37px overlap). It now sits above the bar on pages that have it.
+- **Score marquee said "Schedule loading" on no-game days.** It now says "No games today", or "Reconnecting" on error.
+- **Sunday said "No NFL games on this date" when the feed had actually failed.** Honest states now: skeleton, reconnecting, or truly none.
+- **Scoreboard cache key had no date.** After the freshness change, a fresh cache from another day (midnight, `?debugdate`) was reused. The key is now `nfl-scoreboard:YYYYMMDD`.
+- **ESPN `WSH` vs Sleeper `WAS`:** Commanders players never matched their game (Drive stats, weather, stadium). `normalizeGames` now emits Sleeper codes.
+- Empty dashboard "Add widget" picker collapsed to a sub-24px dead control; it is hidden until something can be added. Research news-card meta contrast was 4.1:1 and is now AA.
+- **Verified false positives (not changed):**
+  - Rankings/Tools segment taps (real taps work).
+  - Already-active tabs, and the "Normal" default report as "dead".
+  - The command page header under its own palette, which is by design.
+- **Harness learning:** ESPN now 403s headless-browser User-Agents. The test proxy sends `KeeperTrade/1.0` like the production Worker, so production is unaffected.
+
+**Phase 1, Replay engine (`js/data/replay.js`):**
+- Scores ESPN play-by-play with the league's Sleeper scoring.
+- Handles real-world text: "reported in as eligible" preambles, replay REVERSED rewrites, TOUCHDOWN NULLIFIED, penalties (yards read from the play text, not penalty-netted `statYardage`), two-point tries split from the scrimmage play, summary-format TD lines, "A.St. Brown"/"Mar.Harrison" names, and aborted snaps.
+- Anchors every player to Sleeper's official total, so each roster ends exactly on the official score.
+- Real-data parse accuracy before anchoring:
+  - Week 8: 80% of 108 starters within 0.1 pts, 99% within 3 (MAE 0.31).
+  - Week 7: 81% / 99% (MAE 0.26).
+  - Week 3: 78% / 96%.
+- Film windows (TNF / SUN INTL / 1PM / 4PM / SNF / MNF) are compressed by points, with time-lapse wipes between.
+
+**Phase 2, The Drive: Head-to-Head (`js/features/drive-race.js`):**
+- The new default Drive mode, also used by poster/video/Story Pack.
+- Two-lane field race in real chronological order, with each point easing in over 0.7s. Every frame is a pure function of the clock, so scrubbing and exports match.
+- Timing tower with gap/DRS, first-down chains, lead-change lane flash, player KPI tiles and the "Fastest lap" (biggest play).
+- F1 mini-map on a Catmull-Rom circuit with a sector strip per window (purple = you won it).
+- Kickoff intro and a winner TOUCHDOWN finale with "stopped at the N-yard line" and the clinch time. Tie handling.
+- Text is measured-fit, never truncated by character count.
+- **Performance:** a static layer is cached offscreen and shadowBlur replaced by gradients. 25.2 → 18.6 ms/frame at 4× CPU throttle with no blocking frames.
+
+**Phase 3, Activity Summary (`js/features/drive-summary.js`):**
+- Strava-style section under the film: headline (win/loss margin + real decided time), KPIs (points, lead changes, biggest lead, week rank), and a pace chart with lead-change markers (tap or drag to scrub the film, with a playhead cursor).
+- Splits per window, best efforts (top 3 each side), and achievements: Comeback, Wire to wire, Photo finish, Statement win, Heartbreak, Highest score, Won every window, SNF/MNF hero, and 4+ lead changes.
+
+Shell **v58** (adds replay, race, summary, friendly-error). Phases 4-6 (Flyover, Wrapped 2.0, live mode) remain per `docs/next-features-spec.md`. Nothing committed.
+
+### 2026-11-07 — Weather fixed + Weather Center (Thursday-to-Monday outlook)
+
+**Why weather looked broken:**
+1. Every weather surface used only *today's* ESPN scoreboard, so it was empty on most days of the week (Tue/Wed/Fri/Sat) and on non-game days. This affected the dashboard widget, League matchup badges and the War Room Start/Sit AI payload.
+2. International venues (Melbourne, Rio, London ×3, Paris, Madrid, Munich this season) weren't in `data/stadiums.json`, so those games silently had no weather.
+3. There was no way to view a whole week or another week.
+
+**Source:** Open-Meteo stays (keyless, CORS, already approved, attribution shown).
+- One batched forecast request per week covers every outdoor venue, limited to the week's date window (~12 KB, not ~2 MB).
+- Forecasts run 16 days ahead; completed games show recorded conditions.
+- Weeks older than 90 days use the archive API.
+- Weeks more than 15 days out show "forecast opens <date>".
+- Open-Meteo geocoding places unknown venues; 12 international stadiums were added to `stadiums.json`.
+
+**New `weather.html` Weather Center** (`js/data/weather-week.js`, `js/features/weather-center.js`, `css/weather-center.css`):
+- Week dropdown (1-18, defaults to Sleeper's current week, `?week=` deep link) and Thursday→Monday day groups.
+- Filters: All / Outdoor / Weather impact / Your players. Single-game picker. "Your team" select highlights your players on cards.
+- Cards: kickoff temperature, feels-like, sky condition, wind with direction arrow, gusts, rain chance (or recorded inches), a 4-hour game-window strip, impact badges (wind, high wind, rain, snow, deep freeze), and a dome state.
+- Week summary with clickable flagged games. Added to the desktop nav, command palette and SW shell **v59**.
+
+**Also switched to the week slate:** the dashboard Weather widget (now "Week N · X weather games", linking to the full outlook), League matchup badges, and War Room Start/Sit weather.
+- Recorded "rain game" means at least 1 mm (0.04 in) across the game window.
+- Verified real flags: Week 2 GB@NYJ rain, Week 5 three rain games, Week 8 NE@MIA rain. League showed 7 starter badges in Week 2.
+
+**Other fixes from the final pass:**
+- The active bottom-nav "More" tab label was gray on the green indicator (4.48:1). The tab under the indicator now reads active.
+- Research news category labels in light mode fixed (2.9:1 → AA).
+- Mobile bottom nav made opaque.
+
+**Regression:**
+- Matrix: 15/15 routes × dark+light PASS (zero axe violations, no overflow measured against the real 390px screen).
+- Third-party-down: PASS. Features: ALL PASS. Yahoo: 18/18. League: 25/25.
+- Deep flows: ALL PASS, including live AI, race-mode MP4 (50 s, 1080×1920, 9.9 MB), Story Pack and poster.
+- Crawl: only verified false positives remain. Sacred math identical. Not committed.
+
 ## Architecture summary
 
 - **UI:** static HTML + CSS tokens/components + ES modules; shared navigation, command palette, transitions, ticker, trade panels, game day, dashboard, clubhouse, league.

@@ -4,7 +4,8 @@ import { getPlayerDatabase } from '../data/player-db.js';
 import { liveData } from '../data/live-data.js';
 import { dealerSource, normalizeDealerPlayers } from '../data/dynasty-dealer.js';
 import { SCOREBOARD_SOURCE, normalizeGames } from '../data/espn.js';
-import { subscribeGameWeather, playerWeatherImpact } from '../data/weather.js';
+import { playerWeatherImpact } from '../data/weather.js';
+import { getWeekSlate, getWeekWeather } from '../data/weather-week.js';
 import { weatherBadge } from '../ui/weather-ui.js';
 import { setLeagueSnapshot } from '../data/league-state.js';
 
@@ -35,7 +36,7 @@ function savedLeaguesMarkup() {
 }
 
 function connectMarkup() {
-  return `<div class="kt-league-connect"><span class="kt-league-ball" aria-hidden="true">KT</span><div><span class="kt-eyebrow">Multi-league mode</span><h3>Every league. One command center.</h3><p>Switch between Sleeper and Yahoo leagues without losing your place.</p></div>${savedLeaguesMarkup()}<div class="kt-provider-tabs" role="group" aria-label="League provider"><button class="kt-chip" type="button" data-provider="sleeper" aria-pressed="${selectedProvider === 'sleeper'}">Sleeper</button><button class="kt-chip" type="button" data-provider="yahoo" aria-pressed="${selectedProvider === 'yahoo'}">Yahoo</button></div><form id="sleeper-connect" ${selectedProvider === 'sleeper' ? '' : 'hidden'}><label for="sleeper-id">Paste your Sleeper league link or ID</label><div><input class="kt-control" id="sleeper-id" type="text" autocomplete="off" spellcheck="false" required placeholder="sleeper.com/leagues/… or league ID"><button class="kt-btn kt-btn-primary" type="submit">Connect Sleeper</button></div><small>In Sleeper: League → Settings → copy the league link or League ID. Public, read-only data; stored only on this device.</small></form><div id="yahoo-connect-panel" ${selectedProvider === 'yahoo' ? '' : 'hidden'}><h4>Connect with Yahoo</h4><p>Authorize Yahoo once. OAuth tokens stay encrypted in the Cloudflare Worker; only a random session ID stays on this device.</p><button class="kt-btn kt-btn-primary" type="button" id="yahoo-connect">Sign in with Yahoo</button><p class="kt-muted" id="yahoo-status" role="status"></p><div class="kt-yahoo-league-list" id="yahoo-league-list"></div>${yahooAttribution()}</div></div>`;
+  return `<div class="kt-league-connect"><span class="kt-league-ball" aria-hidden="true">KT</span><div><span class="kt-eyebrow">Multi-league mode</span><h3>Every league. One command center.</h3><p>Switch between Sleeper and Yahoo leagues without losing your place.</p></div>${savedLeaguesMarkup()}<div class="kt-provider-tabs" role="group" aria-label="League provider"><button class="kt-chip" type="button" data-provider="sleeper" aria-pressed="${selectedProvider === 'sleeper'}">Sleeper</button><button class="kt-chip" type="button" data-provider="yahoo" aria-pressed="${selectedProvider === 'yahoo'}">Yahoo</button></div><form id="sleeper-connect" ${selectedProvider === 'sleeper' ? '' : 'hidden'}><label for="sleeper-id">Paste your Sleeper league link or ID</label><div><input class="kt-control" id="sleeper-id" type="text" autocomplete="off" spellcheck="false" required placeholder="sleeper.com/leagues/… or league ID"><button class="kt-btn kt-btn-primary" type="submit">Connect Sleeper</button></div><small>In Sleeper: League → Settings → copy the league link or League ID. Public, read-only data; stored only on this device.</small></form><div id="yahoo-connect-panel" ${selectedProvider === 'yahoo' ? '' : 'hidden'}><h4>Connect with Yahoo</h4><p>Sign in with Yahoo once. Your Yahoo password never touches Keeper Trade, and you can disconnect anytime.</p><button class="kt-btn kt-btn-primary" type="button" id="yahoo-connect">Sign in with Yahoo</button><p class="kt-muted" id="yahoo-status" role="status"></p><div class="kt-yahoo-league-list" id="yahoo-league-list"></div>${yahooAttribution()}</div></div>`;
 }
 
 function starterWeatherMarkup(matchup) {
@@ -159,17 +160,18 @@ function renderLeague() {
   }));
 }
 
-function syncWeather() {
-  const key = games.map(game => `${game.id}:${game.venue}:${game.date}`).join('|');
-  if (key === weatherScheduleKey) return;
-  weatherScheduleKey = key;
-  weatherCleanup();
-  weatherByGame = {};
-  if (!games.length) return;
-  weatherCleanup = subscribeGameWeather(games, conditions => {
-    weatherByGame = conditions;
-    if (bundle) renderLeague();
-  });
+// Weather badges follow the league week (Thursday to Monday), not today's scoreboard.
+let weatherWeek = '';
+async function syncWeather() {
+  if (!bundle) return;
+  const key = `${bundle.league?.season}:${bundle.week}`;
+  if (key === weatherWeek) return;
+  weatherWeek = key;
+  try {
+    games = await getWeekSlate(String(bundle.league?.season || new Date().getFullYear()), bundle.week);
+    weatherByGame = Object.fromEntries(await getWeekWeather(games));
+    if (bundle && key === weatherWeek) renderLeague();
+  } catch (_) { weatherWeek = ''; }
 }
 
 async function loadLeague(id) {
@@ -189,6 +191,7 @@ async function loadLeague(id) {
       powerHistory = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
     } catch (_) { powerHistory = {}; }
     renderLeague();
+    syncWeather();
   } catch (_) {
     if (generation !== loadGeneration) return;
     section.innerHTML = `<div class="kt-league-connect"><div><span class="kt-eyebrow">League reconnecting</span><h3>That league is out of reach right now.</h3><p>Check the connection and try again. Your other leagues and tools are unaffected.</p></div><button class="kt-btn" type="button" id="league-retry">Try again</button><button class="kt-btn kt-btn-ghost" type="button" id="league-edit">Choose another league</button></div>`;
@@ -271,12 +274,9 @@ export function mountLeague() {
   section.id = 'league';
   section.setAttribute('aria-label', 'Multi-league mode');
   const forYou = document.querySelector('#for-you-title')?.closest('.kt-section');
-  if (forYou) forYou.before(section);
-  liveData.subscribe(SCOREBOARD_SOURCE, snapshot => {
-    if (snapshot.statusOnly) return;
-    games = normalizeGames(snapshot.data);
-    syncWeather();
-  });
+  const slot = document.getElementById('league-slot');
+  if (slot) slot.replaceWith(section);
+  else if (forYou) forYou.before(section);
   const id = getSleeperLeagueId();
   if (id) loadLeague(id);
   else {
