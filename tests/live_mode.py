@@ -74,6 +74,12 @@ async def main():
                 check(not ax, f'pill passes axe WCAG AA (contrast, names) {ax}')
                 box = await pg.locator('.kt-matchup-pill').bounding_box()
                 check(box and box['x'] >= 0 and box['x'] + box['width'] <= 390, f'pill fits the phone screen ({box})')
+                lay = await pg.evaluate("(() => { const r = s => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return [b.left, b.right, b.top, b.bottom]; }; return { pill: r('.kt-matchup-pill'), brand: r('.kt-site-brand'), search: r('.kt-command-trigger'), header: r('[data-site-header]') }; })()")
+                ok = lay['pill'] and lay['brand'] and lay['pill'][0] >= lay['brand'][1] and (not lay['search'] or lay['pill'][1] <= lay['search'][0] + 1) and lay['pill'][3] <= lay['header'][3] + 1
+                check(ok, f'phone: pill sits inside the header bar between logo and search, over no page content ({lay})')
+                await pg.set_viewport_size({'width': 1280, 'height': 800}); await pg.wait_for_timeout(200)  # phones show the compact header pill, no close
+                over = await pg.evaluate("(() => { const p = document.querySelector('.kt-matchup-pill').getBoundingClientRect(); const x = p.left + p.width - 20, y = p.top + p.height / 2; const hit = document.elementFromPoint(x, y); return hit && hit.closest('.kt-matchup-pill') ? '' : (hit && (hit.className || hit.tagName)) + ''; })()")
+                check(not over, f'desktop: nothing covers the pill (scores strip, toasts) {over}')
                 await pg.click('.kt-pill-close'); await pg.wait_for_timeout(200)
                 await pg.reload(); await pg.wait_for_timeout(5000)
                 check(await pg.locator('.kt-matchup-pill:not([hidden])').count() == 0, 'dismissed pill stays hidden for the session')

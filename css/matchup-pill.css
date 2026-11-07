@@ -17,7 +17,20 @@
 .kt-matchup-pill.is-down .kt-pill-prob strong { color: var(--kt-danger); }
 .kt-pill-close { width: var(--kt-tap); height: var(--kt-tap); border: 0; border-radius: 50%; background: transparent; color: var(--kt-text-muted); font-size: 1.15rem; cursor: pointer; }
 .kt-pill-close:hover { color: var(--kt-text-primary); }
-@media (max-width: 47.99rem) { .kt-matchup-pill { top: calc(3.75rem + 0.4rem); } }
+/* desktop pages with the sticky live-scores strip under the header: sit just below it, never on top of it */
+@media (min-width: 48rem) { body:has(.kt-score-dock) .kt-matchup-pill { top: calc(4.25rem + 4.75rem + 0.5rem); } }
+/* phones: compact, inside the header bar's free space (between the logo and search), never over page content */
+@media (max-width: 47.99rem) {
+  .kt-matchup-pill { top: calc((3.75rem - 2.75rem) / 2 + env(safe-area-inset-top, 0px)); right: calc(1rem + var(--kt-tap) + 0.25rem); /* clear of the 44px search button */ padding: 0 0.15rem; box-shadow: none; }
+  .kt-pill-close { display: none; }
+  .kt-pill-tag { font-size: 0; gap: 0; }
+  .kt-pill-tag i { font-size: 0.6875rem; }
+  .kt-matchup-pill:not(.is-live) .kt-pill-tag { display: none; }
+  .kt-pill-body { gap: 0.4rem; padding: 0 0.35rem; }
+  .kt-pill-score { font-size: 1rem; }
+  .kt-pill-prob { min-width: 2.7rem; height: 1.6rem; font-size: 0.85rem; }
+}
+@media (max-width: 21rem) { .kt-matchup-pill { display: none; } }
 @keyframes kt-pill-in { from { opacity: 0; transform: translateY(-8px) scale(0.96); } }
 @keyframes kt-pill-pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .kt-matchup-pill, .kt-pill-tag i, .kt-pill-prob::before { animation: none; transition: none; } }
