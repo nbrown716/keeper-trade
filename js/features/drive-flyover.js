@@ -305,9 +305,9 @@ export function createFlyoverRenderer() {
         const winnerA = race.finalA >= race.finalB;
         context.fillStyle = race.finalA === race.finalB ? INK : winnerA ? COLOR_A : COLOR_B;
         context.font = display(50 * unit);
-        context.fillText(race.finalA === race.finalB ? 'TIE GAME' : 'WINNER', width / 2, height * 0.2);
+        context.fillText(race.live ? `LIVE · ${Math.round(race.live.pA * 100)}% TO WIN` : race.finalA === race.finalB ? 'TIE GAME' : 'WINNER', width / 2, height * 0.2);
         context.fillStyle = INK;
-        context.fillText(fitDisplay(context, (winnerA ? race.nameA : race.nameB).toUpperCase(), 30 * unit, 16 * unit, width - 40 * unit), width / 2, height * 0.255);
+        context.fillText(fitDisplay(context, (race.live ? race.nameA : winnerA ? race.nameA : race.nameB).toUpperCase(), 30 * unit, 16 * unit, width - 40 * unit), width / 2, height * 0.255);
         context.fillStyle = MUTED; context.font = ui(11 * unit, 600);
         context.fillText(`${legs.length} duels · ${legs.filter(item => (item.beat.a?.points || 0) > (item.beat.b?.points || 0)).length}–${legs.filter(item => (item.beat.b?.points || 0) > (item.beat.a?.points || 0)).length} in head-to-head slots`, width / 2, height * 0.8);
       }

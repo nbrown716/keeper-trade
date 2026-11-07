@@ -236,8 +236,8 @@ function drawField(context, race, geo, unit, now, time, reducedMotion) {
   rounded(context, x, top, w, bottom - top, 18 * unit);
   context.clip();
   const ez = context.createLinearGradient(0, top, 0, goal);
-  const winnerColor = race.winner === race.A ? 'rgba(198,255,74,' : race.winner === race.B ? 'rgba(255,122,89,' : 'rgba(255,255,255,';
-  const tdProgress = clamp((time - race.playEnd) / 0.8);
+  const winnerColor = race.live ? 'rgba(255,255,255,' : race.winner === race.A ? 'rgba(198,255,74,' : race.winner === race.B ? 'rgba(255,122,89,' : 'rgba(255,255,255,';
+  const tdProgress = race.live ? 0 : clamp((time - race.playEnd) / 0.8);
   ez.addColorStop(0, `${winnerColor}${0.22 + 0.4 * tdProgress})`);
   ez.addColorStop(1, `${winnerColor}${0.06 + 0.2 * tdProgress})`);
   context.fillStyle = ez;
@@ -247,7 +247,7 @@ function drawField(context, race, geo, unit, now, time, reducedMotion) {
   context.textAlign = 'center';
   context.fillText('E N D   Z O N E', x + w / 2, top + endZone * 0.68);
 
-  const target = Math.max(race.finalA, race.finalB, 1);
+  const target = race.target || Math.max(race.finalA, race.finalB, 1); // live: scaled to projected finals
   const lanes = [
     { key: 'a', cx: x + w * 0.27, color: COLOR_A, rgb: '198,255,74', score: now.a, final: race.finalA, id: race.A },
     { key: 'b', cx: x + w * 0.73, color: COLOR_B, rgb: '255,122,89', score: now.b, final: race.finalB, id: race.B }
@@ -498,8 +498,44 @@ function drawIntro(context, race, width, height, unit, time) {
   context.restore();
 }
 
+function drawLiveFinale(context, race, width, height, unit, time) {
+  const p = clamp((time - race.playEnd) / 0.9);
+  const live = race.live;
+  const pct = Math.round(live.pA * 100);
+  const color = pct >= 50 ? COLOR_A : COLOR_B;
+  context.save();
+  context.globalAlpha = easeOut(p);
+  context.fillStyle = 'rgba(4,7,13,0.7)';
+  context.fillRect(0, 0, width, height);
+  context.textAlign = 'center';
+  const pulse = 0.55 + 0.45 * Math.abs(Math.sin(time * 3));
+  context.fillStyle = `rgba(255,123,138,${pulse})`;
+  context.beginPath(); context.arc(width / 2 - 34 * unit, height * 0.3 - 5 * unit, 5 * unit, 0, Math.PI * 2); context.fill();
+  context.fillStyle = INK;
+  context.font = ui(13 * unit, 800);
+  context.fillText(live.inProgress ? 'LIVE' : 'IN PROGRESS', width / 2 + 8 * unit, height * 0.3);
+  context.fillStyle = color;
+  context.font = display(96 * unit * (0.9 + 0.1 * easeOut(p)));
+  context.fillText(`${pct}%`, width / 2, height * 0.43);
+  context.fillStyle = INK;
+  context.font = ui(12 * unit, 700);
+  context.fillText(fit(context, `${race.nameA.toUpperCase()} TO WIN`, width - 40 * unit), width / 2, height * 0.47);
+  context.font = display(34 * unit);
+  context.fillStyle = COLOR_A; context.fillText(fmt(race.finalA), width / 2 - 62 * unit, height * 0.545);
+  context.fillStyle = MUTED; context.font = display(20 * unit); context.fillText('–', width / 2, height * 0.54);
+  context.fillStyle = COLOR_B; context.font = display(34 * unit); context.fillText(fmt(race.finalB), width / 2 + 62 * unit, height * 0.545);
+  context.fillStyle = MUTED;
+  context.font = ui(11 * unit, 600);
+  context.fillText(`Projected final ${fmt(live.projA)} – ${fmt(live.projB)}`, width / 2, height * 0.59);
+  context.fillText(`${live.leftA} of your starters and ${live.leftB} of theirs still to play`, width / 2, height * 0.59 + 18 * unit);
+  context.font = ui(9 * unit, 600);
+  context.fillText(fit(context, '4,000 simulations of every player still to play, from his season in your scoring', width - 32 * unit), width / 2, height * 0.59 + 40 * unit);
+  context.restore();
+}
+
 function drawFinale(context, race, width, height, unit, time, reducedMotion) {
   if (time < race.playEnd) return;
+  if (race.live) { drawLiveFinale(context, race, width, height, unit, time); return; }
   const p = clamp((time - race.playEnd) / 0.9);
   const tie = !race.winner;
   const color = race.winner === race.A ? COLOR_A : COLOR_B;

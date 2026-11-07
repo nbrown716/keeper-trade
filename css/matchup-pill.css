@@ -1,0 +1,23 @@
+/* Matchup Pill: Live Activity-style live score + win probability, under the site header */
+.kt-matchup-pill { position: fixed; z-index: 70; top: calc(4.25rem + 0.5rem); right: max(0.75rem, env(safe-area-inset-right)); display: flex; align-items: center; gap: 0.15rem; padding: 0.2rem 0.2rem 0.2rem 0.35rem; border: 1px solid var(--kt-border); border-radius: 999px; background: color-mix(in srgb, var(--kt-surface-2) 92%, transparent); box-shadow: 0 10px 30px rgb(0 0 0 / 35%); animation: kt-pill-in 320ms cubic-bezier(.2, 1.25, .3, 1) both; }
+.kt-matchup-pill[hidden] { display: none; }
+.kt-pill-link { display: flex; min-height: var(--kt-tap); align-items: center; border-radius: 999px; color: var(--kt-text-primary); text-decoration: none; }
+.kt-pill-link:focus-visible, .kt-pill-close:focus-visible { outline: 3px solid var(--kt-accent); outline-offset: 2px; }
+.kt-pill-body { display: flex; align-items: center; gap: 0.6rem; padding: 0 0.5rem; }
+.kt-pill-tag { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--kt-text-secondary); font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.08em; }
+.kt-pill-tag i { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--kt-danger); animation: kt-pill-pulse 1.4s ease-in-out infinite; }
+.kt-pill-score { display: inline-flex; align-items: baseline; gap: 0.3rem; font-family: var(--kt-font-display); font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.kt-pill-score small { color: var(--kt-text-muted); }
+.kt-pill-me { color: var(--kt-accent); } /* your score; the opponent's stays neutral */
+.kt-pill-prob { position: relative; display: inline-grid; place-items: center; min-width: 3.2rem; height: 1.8rem; overflow: hidden; border-radius: 999px; background: var(--kt-surface-1); font-family: var(--kt-font-display); font-size: 0.95rem; font-weight: 800; }
+.kt-pill-prob::before { position: absolute; inset: 0 auto 0 0; width: var(--p); background: var(--kt-accent-soft); content: ""; transition: width 600ms ease; }
+.kt-matchup-pill.is-down .kt-pill-prob::before { background: var(--kt-danger-soft); }
+.kt-pill-prob strong { position: relative; }
+.kt-matchup-pill.is-up .kt-pill-prob strong { color: var(--kt-accent); }
+.kt-matchup-pill.is-down .kt-pill-prob strong { color: var(--kt-danger); }
+.kt-pill-close { width: var(--kt-tap); height: var(--kt-tap); border: 0; border-radius: 50%; background: transparent; color: var(--kt-text-muted); font-size: 1.15rem; cursor: pointer; }
+.kt-pill-close:hover { color: var(--kt-text-primary); }
+@media (max-width: 47.99rem) { .kt-matchup-pill { top: calc(3.75rem + 0.4rem); } }
+@keyframes kt-pill-in { from { opacity: 0; transform: translateY(-8px) scale(0.96); } }
+@keyframes kt-pill-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .kt-matchup-pill, .kt-pill-tag i, .kt-pill-prob::before { animation: none; transition: none; } }

@@ -6,6 +6,8 @@ import { loadUsMap, albers, onMainland } from '../data/us-map.js';
 import { getPlayerDatabase } from '../data/player-db.js';
 import { normalizeGames, summarySource } from '../data/espn.js';
 import { resolveStadium, weatherImpacts } from '../data/weather.js';
+import { winProbability } from '../data/win-prob.js';
+import { getPlayerBaselines } from '../data/player-baselines.js';
 
 export const DRIVE_DURATION = 50;
 const MANAGER_KEY = 'kt-drive-manager:v1';
@@ -96,7 +98,10 @@ export async function loadDriveRecap(leagueId, week, rosterId) {
   try { localStorage.setItem(MANAGER_KEY, String(selected)); } catch (_) {}
 
   const season = bundle.league.season || (await getNflState())?.season || new Date().getFullYear();
-  const scoreboard = await fetchSource(`drive-scoreboard:${season}:${week}`, `https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/scoreboard?dates=${season}&seasontype=2&week=${week}`, 86400000);
+  // The current week is live: its scoreboard is re-read every 30 s; finished weeks are cached for a day.
+  const nflNow = await getNflState().catch(() => ({}));
+  const currentWeek = String(nflNow?.season) === String(season) && Number(nflNow?.week) === Number(week);
+  const scoreboard = await fetchSource(`drive-scoreboard:${season}:${week}`, `https://keeper-trade-ai.nicholas-brown00.workers.dev/espn/scoreboard?dates=${season}&seasontype=2&week=${week}`, currentWeek ? 30000 : 86400000);
   const games = normalizeGames(scoreboard);
   const teamGames = new Map();
   games.forEach(game => {
@@ -147,6 +152,18 @@ export async function loadDriveRecap(leagueId, week, rosterId) {
   const opponentTotal = Number(opponent?.points || 0);
   const race = buildRace({ bundle, matchup, opponent, playerMap, teamGames, summaries, managers, selected });
   if (race) race.flyover = await buildFlyover({ bundle, matchup, opponent, playerMap, teamGames, race }).catch(() => null);
+  // Live: any starter (either side) whose game is not final. The film then ends on a LIVE card with the win
+  // probability instead of a winner, and the field is scaled to the projected finals (nobody scores a TD yet).
+  if (race && opponent) {
+    const sideGames = [...starterIds, ...opponentIds].map(id => teamGames.get(playerMap.get(id)?.team)).filter(Boolean);
+    if (sideGames.some(game => game.state !== 'post')) {
+      const baselines = await getPlayerBaselines(leagueId, playerMap).catch(() => null);
+      const side = entry => (entry.starters || []).filter(id => id !== '0').map(id => ({ id, position: playerMap.get(id)?.position || '', team: playerMap.get(id)?.team || '', points: Number(entry.players_points?.[id] || 0) }));
+      const odds = winProbability(side(matchup), side(opponent), { gameFor: team => teamGames.get(team) || null, baselines });
+      race.live = { ...odds, at: Date.now(), inProgress: sideGames.some(game => game.state === 'in') };
+      race.target = Math.max(odds.projA, odds.projB, race.finalA, race.finalB, 1);
+    }
+  }
   const rank = bundle.matchups.slice().sort((a, b) => Number(b.points || 0) - Number(a.points || 0)).findIndex(item => item.roster_id === selected) + 1;
   return {
     leagueId,
@@ -167,6 +184,7 @@ export async function loadDriveRecap(leagueId, week, rosterId) {
     duration: DRIVE_DURATION,
     beatDuration: 40 / Math.max(1, starters.length),
     race,
+    live: race?.live || null, // in-progress week: every surface shows LIVE + win %, never a result
     cacheKey: `drive:${leagueId}:${week}:${selected}:${total}:${opponentTotal}`
   };
 }

@@ -8,6 +8,7 @@ import { renderSummary } from './drive-summary.js';
 const rendererFor = name => name === 'race' ? createRaceRenderer() : name === 'map' ? createFlyoverRenderer() : createFieldRenderer();
 import { askAI } from '../data/ai.js';
 import { getSleeperLeagueId } from '../data/sleeper.js';
+import { liveData } from '../data/live-data.js';
 import { renderDriveVideo, renderStoryPack, renderScoreCard, shareOrDownload, shareStoryPack, copyRecapLink, ShareError } from './share.js';
 import { mascot } from '../ui/mascot.js';
 
@@ -48,10 +49,10 @@ function renderFrame() {
   const beat = playhead.time < 3 ? -1 : playhead.time >= 43 ? recap.starters.length : Math.floor((playhead.time - 3) / recap.beatDuration);
   if (beat !== currentBeat) {
     currentBeat = beat;
-    const label = beat === -1 ? `${recap.manager}, week ${recap.week}` : beat === recap.starters.length ? `Final: ${recap.total.toFixed(2)} points, ${recap.result}` : `${recap.starters[beat].name}, ${recap.starters[beat].points.toFixed(1)} points`;
+    const label = beat === -1 ? `${recap.manager}, week ${recap.week}` : beat === recap.starters.length ? (recap.live ? `Live: ${recap.total.toFixed(2)} points so far, ${Math.round(recap.live.pA * 100)}% to win` : `Final: ${recap.total.toFixed(2)} points, ${recap.result}`) : `${recap.starters[beat].name}, ${recap.starters[beat].points.toFixed(1)} points`;
     canvas.setAttribute('aria-label', `The Drive recap. ${label}`);
     setStatus(beat === recap.starters.length ? 'End zone. Your week is complete.' : beat === -1 ? 'The opening kickoff…' : `Play ${beat + 1} of ${recap.starters.length} · ${recap.starters[beat].name}`);
-    if (beat === recap.starters.length) window.dispatchEvent(new CustomEvent('kt:drive-finale', { detail: { result: recap.result, rank: recap.rank, manager: recap.manager } }));
+    if (beat === recap.starters.length && !recap.live) window.dispatchEvent(new CustomEvent('kt:drive-finale', { detail: { result: recap.result, rank: recap.rank, manager: recap.manager } }));
     if (soundEnabled && !reducedMotion.matches) playSting(beat === recap.starters.length);
   }
 }
@@ -64,11 +65,11 @@ function raceStatus() {
   const key = t >= race.playEnd ? 'final' : t < race.intro ? 'intro' : segment?.id || 'gap';
   if (key === raceBeat) return;
   raceBeat = key;
-  const result = race.winner === race.A ? `${race.nameA} wins` : race.winner === race.B ? `${race.nameB} wins` : 'Tie game';
+  const result = race.live ? `In progress, ${Math.round(race.live.pA * 100)}% to win` : race.winner === race.A ? `${race.nameA} wins` : race.winner === race.B ? `${race.nameB} wins` : 'Tie game';
   const label = key === 'final' ? `${result}, ${race.finalA.toFixed(2)} to ${race.finalB.toFixed(2)}. ${race.leadChanges.length} lead changes.` : key === 'intro' ? `${race.nameA} versus ${race.nameB}` : segment ? `${segment.label} window` : 'Between windows';
   canvas.setAttribute('aria-label', `The Drive head-to-head race. ${label}`);
-  setStatus(key === 'final' ? `Final · ${result}` : key === 'intro' ? 'Kickoff: both lineups, every play in real order.' : segment ? `${segment.label} · the race is on` : 'Time-lapse to the next window…');
-  if (key === 'final') window.dispatchEvent(new CustomEvent('kt:drive-finale', { detail: { result: recap.result, rank: recap.rank, manager: recap.manager } }));
+  setStatus(key === 'final' ? (race.live ? `Live · ${result}` : `Final · ${result}`) : key === 'intro' ? 'Kickoff: both lineups, every play in real order.' : segment ? `${segment.label} · the race is on` : 'Time-lapse to the next window…');
+  if (key === 'final' && !race.live) window.dispatchEvent(new CustomEvent('kt:drive-finale', { detail: { result: recap.result, rank: recap.rank, manager: recap.manager } }));
   if (soundEnabled && !reducedMotion.matches) playSting(key === 'final');
 }
 
@@ -170,6 +171,11 @@ export async function generatePoster(recapData, posterMode = 'field') {
 }
 
 async function loadVerdict(sequence) {
+  if (recap.live) { // no verdict on a game that isn't over
+    recap.verdict = `Week ${recap.week} is still being played: ${Math.round(recap.live.pA * 100)}% to win, projected ${recap.live.projA.toFixed(1)} to ${recap.live.projB.toFixed(1)}.`;
+    if (sequence === loadSequence) renderFrame();
+    return;
+  }
   const fallback = recap.result === 'W'
     ? `${recap.manager} turned week ${recap.week} into a ${recap.margin.toFixed(2)}-point statement win.`
     : recap.result === 'L' ? `Week ${recap.week} went to ${recap.opponent}; the next drive starts now.` : `Week ${recap.week} ended level. One play made all the difference.`;
@@ -246,6 +252,30 @@ async function load() {
     setStatus('The Drive is waiting for a connected league.');
   }
 }
+
+// Live mode: while the week is in progress, re-read scores every 60 s. If you're watching the live end of the
+// film, it replays the last few seconds so the new plays animate in.
+let liveBusy = false;
+window.setInterval(async () => {
+  if (!recap?.race?.live || document.hidden || liveBusy || document.querySelector('#drive-export-progress:not([hidden])')) return;
+  liveBusy = true;
+  try {
+    const leagueId = getSleeperLeagueId();
+    liveData.invalidate(`sleeper-matchups:${leagueId}:${recap.week}`);
+    [...liveData.sources.keys()].filter(key => key.startsWith('drive-scoreboard:') && key.endsWith(`:${recap.week}`)).forEach(key => liveData.invalidate(key));
+    const data = await loadDriveRecap(leagueId, recap.week, recap.rosterId);
+    const before = `${recap.race.finalA}:${recap.race.finalB}:${recap.race.events.length}`;
+    const after = `${data.race?.finalA}:${data.race?.finalB}:${data.race?.events.length}`;
+    if (!data.race) return;
+    if (before === after) { recap.race.live = data.race.live; recap.race.target = data.race.target; recap.live = data.live; renderFrame(); return; }
+    const atEnd = playhead.time >= recap.race.playEnd - 0.05;
+    data.verdict = data.live ? `Week ${data.week} is still being played: ${Math.round(data.live.pA * 100)}% to win, projected ${data.live.projA.toFixed(1)} to ${data.live.projB.toFixed(1)}.` : recap.verdict;
+    recap = data;
+    raceBeat = '';
+    makeTimeline(atEnd ? Math.max(0, recap.race.playEnd - 5) : playhead.time, atEnd);
+    summary = renderSummary(document.querySelector('#drive-summary'), recap, { onSeek: time => seek(time) }) || null;
+  } catch (_) {} finally { liveBusy = false; }
+}, 60000);
 
 modeButtons.forEach(item => item.setAttribute('aria-pressed', String(item.dataset.driveMode === mode)));
 playButton.addEventListener('click', togglePlay);

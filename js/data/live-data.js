@@ -203,6 +203,13 @@ class LiveData {
   // One-shot read: fresh cache answers immediately; otherwise wait for the network, falling back to
   // stale cache if the request fails or is still pending after a few seconds. Resolves null when
   // nothing is available. Does not keep a polling subscription alive.
+  // Mark a source stale so the next get() fetches fresh data (live loops whose timer can fire a second before
+  // the cached copy expires would otherwise re-read it).
+  invalidate(key) {
+    const source = this.sources.get(key);
+    if (source) source.updatedAt = 0;
+  }
+
   async get(key) {
     const source = this.sources.get(key);
     if (!source) throw new Error(`LiveData source not registered: ${key}`);

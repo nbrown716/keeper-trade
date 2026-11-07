@@ -23,6 +23,8 @@ SUITES = [
     ('yahoo_test.py', 'ALL PASS', False),
     ('fly_edge.py', 'passed', False),                  # The Drive "Home Of" edge cases
     ('values_live.py', 'passed', False),               # live-only value sources, <=6 h cadence, open-page refresh, baselines
+    ('winprob_calibration.py', 'passed', False),       # win probability: backtest vs real results + sanity laws
+    ('live_mode.py', 'passed', False),                 # Drive live mode + Matchup Pill on an in-progress week
     ('wrapped_entry.py', 'passed', False),             # Wrapped entry points + one-time championship prompt
     ('wr_audit.py', 'passed', True),                  # Wrapped: overflow detector, interactions, exports, edge cases
     ('deep.py', 'DEEP ALL PASS', True),                       # animations, Drive exports, AI features, Pulse

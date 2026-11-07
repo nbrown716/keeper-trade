@@ -570,6 +570,38 @@ What changed:
 
 **Tests:** new `tests/values_live.py` (18 checks, in the release gate). It checks the static source and cadence rules, Keeper/Redraft/Rankings 15-minute refetch with a fake clock, the honest Dealer-down status, Rankings filters, and baselines against an independent recomputation.
 
+### 2026-11-07 — Phase 6: live mode, Matchup Pill, fantasy win probability (spec §4.7, §6 #1–2)
+
+**Win probability (`js/data/win-prob.js`)**
+- A Monte Carlo of every starter's remaining points: 4,000 sims, seeded so the number doesn't jitter.
+- Points already scored are locked in.
+- Remaining share per player comes from ESPN game state: not started 1, final/bye 0, in progress = quarters and clock left.
+- Each player's mean and SD come from his own season in the league's scoring (`player-baselines.js`), shrunk toward the position average (k = 3 games).
+- **Honest backtest** (`tests/winprob_calibration.py`): weeks 3+, pre-game, using only earlier weeks.
+  - 36 matchups, Brier 0.211 vs 0.250 for a coin flip.
+  - Favourites won 67% when claimed 68%.
+  - The sample is small; it grows every week.
+
+**Matchup Pill (`js/ui/matchup-pill.js` + `css/matchup-pill.css`)**
+- Appears on every page that mounts the shared navigation, loaded at idle.
+- Visible from the week's first kickoff until the NFL week rolls over: LIVE dot, your score (volt) vs theirs, win %.
+- Taps through to The Drive for that week. Dismissible per session.
+- Never shown without a remembered team, and never on Drive, Wrapped, command, offline or 404.
+- The slate refreshes every 30 s while a game is live; Sleeper matchups refresh every 60 s.
+
+**The Drive, live (`drive-data` / `drive-race` / `drive-flyover` / `drive-cards` / `drive-summary` / `drive.js` / `share.js`)**
+- An in-progress week gets `race.live` / `recap.live`.
+- The field is scaled to projected finals, so nobody scores a TD early.
+- Every finale becomes a LIVE card: win %, projected final, players left.
+- No winner, W/L stamp, confetti, finale/reward event, AI verdict or medals until the final whistle.
+- Re-reads scores every 60 s. `liveData.invalidate()` avoids the fires-a-second-early cache trap.
+- If you're at the live end, the last 5 s replay so new plays animate in.
+
+**Tests:** `tests/live_mode.py` (16 checks) runs on a simulated in-progress week. It covers:
+- the LIVE race end, no winner, honest summary, field mode LIVE with no celebration;
+- pill score/%/link/fit/axe/dismiss, and no pill without a team;
+- live follow: +6 Sleeper points appear in about 60 s with no reload.
+
 ## Architecture summary
 
 - **UI:** static HTML + CSS tokens/components + ES modules; shared navigation, command palette, transitions, ticker, trade panels, game day, dashboard, clubhouse, league.

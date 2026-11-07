@@ -197,7 +197,7 @@ export function drawFinale(context, recap, width, height, progress, reducedMotio
   context.textAlign = 'center';
   context.fillStyle = '#93a2b8';
   context.font = font(20 * unit, 700);
-  context.fillText('FINAL · END ZONE', width / 2, height * 0.25);
+  context.fillText(recap.live ? 'LIVE · STILL BEING PLAYED' : 'FINAL · END ZONE', width / 2, height * 0.25);
   context.fillStyle = '#f4f7fb';
   context.font = font(104 * unit, 800);
   const counted = reducedMotion ? recap.total : recap.total * easeOut(progress * 2);
@@ -208,22 +208,22 @@ export function drawFinale(context, recap, width, height, progress, reducedMotio
   context.save();
   context.translate(width / 2, height * 0.25 + 230 * unit);
   context.rotate(-0.055);
-  context.strokeStyle = recap.result === 'W' ? '#c6ff4a' : recap.result === 'L' ? '#ff5268' : '#59a8ff';
+  context.strokeStyle = recap.live ? '#59a8ff' : recap.result === 'W' ? '#c6ff4a' : recap.result === 'L' ? '#ff5268' : '#59a8ff';
   context.lineWidth = 5 * unit;
   rounded(context, -95 * unit, -58 * unit, 190 * unit, 116 * unit, 15 * unit);
   context.stroke();
   context.fillStyle = context.strokeStyle;
   context.font = font(104 * unit, 800);
-  context.fillText(recap.result, 0, 34 * unit);
+  if (recap.live) { context.font = font(64 * unit, 800); context.fillText(`${Math.round(recap.live.pA * 100)}%`, 0, 22 * unit); } else context.fillText(recap.result, 0, 34 * unit);
   context.restore();
   context.fillStyle = '#f4f7fb';
   context.font = font(25 * unit, 700);
-  context.fillText(`${recap.result === 'W' ? 'WON' : recap.result === 'L' ? 'LOST' : 'TIED'} BY ${recap.margin.toFixed(2)}${showRank ? ` · #${recap.rank} OF ${recap.teams} THIS WEEK` : ''}`, width / 2, height * 0.25 + 310 * unit);
+  context.fillText(recap.live ? `TO WIN · PROJECTED ${recap.live.projA.toFixed(1)} – ${recap.live.projB.toFixed(1)}` : `${recap.result === 'W' ? 'WON' : recap.result === 'L' ? 'LOST' : 'TIED'} BY ${recap.margin.toFixed(2)}${showRank ? ` · #${recap.rank} OF ${recap.teams} THIS WEEK` : ''}`, width / 2, height * 0.25 + 310 * unit);
   context.font = font(22 * unit, 600);
   context.fillStyle = '#c8d2df';
   wrapText(context, recap.verdict, width / 2, height * 0.25 + 360 * unit, width * 0.7, 30 * unit, 3);
   context.textAlign = 'left';
-  if (!reducedMotion) {
+  if (!reducedMotion && !recap.live) {
     for (let index = 0; index < 55; index += 1) {
       const x = seeded(index, recap.week) * width;
       const speed = 50 + seeded(index + 100, recap.week) * 160;

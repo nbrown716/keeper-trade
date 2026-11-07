@@ -66,4 +66,10 @@ export function mountNavigation({ active = 'home' } = {}) {
   window.addEventListener('kt:theme-change', event => updateThemeButton(event.detail.theme));
   updateThemeButton(document.documentElement.dataset.theme || 'dark');
   mountCommandPalette();
+  // Live matchup pill: loaded at idle so it never competes with the page's first paint.
+  const pill = () => {
+    if (!document.querySelector('link[href$="matchup-pill.css"]')) document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="css/matchup-pill.css">');
+    import('./matchup-pill.js').then(module => module.mountMatchupPill()).catch(() => {});
+  };
+  if ('requestIdleCallback' in window) window.requestIdleCallback(pill, { timeout: 3000 }); else window.setTimeout(pill, 1500);
 }

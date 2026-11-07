@@ -79,14 +79,14 @@ export function renderSummary(container, recap, { onSeek } = {}) {
   const youWon = race.winner === race.A;
   const margin = Math.abs(race.finalA - race.finalB);
   const clinched = race.filmToReal(race.clinchedAt);
-  const headline = race.winner === 0 ? `Dead level at ${fmt(race.finalA)}.` : `${youWon ? 'Win' : 'Loss'} by ${fmt(margin)}.`;
-  const clinchedLine = clinched && race.winner ? `Decided ${ET_DAY.format(new Date(clinched))} ET` : '';
+  const headline = race.live ? `In progress · ${Math.round(race.live.pA * 100)}% to win${margin > 0.05 ? ` · ${race.finalA > race.finalB ? 'up' : 'down'} ${fmt(margin)}` : ''}.` : race.winner === 0 ? `Dead level at ${fmt(race.finalA)}.` : `${youWon ? 'Win' : 'Loss'} by ${fmt(margin)}.`;
+  const clinchedLine = race.live ? `Projected ${fmt(race.live.projA)} – ${fmt(race.live.projB)} · ${race.live.leftA} of your starters still to play` : clinched && race.winner ? `Decided ${ET_DAY.format(new Date(clinched))} ET` : '';
   const splits = race.segments.map(segment => {
     const diff = segment.a - segment.b;
     return `<tr><th scope="row">${escapeHtml(segment.label)}</th><td>${fmt(segment.a)}</td><td>${fmt(segment.b)}</td><td class="${diff > 0.05 ? 'is-up' : diff < -0.05 ? 'is-down' : ''}">${diff >= 0 ? '+' : '−'}${fmt(Math.abs(diff))}</td></tr>`;
   }).join('');
   const performer = (player, rank) => `<li><span class="kt-summary-rank">${rank}</span><div><strong>${escapeHtml(player.name || 'Player')}</strong><small>${escapeHtml([player.position, player.team].filter(Boolean).join(' · '))}</small></div><b class="kt-num">${fmt(player.points)}</b></li>`;
-  const badges = achievements(race, recap, stats);
+  const badges = race.live ? [] : achievements(race, recap, stats); // no medals until the final whistle
   container.hidden = false;
   container.innerHTML = `<div class="kt-summary-head"><span class="kt-eyebrow">Activity summary · Week ${recap.week}</span><h2 id="drive-summary-title">${escapeHtml(headline)}</h2><p>${escapeHtml(race.nameA)} vs ${escapeHtml(race.nameB)}${clinchedLine ? ` · ${escapeHtml(clinchedLine)}` : ''}</p></div>
   <dl class="kt-summary-kpis"><div><dt>Points</dt><dd class="kt-num">${fmt(race.finalA)}</dd></div><div><dt>Lead changes</dt><dd class="kt-num">${race.leadChanges.length}</dd></div><div><dt>Biggest lead</dt><dd class="kt-num">${fmt(stats.maxLead)}</dd></div><div><dt>Week rank</dt><dd class="kt-num">${recap.rank}<small>/${recap.teams}</small></dd></div></dl>

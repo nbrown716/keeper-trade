@@ -186,9 +186,9 @@ export async function renderScoreCard(recap) {
   context.fillStyle = '#f4f7fb';
   context.font = '800 154px "Barlow Condensed", sans-serif';
   context.fillText(recap.total.toFixed(2), 65, 340);
-  context.fillStyle = recap.result === 'W' ? '#c6ff4a' : '#ff5268';
+  context.fillStyle = recap.live ? '#59a8ff' : recap.result === 'W' ? '#c6ff4a' : '#ff5268';
   context.font = '800 70px "Barlow Condensed", sans-serif';
-  context.fillText(`${recap.result} · ${recap.margin.toFixed(2)} PT MARGIN`, 70, 415);
+  context.fillText(recap.live ? `LIVE · ${Math.round(recap.live.pA * 100)}% TO WIN` : `${recap.result} · ${recap.margin.toFixed(2)} PT MARGIN`, 70, 415);
   context.fillStyle = '#93a2b8';
   context.font = '600 28px "Barlow Condensed", sans-serif';
   context.fillText(`VS ${recap.opponent.toUpperCase()} · ${recap.opponentTotal.toFixed(2)} · #${recap.rank} OF ${recap.teams}`, 70, 462);
