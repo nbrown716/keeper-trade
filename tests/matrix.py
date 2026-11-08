@@ -17,6 +17,10 @@ ESPN = {'/espn/scoreboard': 'https://site.api.espn.com/apis/site/v2/sports/footb
 
 async def worker_relay(route):
     # The Worker only answers the production origin; relay local test calls with it (same answer production gets).
+    # READS ONLY. A test must never write to the live Worker: 11/7 a production run relayed a POST /votes and cast a
+    # real vote in the owner's league. Writes get a 'resting' answer (the app's own not-deployed path) instead.
+    if route.request.method != 'GET':
+        return await route.fulfill(status=200, body='{"status":"resting"}', headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})
     try:
         resp = await route.fetch(headers={**route.request.headers, 'origin': 'https://keeper-trade.pages.dev'})
         await route.fulfill(status=resp.status, body=await resp.body(), headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'})

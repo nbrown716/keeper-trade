@@ -677,3 +677,10 @@ We studied market.qlinch.co's features as a user. We built our own versions; no 
 - Motion scale: 160ms micro, 320ms standard, 640ms hero. Transform/opacity animation and reduced-motion fallbacks are built into the system.
 - AI features (Prompt 09 onward) run through the deployed Cloudflare Worker holding the encrypted Anthropic key; workspace ID and public origin are non-secret configuration.
 - Sleeper league ID: owner provided `1370223929452433408` during Prompt 07; it is stored locally by the app, never hardcoded.
+
+## 2026-11-07 - Worker deployed (dashboard) + test write-leak fixed
+- Worker deployed from the Cloudflare dashboard editor (worker.js @ 21b9bf8, byte-identical to GitHub). Existing bindings kept: AI_CACHE, AI_USAGE, ALLOWED_ORIGIN, ANTHROPIC_API_KEY (secret), ANTHROPIC_WORKSPACE_ID, DAILY_SPEND_CAP. No Yahoo secrets set yet.
+- Live checks: GET /votes 200 with CORS for pages.dev; other origins 403; /ai/stats 200.
+- FAILURE: a KT_REMOTE deals_test run relayed POST /votes to the live Worker and cast a real "Even" vote in the league (trade 1424650384244240384). Removed both KV keys by hand in the dashboard; live count back to 0/0/0.
+- Root cause: matrix.worker_relay forwarded every method. Safeguard: relay is now READ-ONLY (non-GET gets {"status":"resting"}). Proof: the deals_test production re-run passed 25/25 and the live count stayed 0.
+- Rule: no test may ever write to a live backend. New relays and proxies must stub writes.

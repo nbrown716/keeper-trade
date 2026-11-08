@@ -76,7 +76,7 @@ async def main():
         verdict = await pg.inner_text('.dl-verdict')
         check(re.search(r'(won by [\d,]+|Even: [\d,]+ apart)', verdict), f'verdict states the margin ("{verdict.strip()[:80]}")')
         await pg.screenshot(path='review/deals-reveal.png', full_page=True)
-        check(await pg.locator('.dl-crowd').count() == 0, 'league votes hidden while the Worker vote route is not deployed')
+        check(await pg.locator('.dl-crowd').count() == 0, 'league votes hidden when the vote does not land (tests never write to the live Worker)')
         stored = await pg.evaluate("Object.keys(JSON.parse(localStorage.getItem('kt-deal-votes:v1') || '{}')).length")
         check(stored == 1, 'your vote is saved on this device')
         await pg.click('[data-revote]'); await pg.wait_for_timeout(200)
