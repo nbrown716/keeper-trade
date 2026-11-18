@@ -739,3 +739,5 @@ The 11/12 gate run failed 8 suites. Re-run one at a time on 11/18:
 Rule reinforced: a test may not contain a week number, a record, a score or any other value the season changes. Read it from the source.
 
 Open: the Worker still caches an AI answer that is not valid JSON. The client now repairs the common slips; a Worker-side "do not cache unparseable answers" needs a Worker deploy (owner pastes `worker.js`). War Room shows the raw Dynasty Dealer number (a Superflex market) labelled "dealer"; it is not converted to league format.
+
+- **War Room scrolled sideways on phones (also on the live site), 11/18.** Root cause: the weather badge tooltip (`::after`, 13rem wide, anchored left) was only transparent, so it still counted as page width when a badge sat at a row's right edge; it appeared the week a roster player drew a wind advisory. Fix: the tooltip takes no space until shown, is capped to the screen width, and opens leftwards in War Room rows. Safeguard: `tests/tooltip_overflow.py` adds a badge to every roster row regardless of the week's weather.

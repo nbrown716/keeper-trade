@@ -6,7 +6,11 @@
 .kt-weather-high-wind { border-color: rgb(255 82 104 / 40%); background: var(--kt-danger-soft); color: var(--kt-live); }
 .kt-weather-freeze { border-color: rgb(143 211 255 / 45%); color: #8fd3ff; }
 .kt-weather-badge::after { position: absolute; z-index: 150; bottom: calc(100% + 0.5rem); left: 0; width: 13rem; padding: var(--kt-space-2); border: 1px solid var(--kt-border); border-radius: var(--kt-radius-sm); background: var(--kt-surface-3); box-shadow: var(--kt-shadow-md); color: var(--kt-text-primary); content: attr(data-tooltip); font-size: var(--kt-text-xs); font-weight: 500; letter-spacing: 0; line-height: 1.4; white-space: normal; opacity: 0; pointer-events: none; transform: translateY(4px); transition: opacity var(--kt-duration-micro) ease, transform var(--kt-duration-micro) var(--kt-ease-out); }
-.kt-weather-badge:hover::after, .kt-weather-badge:focus::after { opacity: 1; transform: translateY(0); }
+/* The tooltip is 13rem wide. While only transparent it still counted as page width, so a badge near the right edge
+   made the whole page scroll sideways on phones (War Room, 11/18, when a roster player drew a wind advisory).
+   It now takes no space until it is shown, and never grows wider than the screen. */
+.kt-weather-badge::after { display: none; max-width: calc(100vw - 2rem); }
+.kt-weather-badge:hover::after, .kt-weather-badge:focus::after { display: block; opacity: 1; transform: translateY(0); }
 .kt-weather-badge:focus-visible { outline: 2px solid var(--kt-accent); outline-offset: 2px; }
 
 .kt-weather-strip { position: relative; display: flex; align-items: center; gap: var(--kt-space-4); margin: calc(var(--kt-space-3) * -1) 0 var(--kt-space-5); padding: var(--kt-space-3) var(--kt-space-4); border: 1px solid var(--kt-border-subtle); border-radius: var(--kt-radius-lg); background: var(--kt-surface-1); color: var(--kt-text-secondary); font-size: var(--kt-text-xs); }

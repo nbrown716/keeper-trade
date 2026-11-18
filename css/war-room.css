@@ -21,6 +21,7 @@
 .kt-war-player-option span { min-width: 0; font-size: var(--kt-text-xs); font-weight: 700; }
 .kt-war-player-option small { display: block; margin-top: 0.2rem; color: var(--kt-text-muted); font-size: 0.625rem; }
 .kt-war-player-option .kt-weather-badge { margin-left: auto; }
+.kt-war-player-option .kt-weather-badge::after { right: 0; left: auto; } /* badge sits at the row's right edge: open the tooltip leftwards */
 .kt-war-results { display: grid; gap: var(--kt-space-3); }
 .kt-verdict-card { position: relative; padding: var(--kt-space-4); overflow: hidden; border: 1px solid var(--kt-border-subtle); border-radius: var(--kt-radius-lg); background: linear-gradient(120deg, var(--kt-surface-2), rgb(11 15 26 / 80%)); animation: kt-war-card-in 320ms var(--kt-ease-out) both; animation-delay: var(--kt-delay, 0ms); }
 .kt-verdict-card.is-start { border-left: 3px solid var(--kt-accent); }
