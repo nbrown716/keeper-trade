@@ -4,6 +4,8 @@ const pages = [
   { id: 'home', type: 'Pages', title: 'Home', meta: 'Your fantasy command center', icon: 'home', url: 'index.html', keywords: 'scores dashboard' },
   { id: 'keeper', type: 'Pages', title: 'Keeper Trade Calculator', meta: 'Keeper costs, escalation, and the 1,000-point rule', icon: 'keeper', url: 'keeper.html', keywords: 'trade dynasty league' },
   { id: 'redraft', type: 'Pages', title: 'Redraft Trade Calculator', meta: 'Redraft and dynasty values with league settings', icon: 'trade', url: 'redraft.html', keywords: 'trade ppr superflex' },
+  { id: 'dynasty', type: 'Pages', title: 'Dynasty Trade Calculator', meta: 'Live dynasty values, rookie picks, values in 1sts, your league scoring', icon: 'trade', url: 'dynasty.html', keywords: 'trade dynasty superflex tep picks rookie calculator' },
+  { id: 'values', type: 'Pages', title: 'Trade Value Chart', meta: 'This week’s trade values by position with the next three matchups', icon: 'rankings', url: 'trade-values.html', keywords: 'trade value chart weekly values bye schedule' },
   { id: 'rankings', type: 'Pages', title: 'Rankings', meta: 'Keeper, redraft, and dynasty boards', icon: 'rankings', url: 'rankings.html', keywords: 'players values' },
   { id: 'research', type: 'Pages', title: 'Research Hub', meta: 'Player profiles, stats, standings, and news', icon: 'research', url: 'research.html', keywords: 'wire news stats' },
   { id: 'league', type: 'Pages', title: 'League Mode', meta: 'Sleeper rosters, standings, matchups, and trade wire', icon: 'spark', url: 'index.html#league', keywords: 'sleeper roster league' },

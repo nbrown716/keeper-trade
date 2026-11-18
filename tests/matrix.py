@@ -5,8 +5,9 @@ import asyncio, json, re, sys
 from playwright.async_api import async_playwright
 
 BASE = _os.environ.get('KT_BASE', 'http://127.0.0.1:4173/')  # KT_BASE=https://keeper-trade.pages.dev/ audits production
-ROUTES = ['deals.html', 'wrapped.html', 'weather.html', 'index.html', 'keeper.html', 'redraft.html', 'rankings.html', 'research.html', 'tools.html', 'game.html',
+ROUTES = ['dynasty.html', 'trade-values.html', 'deals.html', 'wrapped.html', 'weather.html', 'index.html', 'keeper.html', 'redraft.html', 'rankings.html', 'research.html', 'tools.html', 'game.html',
           'sunday.html', 'war-room.html', 'mock-draft.html', 'season-sim.html', 'pulse.html', 'drive.html', 'command.html']
+if _os.environ.get('KT_ROUTES'): ROUTES = _os.environ['KT_ROUTES'].split(',')   # KT_ROUTES=dynasty.html,rankings.html checks just those
 # 'third-party down' = everything except the site under test (local server or the live site)
 THIRD_PARTY = re.compile(r'^https?://(?!' + re.escape(BASE.split('/')[2]) + r'/).*')
 MODE = sys.argv[1] if len(sys.argv) > 1 else 'mobile'   # mobile | down

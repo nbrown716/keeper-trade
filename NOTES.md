@@ -684,3 +684,58 @@ We studied market.qlinch.co's features as a user. We built our own versions; no 
 - FAILURE: a KT_REMOTE deals_test run relayed POST /votes to the live Worker and cast a real "Even" vote in the league (trade 1424650384244240384). Removed both KV keys by hand in the dashboard; live count back to 0/0/0.
 - Root cause: matrix.worker_relay forwarded every method. Safeguard: relay is now READ-ONLY (non-GET gets {"status":"resting"}). Proof: the deals_test production re-run passed 25/25 and the live count stayed 0.
 - Rule: no test may ever write to a live backend. New relays and proxies must stub writes.
+
+## 2026-11-12 - League scoring sync, Dynasty calculator, Trade Value Chart, player card fix
+
+### What shipped
+- **Player card bug (owner, 11/11):** on the Keeper calculator the photo card stayed up after picking a search result. Cause: picking a result removed the row under the mouse, so `mouseleave` never fired. Now: picking always closes it; clicking a player's name pins the card; clicking outside, the name again, Esc, the x, or scrolling away closes it. Ctrl/middle-click still opens FantasyPros. Test: `tests/player_card.py`.
+- **League scoring sync** (`js/data/scoring-format.js`, `js/ui/format-bar.js`, `css/format-bar.css`): one format for the whole site (`localStorage kt-format:v1`; default = the connected Sleeper league). Bar: NON-PPR / HALF-PPR / PPR / TEP / MY LEAGUE + Pass TD 4|6 + 1QB|Superflex. On Keeper, Dynasty, Rankings, Trade Value Chart. Deals always prices a league's trades in that league's scoring.
+  - FantasyCalc is requested in the format (numQbs, ppr).
+  - **Dynasty Dealer is a Superflex PPR market** (its QBs match FantasyCalc Superflex, RMSE 17.6, not 1QB, RMSE 43.8; the API echoes sf/tep flags but returns identical values). Each Dealer value is moved by FantasyCalc's (format / Superflex PPR) ratio for that player (position median when missing).
+  - **Consequence for the 1QB league:** QBs were ~40% high before (Superflex Dealer averaged with 1QB FantasyCalc). Josh Allen 7,7xx -> ~5,300. Non-QBs barely move. Keeper math is untouched (inputs only); `market_parity.py` still holds.
+  - Rules no source prices (passing-TD points, TE/RB/WR reception bonus, off-bucket PPR): Sleeper season projections (`/projections/nfl/{season}`, 6 h cadence), scored under league rules and source rules; multiplier = ratio of points over a waiver-level replacement (2.5x starters), at 60% strength, capped 0.8-1.25. Untouched positions get exactly 1.
+  - **Calibration (`tests/calibration/format_calibration.py`):** first cut (1.5x baseline, 75%) was unstable: neighbouring QBs ranged 0.4 to 3.1 raw. Against real-trade TE-premium markets (Qlinch 1QB+TEP vs 1QB, top 12 TEs, read 11/12) the raw ratio overshot by ~9 points; 0.6 fits best. FantasyCalc's own PPR switch is only a per-position scalar (WR -1.8%, TE -2.3%, RB +0.6%), so it could not calibrate anything.
+  - Scale: each source is scaled against its own top value after the format shift and before the rule multipliers, so a boosted player never rescales others. A boosted top player can exceed 10,000 (Superflex + 6-pt TDs: Allen ~10,800).
+- **Dynasty Trade Calculator** (`dynasty.html`, `js/features/dynasty.js`, `js/data/dynasty-engine.js`, `css/dynasty.css`): players + rookie picks (2027-2029, rounds 1-4, early/mid/late, both markets), values in points or 1sts, package adjustment (1 / .85 / .75 / .65 / .55 / .5, a disclosed model setting, toggle), range between the two markets, the call (5% fair, 15% lean), even-up suggestions (one tap), load league rosters and owned picks, player card, share link (`?a=&b=`), saved on reload. No keeper cost and no 1,000 band here.
+- **Trade Value Chart** (`trade-values.html`, `js/features/trade-values.js`): Week N from Sleeper state; QB/RB/WR/TE tables; value, 30-day move, next three opponents and byes (Sleeper weekly projections, QB rows); "This season" (FantasyCalc redraft) or "Keeper & Dynasty" (the calculators' market); own players highlighted. Live, not a weekly export.
+- **Rankings:** PPR/QB chips replaced by the format bar; values re-ranked after scoring rules; % tag shows the rule's effect.
+- **Header:** Dynasty + Values links. Weather, League and Tools leave the desktop bar below 2200 px (Home, phone More menu and search still reach them).
+
+### Failures found while building, and the safeguard for each
+| Failure | Root cause | Safeguard |
+|---|---|---|
+| Card stuck open (owner) | no close path when the hovered row is removed | `player_card.py`; card logic has explicit close on pick / outside / Esc / scroll |
+| Dynasty card closed the instant it opened when the tap scrolled the page | closed on any scroll event | closes only after 24 px of page scroll; `dynasty_test.py` asserts the card is visible and on screen on a phone |
+| Scoring multiplier swung 0.4-3.1 between similar QBs | replacement baseline too shallow for a flat QB curve | calibrated depth + strength; `format_verify.py` asserts bands; calibration script kept in repo |
+| Superflex Allen priced 14,450 on a 10,000 scale | assumed Dealer was 1QB; it is Superflex | measured Dealer vs both FantasyCalc markets; `format_verify.py` asserts SF value <= 10,000 and the 1QB value sits on FantasyCalc 1QB |
+| Keeper page 439 px wide on a 390 px phone (search results off screen) | longer status chip could not wrap | chip wraps; matrix overflow check already covers keeper |
+| Header wrapped at 1280 and page scrolled sideways at 1536+ (1536 was already broken live) | 16 nowrap links + search button never fit | `tests/nav_fit.py` (1000-2560 px) in the gate |
+| Light theme contrast fail on new toggles | hard-coded dark text on accent | `var(--kt-on-accent)`; matrix light run |
+| Even-up suggestions changed with the search box | reused the filtered list | separate unfiltered pool |
+| Test assumed 4 tradeable rounds | league trades 3 (`draft_rounds`) | test reads the league setting |
+
+### Still open / owner decisions
+- Rankings "Keeper" board = average of redraft and dynasty FantasyCalc values; the Keeper calculator uses the Dealer + FantasyCalc dynasty blend. Same player, two "keeper" numbers. Not changed.
+- Week-over-week change needs stored history (no backend); the chart shows FantasyCalc's 30-day move instead.
+- FantasyPros API: the new key works (weekly, ROS, dynasty rankings + projections, 11/11 data). The old key in `Downloads\\refresh-draft-data.ps1` returns 403. Nothing on the site uses FantasyPros; using it needs a Worker secret (owner adds it) and a `/fp/*` route.
+- Redraft calculator keeps its own format toggles (not on the shared bar).
+- Package weights are a model setting, not market data.
+
+### 2026-11-18 addendum: gate failures after the calendar moved (none caused by the 11/12 code)
+The 11/12 gate run failed 8 suites. Re-run one at a time on 11/18:
+
+| Failure | Root cause | Safeguard |
+|---|---|---|
+| `season_verify2` mismatches | test hardcoded `W = 8` completed weeks | reads the week from Sleeper |
+| `league_test` "owner 7–1 / 1217.1" (x2) | record and points hardcoded from week 9 | expected values read from Sleeper rosters |
+| `league_test` Yahoo matchups 0 cards | mock answered only `week == '9'` | mock answers every in-season week; week 1 stays the empty case |
+| `live_mode` summary "" | test assumed the live week already has points (fails every Tue-Thu) | checks Sleeper: hidden before kickoff, "In progress" after; never a result |
+| `deep` hung at War Room counters | no trade in this week's feed to load; "Build counters" with no offer only wrote to the status line, so it looked dead | hint now also shows beside the button; test types an offer when the feed is empty and asserts the hint |
+| `deep` Start/Sit "unavailable" | the AI returned JSON with a missing comma; the Worker caches it, so the feature stayed off | shared tolerant parser `js/data/ai-json.js` (War Room, Pulse, Mock Draft); `tests/ai_json.py` uses the real answer |
+| matrix: Deals light theme contrast | RB tag `#0d7a4c` too light on a tinted row (showed up once an RB led the newest trade) | `#0a6039` in Deals and Rankings |
+| `deals_test`, `wrapped_entry`, `wr_audit` tracebacks | environmental on that run (all three pass unchanged) | none needed |
+| Chart "This season" did not equal Rankings Redraft / the Redraft calculator | chart rescaled FantasyCalc redraft to top = 10,000 | shows FantasyCalc's own number; test compares the chart to the Rankings board, QBs included |
+
+Rule reinforced: a test may not contain a week number, a record, a score or any other value the season changes. Read it from the source.
+
+Open: the Worker still caches an AI answer that is not valid JSON. The client now repairs the common slips; a Worker-side "do not cache unparseable answers" needs a Worker deploy (owner pastes `worker.js`). War Room shows the raw Dynasty Dealer number (a Superflex market) labelled "dealer"; it is not converted to league format.

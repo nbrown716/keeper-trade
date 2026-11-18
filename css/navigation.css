@@ -26,7 +26,7 @@
 .kt-site-brand em { color: var(--kt-accent); font-style: normal; }
 
 .kt-desktop-nav { display: flex; align-self: stretch; gap: var(--kt-space-1); }
-.kt-desktop-nav a { position: relative; display: inline-flex; min-height: var(--kt-tap); align-items: center; padding-inline: var(--kt-space-3); color: var(--kt-text-secondary); font-size: var(--kt-text-sm); font-weight: 650; text-decoration: none; transition: color var(--kt-duration-micro) ease; }
+.kt-desktop-nav a { position: relative; display: inline-flex; min-height: var(--kt-tap); align-items: center; white-space: nowrap; padding-inline: var(--kt-space-3); color: var(--kt-text-secondary); font-size: var(--kt-text-sm); font-weight: 650; text-decoration: none; transition: color var(--kt-duration-micro) ease; }
 .kt-desktop-nav a::after { position: absolute; inset: auto var(--kt-space-3) 0; height: 2px; border-radius: 2px; background: var(--kt-accent); content: ""; opacity: 0; transform: scaleX(0.3); transition: transform var(--kt-duration-standard) var(--kt-ease-spring), opacity var(--kt-duration-micro) ease; }
 .kt-desktop-nav a:hover, .kt-desktop-nav a[aria-current="page"] { color: var(--kt-text-primary); }
 .kt-desktop-nav a:hover::after, .kt-desktop-nav a[aria-current="page"]::after { opacity: 1; transform: scaleX(1); }
@@ -84,16 +84,20 @@
 .kt-command-footer span { display: inline-flex; align-items: center; gap: var(--kt-space-1); }
 .kt-command-footer .kt-command-hint { margin-left: auto; }
 
-@media (min-width: 62.01rem) and (max-width: 94rem) {
+/* The bar holds 13 links. Weather, League and Tools (reachable from Home, the phone "More" menu and search, Ctrl K)
+   only join it on very wide screens: with all 16 the page scrolled sideways at 1536 and 1920 px (found 11/12). */
+@media (max-width: 137.49rem) {
+  .kt-desktop-nav a[href="tools.html"], .kt-desktop-nav a[href="weather.html"], .kt-desktop-nav a[href="index.html#league"] { display: none; }
+}
+@media (min-width: 62.01rem) and (max-width: 106rem) {
   .kt-site-header-inner { gap: var(--kt-space-3); }
   .kt-desktop-nav a { padding-inline: var(--kt-space-2); font-size: var(--kt-text-xs); }
-  .kt-desktop-nav a[href="tools.html"] { display: none; }
   .kt-command-trigger { min-width: var(--kt-tap); width: var(--kt-tap); padding: 0; justify-content: center; }
   .kt-command-trigger > span:not(.kt-key), .kt-command-trigger .kt-key { display: none; }
 }
 
 @media (min-width: 62.01rem) and (max-width: 75rem) {
-  .kt-desktop-nav a[href="redraft.html"], .kt-desktop-nav a[href="rankings.html"], .kt-desktop-nav a[href="tools.html"] { display: none; }
+  .kt-desktop-nav a[href="redraft.html"], .kt-desktop-nav a[href="rankings.html"], .kt-desktop-nav a[href="tools.html"], .kt-desktop-nav a[href="season-sim.html"], .kt-desktop-nav a[href="pulse.html"] { display: none; }
 }
 
 @media (max-width: 62rem) {

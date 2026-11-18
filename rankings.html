@@ -33,22 +33,22 @@
   <link rel="stylesheet" href="css/design-system.css">
   <link rel="stylesheet" href="css/navigation.css">
   <link rel="stylesheet" href="css/rankings.css">
+<link rel="stylesheet" href="css/format-bar.css">
 </head>
 <body>
   <main class="rk-shell">
     <header class="rk-heading">
       <span class="kt-eyebrow">Live consensus · FantasyCalc</span>
       <h1>RANKINGS <span id="rk-mode-label">Redraft</span></h1>
-      <p>Live player values tuned to your format and scoring. Filter by position or team, search a player, or show only your roster.</p>
+      <p>Live player values priced in your league's exact scoring: PPR or standard, 4 or 6 point passing touchdowns, TE premium, 1QB or Superflex. Filter by position or team, search a player, or show only your roster.</p>
     </header>
     <div class="rk-modes" id="rk-mode" role="group" aria-label="Board">
       <button class="kt-chip" type="button" data-v="redraft" aria-pressed="true">Redraft</button>
       <button class="kt-chip" type="button" data-v="keeper" aria-pressed="false">Keeper</button>
       <button class="kt-chip" type="button" data-v="dynasty" aria-pressed="false">Dynasty</button>
     </div>
+    <div id="rk-format" class="kt-fmt rk-format"></div>
     <section class="rk-controls" aria-label="Filters">
-      <div class="rk-field"><span id="rk-ppr-label">Scoring</span><div class="rk-group" id="rk-ppr" role="group" aria-labelledby="rk-ppr-label"><button class="kt-chip" type="button" data-v="1" aria-pressed="true">PPR</button><button class="kt-chip" type="button" data-v="0.5" aria-pressed="false">Half</button><button class="kt-chip" type="button" data-v="0" aria-pressed="false">Non</button></div></div>
-      <div class="rk-field"><span id="rk-qb-label">Quarterbacks</span><div class="rk-group" id="rk-qb" role="group" aria-labelledby="rk-qb-label"><button class="kt-chip" type="button" data-v="1" aria-pressed="true">1QB</button><button class="kt-chip" type="button" data-v="2" aria-pressed="false">Superflex</button></div></div>
       <div class="rk-field"><span id="rk-pos-label">Position</span><div class="rk-group" id="rk-pos" role="group" aria-labelledby="rk-pos-label"><button class="kt-chip" type="button" data-v="ALL" aria-pressed="true">All</button><button class="kt-chip" type="button" data-v="QB" aria-pressed="false">QB</button><button class="kt-chip" type="button" data-v="RB" aria-pressed="false">RB</button><button class="kt-chip" type="button" data-v="WR" aria-pressed="false">WR</button><button class="kt-chip" type="button" data-v="TE" aria-pressed="false">TE</button></div></div>
       <div class="rk-field"><label for="rk-team">Team</label><select class="kt-control" id="rk-team"><option value="ALL">All teams</option></select></div>
       <div class="rk-field rk-search"><label for="rk-search">Search</label><input class="kt-control" type="search" id="rk-search" placeholder="Player name…" autocomplete="off"></div>
@@ -56,7 +56,6 @@
     </section>
     <div class="rk-meta">
       <p class="rk-status is-loading" id="rk-status" role="status" aria-live="polite"><span class="rk-dot"></span>Loading values…</p>
-      <p class="rk-tuned kt-badge kt-badge-blue" id="rk-tuned" hidden></p>
       <span class="rk-count" id="rk-count" aria-live="polite"></span>
     </div>
     <div class="rk-card">
@@ -69,7 +68,7 @@
       </div>
     </div>
     <button class="kt-btn kt-btn-secondary rk-more" type="button" id="rk-more" hidden>Show more</button>
-    <p class="rk-note"><b>Keeper</b> blends redraft and dynasty value, rewarding young, cheap-to-hold players without going full dynasty. <b>Redraft</b> is this-year value. <b>Dynasty</b> is long-term. Values and 30-day trends come live from FantasyCalc. Keeper Trade is not affiliated with FantasyCalc.</p>
+    <p class="rk-note"><b>Keeper</b> blends redraft and dynasty value, rewarding young, cheap-to-hold players without going full dynasty. <b>Redraft</b> is this-year value. <b>Dynasty</b> is long-term. Values and 30-day trends come live from FantasyCalc in the selected scoring. Passing-touchdown points and TE premium, which no value source prices, are applied from Sleeper's live season projections: a player moves by how much the rule changes his points over a replacement starter at his position (the % beside his value). Keeper Trade is not affiliated with FantasyCalc or Sleeper.</p>
   </main>
   <script type="module" src="js/features/rankings.js"></script>
   <script type="module" src="js/pwa.js"></script>

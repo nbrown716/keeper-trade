@@ -12,7 +12,9 @@ def check(ok, msg): results.append(bool(ok)); print('PASS' if ok else 'FAIL', ms
 
 JS = r"""(async () => {
   const E = window.TradeEngine;
-  const db = E.players().filter(p => !p.pick && p.ds != null && p.base > 0).slice(0, 120);
+  // players in today's live FantasyCalc feed (sleeperId comes from it). A built-in seed name that dropped out of the
+  // feed (11/11: Joe Mixon, FA) is not a pricing gap: Deals only prices live-feed players.
+  const db = E.players().filter(p => !p.pick && p.ds != null && p.base > 0 && p.sleeperId).slice(0, 120);
   const m = await import('./js/data/trade-market.js');
   const market = await m.getMarket('keeper');
   const players = db.map(p => { const mine = m.playerValue(market, p.sleeperId, p.n); return { name: p.n, calc: p.base, mine: mine ? mine.base : null }; });

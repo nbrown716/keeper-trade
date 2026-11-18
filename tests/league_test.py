@@ -1,7 +1,7 @@
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 REPO = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
-import asyncio, json, sys
+import asyncio, json, sys, urllib.request
 from playwright.async_api import async_playwright
 import yahoo_test as Y  # reuse fixtures + mock handler
 
@@ -61,7 +61,11 @@ async def main():
         rows = await pg.locator('.kt-standing-row').count()
         check(rows == 12, f'current league renders 12 standings rows ({rows})')
         text = await pg.locator('.kt-standings-card').inner_text()
-        check('7–1' in text and '1217.1' in text, 'owner 7–1 / 1217.1 visible')
+        # expected record and points come from Sleeper now, never a literal (was '7–1 / 1217.1', true only in week 9)
+        raw = json.load(urllib.request.urlopen(urllib.request.Request(f'https://api.sleeper.app/v1/league/{CUR}/rosters', headers={'User-Agent': 'KeeperTrade/1.0'})))
+        best = max(raw, key=lambda r: (r['settings']['wins'], r['settings']['fpts'] + r['settings'].get('fpts_decimal', 0) / 100))
+        rec = f"{best['settings']['wins']}–{best['settings']['losses']}"; pts = f"{best['settings']['fpts'] + best['settings'].get('fpts_decimal', 0) / 100:.1f}"
+        check(rec in text and pts in text, f'the league leader shows the record and points Sleeper reports ({rec} / {pts})')
         await pg.click('#league-add'); await pg.wait_for_selector('#sleeper-id')
         await pg.fill('#sleeper-id', PREV); await pg.click('#sleeper-connect button[type=submit]')
         await pg.wait_for_selector('#league-active', timeout=45000); await pg.wait_for_selector('.kt-standing-row', timeout=45000)
@@ -73,7 +77,7 @@ async def main():
         await pg.wait_for_selector('.kt-standing-row', timeout=45000); await pg.wait_for_timeout(2500)
         sel = await pg.eval_on_selector('#league-active', 'e => e.value')
         stand = await pg.locator('.kt-standings-card').inner_text()
-        check(sel == f'sleeper:{CUR}' and '7–1' in stand, 'rapid switching ends on the last-selected league')
+        check(sel == f'sleeper:{CUR}' and rec in stand and pts in stand, 'rapid switching ends on the last-selected league')
         await pg.reload(); await pg.wait_for_selector('.kt-standing-row', timeout=45000)
         check(await pg.eval_on_selector('#league-active', 'e => e.value') == f'sleeper:{CUR}', 'active league persists after reload')
         pg.once('dialog', lambda d: asyncio.ensure_future(d.accept()))

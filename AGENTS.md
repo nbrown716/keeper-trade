@@ -60,6 +60,8 @@
 - Sleeper: `https://api.sleeper.app/v1/...` (league, rosters, users, matchups/{week}, transactions/{week}, state/nfl; players DB at `/players/nfl` — large, cache in IndexedDB)
 - Dynasty Dealer values: `https://www.dynastydealer.com/api/player-values`
 - FantasyCalc values: `https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=1&numTeams=12&ppr=1`
+- Sleeper projections (scoring-rule adjustments and the schedule): `https://api.sleeper.app/projections/nfl/{season}` and `/projections/nfl/{season}/{week}`. Refresh at least every 6 hours.
+- Dynasty Dealer is a **Superflex PPR** market. Never average it with 1QB values directly: go through `js/data/scoring-format.js`, which converts it to the league's format.
 - Weather: `https://api.open-meteo.com/v1/forecast` (always attribute "Weather data by Open-Meteo.com" somewhere visible)
 - Yahoo Fantasy (OAuth, NOT keyless): only through the Cloudflare Worker `/yahoo/*` routes. The browser holds a random session ID only; tokens stay in Worker KV. Always show "Fantasy data provided by Yahoo Fantasy" attribution. See `worker/DEPLOY.md`.
 - ESPN is reached through the Worker `/espn/*` proxy (direct browser calls fail CORS).

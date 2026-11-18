@@ -32,7 +32,9 @@ function fcSource(dynasty) {
 }
 
 // Pure: build the value curve from raw FantasyCalc + Dealer payloads.
-export function buildMarket(fcRows, dealer, type = 'keeper') {
+// anchors: { fcMax, dMax } from scoring-format applyFormat. Each source stays normalized against its OWN raw top
+// value, so a scoring-boosted QB never rescales everyone else (same anchors as keeper.html).
+export function buildMarket(fcRows, dealer, type = 'keeper', anchors = {}) {
   const live = new Map();
   let fcMax = 0;
   const fcPicks = new Map();
@@ -43,8 +45,9 @@ export function buildMarket(fcRows, dealer, type = 'keeper') {
     if (position === 'PICK') { fcPicks.set(player.name, value); return; }
     if (!POSITIONS.includes(position) || !player.name) return;
     if (value > fcMax) fcMax = value;
+    if (anchors.fcMax) fcMax = anchors.fcMax;
     const key = keyOf(player.name);
-    if (value > (live.get(key)?.fc || 0)) live.set(key, { key, name: player.name, pos: position, team: player.maybeTeam || 'FA', age: player.maybeAge ?? null, sleeperId: player.sleeperId ? String(player.sleeperId) : '', fc: value, trend: Number(row.trend30Day || 0) });
+    if (value > (live.get(key)?.fc || 0)) live.set(key, { key, name: player.name, pos: position, team: player.maybeTeam || 'FA', age: player.maybeAge ?? null, sleeperId: player.sleeperId ? String(player.sleeperId) : '', fc: value, trend: Number(row.trend30Day || 0), adj: Number(row.formatM || 1) });
   });
   const useDealer = type !== 'redraft' && dealer?.players?.length;
   const dById = new Map();
@@ -53,6 +56,7 @@ export function buildMarket(fcRows, dealer, type = 'keeper') {
   let dMax = 0;
   if (useDealer) {
     dealer.players.forEach(row => { if (row.position !== 'PICK') dMax = Math.max(dMax, Number(row.current_value || 0)); });
+    if (anchors.dMax) dMax = anchors.dMax;
     dealer.players.forEach(row => {
       const value = Number(row.current_value || 0);
       if (row.position === 'PICK') { dPicks.set(String(row.sleeper_id), value); return; }
@@ -77,14 +81,19 @@ export function buildMarket(fcRows, dealer, type = 'keeper') {
   return { type, players, byId, byName, fcMax, dMax, fcPicks, dPicks, sources: { fc: fcMax > 0, dealer: Boolean(useDealer) && dMax > 0 } };
 }
 
-export async function getMarket(type = 'keeper') {
+// format: a scoring-format object (league scoring, passing-TD points, TE premium, 1QB/SF). Omitted: the active
+// format (the connected league unless the user picked one), exactly what the calculators use.
+export async function getMarket(type = 'keeper', format = null, { force = false } = {}) {
   const dynasty = type !== 'redraft';
-  const [fc, dealer] = await Promise.all([
-    liveData.get(fcSource(dynasty)).catch(() => null),
-    type !== 'redraft' ? liveData.get(dealerSource()).catch(() => null) : Promise.resolve(null)
-  ]);
-  if (!Array.isArray(fc) || !fc.length) throw new Error('Live values are reconnecting.');
-  return buildMarket(fc, dealer, type);
+  const F = await import('./scoring-format.js');
+  const fmt = format || await F.getActiveFormat();
+  const src = await F.formatSources(fmt, { dynasty, dealer: type !== 'redraft', force });
+  if (!Array.isArray(src.fc) || !src.fc.length) throw new Error('Live values are reconnecting.');
+  const market = buildMarket(src.fc, src.dealer, type, { fcMax: src.fcMax, dMax: src.dMax });
+  market.format = fmt;
+  market.mult = src.mult;
+  market.projected = src.projected;
+  return market;
 }
 
 export function playerValue(market, id, name) {
@@ -123,6 +132,38 @@ export function pickValue(market, pick, ctx) {
     return Math.round(parts.reduce((sum, value) => sum + value, 0) / parts.length * Math.pow(0.92, extraYears) * 100);
   }
   return null;
+}
+
+// Dynasty rookie pick by draft year, round and likely slot (early / mid / late), from both live sources.
+// Dealer prices every year x round x slot. FantasyCalc prices slots for the next draft only, so for later years its
+// year-round value is moved by the Dealer's own slot-to-mid ratio. Each source is normalized against its own top
+// player (same rule as players). Returns display-scale { value, low, high } (low/high = the two sources) or null.
+const ORDINAL = ['1st', '2nd', '3rd', '4th'];
+export function dynastyPickYears(market) {
+  const years = new Set();
+  market.dPicks.forEach((_, key) => { const y = Number(String(key).split('_')[1]); if (y) years.add(y); });
+  market.fcPicks.forEach((_, key) => { const y = Number(String(key).slice(0, 4)); if (y) years.add(y); });
+  return [...years].sort((a, b) => a - b);
+}
+export function dynastyPick(market, { season, round, slot = 'mid' }) {
+  round = Number(round);
+  if (!(round >= 1 && round <= 4)) return null;
+  const years = dynastyPickYears(market);
+  if (!years.length) return null;
+  const lastYear = years[years.length - 1];
+  const year = Math.min(Math.max(Number(season), years[0]), lastYear);
+  const extraYears = Math.max(0, Number(season) - lastYear);
+  const d = market.dPicks.get(`pick_${year}_${round}_${slot}`);
+  const dMid = market.dPicks.get(`pick_${year}_${round}_mid`);
+  let f = market.fcPicks.get(`${year} ${ORDINAL[round - 1]} (${slot[0].toUpperCase()}${slot.slice(1)})`);
+  if (f == null) {
+    const generic = market.fcPicks.get(`${year} ${ORDINAL[round - 1]}`);
+    if (generic != null) f = slot !== 'mid' && d > 0 && dMid > 0 ? generic * d / dMid : generic;
+  }
+  const parts = [d != null && market.dMax ? d / market.dMax * 100 : null, f != null && market.fcMax ? f / market.fcMax * 100 : null].filter(value => value != null);
+  if (!parts.length) return null;
+  const k = Math.pow(0.92, extraYears) * 100;
+  return { value: Math.round(parts.reduce((sum, value) => sum + value, 0) / parts.length * k), low: Math.round(Math.min(...parts) * k), high: Math.round(Math.max(...parts) * k), sources: parts.length };
 }
 
 // One "pick" unit = a mid 1st in the next draft, in this league's structure.

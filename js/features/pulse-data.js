@@ -1,3 +1,4 @@
+import { parseAiJson } from '../data/ai-json.js';
 import { getLeagueBundle, getLeagueLineage, leagueUsers, rosterOwner, rosterPoints } from '../data/sleeper.js';
 import { getPlayerDatabase } from '../data/player-db.js';
 import { askAI } from '../data/ai.js';
@@ -374,14 +375,8 @@ export async function loadPulseData(leagueId, week) {
 
 function parseJSON(result) {
   if (result?.status !== 'ready' || !result.text) throw new Error('AI unavailable');
-  const text = result.text.replace(/^```(?:json)?\s*/i, '').replace(/```$/g, '').trim();
-  try { return JSON.parse(text); }
-  catch (_) {
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
-    throw new Error('Unexpected AI format');
-  }
+  try { return parseAiJson(result.text); }
+  catch (_) { throw new Error('Unexpected AI format'); }
 }
 
 function numericTokens(value) {

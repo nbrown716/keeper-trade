@@ -152,6 +152,13 @@
     border-radius:12px;box-shadow:var(--shadow);padding:12px;pointer-events:none;opacity:0;
     transform:translateY(-4px);transition:opacity .12s,transform .12s}
   #pop.show{opacity:1;transform:none}
+  #pop.pinned{pointer-events:auto}
+  #valStatus{white-space:normal;max-width:100%;height:auto;line-height:1.35;padding-block:6px} /* names the format now: wrap, never widen the page */
+  .pop-x{position:absolute;top:6px;right:6px;width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--ink-faint);font-size:18px;line-height:1;cursor:pointer;display:none}
+  #pop.pinned .pop-x{display:block}
+  .pop-x:hover,.pop-x:focus-visible{background:var(--line-soft);color:var(--ink)}
+  .pop-foot a{color:var(--gold);font-weight:700;text-decoration:none}
+  .pop-foot a:hover{text-decoration:underline}
   .pop-head{display:flex;gap:9px;align-items:center;margin-bottom:11px}
   .pop-name{font-weight:800;font-size:15px;line-height:1.1}
   .pop-team{font-size:11px;color:var(--ink-faint);font-weight:600;margin-top:1px}
@@ -263,6 +270,7 @@
 <link rel="stylesheet" href="css/design-system.css">
 <link rel="stylesheet" href="css/navigation.css?v=2">
 <link rel="stylesheet" href="css/trade-desk.css">
+<link rel="stylesheet" href="css/format-bar.css">
 <link rel="stylesheet" href="css/mascot.css">
     </head>
 <body>
@@ -286,9 +294,10 @@
     </div>
   </header>
 
+  <div id="ktFormat" class="kt-fmt"></div>
   <section class="league" aria-label="League settings">
     <span class="chip"><b>12</b>-team</span>
-    <span class="chip"><b>Full PPR</b></span>
+    <span class="chip" id="fmtChip"><b>Full PPR</b></span>
     <span class="chip">Snake · <b>2 keepers</b></span>
     <span class="chip">Cost: <b>−1 round / yr</b></span>
     <span class="chip">Cap: keep while cost <b>≤ 1st</b></span>
@@ -887,7 +896,7 @@
     var input=document.querySelector('[data-search="'+side+'"]');
     var box=document.querySelector('[data-results="'+side+'"]');
     var hi=-1, matches=[];
-    function close(){ box.classList.remove("open"); box.innerHTML=""; hi=-1; }
+    function close(){ box.classList.remove("open"); box.innerHTML=""; hi=-1; if(!popPinned) hidePopNow(); }
     function render(q){
       q=q.trim().toLowerCase();
       if(!q){ close(); return; }
@@ -909,7 +918,7 @@
       box.classList.add("open");
       box.querySelectorAll(".res").forEach(function(el){
         var p=matches[+el.getAttribute("data-i")];
-        el.addEventListener("mousedown",function(ev){ ev.preventDefault();
+        el.addEventListener("mousedown",function(ev){ ev.preventDefault(); hidePopNow();
           addAsset(side, p); input.value=""; close(); input.focus(); });
         if(p && !p.pick){ el.addEventListener("mouseenter",function(){showPop(el,p);}); el.addEventListener("mouseleave",hidePop); }
       });
@@ -1016,11 +1025,29 @@
         '<div><span>Bye</span><b>'+bye+'</b></div>'+
         trendCell+
       '</div>'+
-      '<div class="pop-foot">Click name → full FantasyPros profile ↗</div>';
+      '<div class="pop-foot">'+(popPinned
+        ? '<a href="'+esc(fpUrl(p))+'" target="_blank" rel="noopener">Full FantasyPros profile ↗</a>'
+        : 'Click name to pin this card')+'</div>'+
+      '<button class="pop-x" type="button" aria-label="Close player card">×</button>';
   }
+  // The card never outlives what opened it: hover shows a preview; clicking a player's name pins it (click the
+  // name again, click anywhere else, press Esc, or scroll to close). Picking a search result always closes it.
+  var popPinned=false, popAnchor=null, popScrollY=0;
+  function hidePopNow(){ clearTimeout(popT); pop.classList.remove("show","pinned"); popPinned=false; popAnchor=null; }
+  pop.addEventListener("click",function(ev){ if(ev.target.closest(".pop-x")) hidePopNow(); });
+  document.addEventListener("pointerdown",function(ev){
+    if(!pop.classList.contains("show")) return;
+    if(pop.contains(ev.target) || (popAnchor && popAnchor.contains(ev.target))) return;
+    hidePopNow();
+  },true);
+  document.addEventListener("keydown",function(ev){ if(ev.key==="Escape" && pop.classList.contains("show")) hidePopNow(); });
+  // a pinned card survives a few pixels of settle (a tap that nudges the page); scrolling away closes it
+  window.addEventListener("scroll",function(){ if(!pop.classList.contains("show")) return; if(popPinned && Math.abs(window.scrollY-popScrollY)<=24) return; hidePopNow(); },{passive:true,capture:true});
+  window.addEventListener("resize",function(){ if(pop.classList.contains("show")) hidePopNow(); },{passive:true});
   function showPop(el,p){
     if(!p||p.pick) return;
     clearTimeout(popT);
+    popAnchor=el;
     pop.innerHTML=popHTML(p);
     var r=el.getBoundingClientRect(), w=270;
     var left=Math.max(8, Math.min(r.left, window.innerWidth-w-8));
@@ -1029,10 +1056,17 @@
     pop.style.left=left+"px"; pop.style.top=top+"px";
     pop.classList.add("show");
   }
-  function hidePop(){ popT=setTimeout(function(){ pop.classList.remove("show"); }, 60); }
+  function hidePop(){ if(popPinned) return; popT=setTimeout(function(){ pop.classList.remove("show"); popAnchor=null; }, 60); }
+  var finePointer=window.matchMedia("(hover:hover) and (pointer:fine)");
   function attachPop(el,p){
-    el.addEventListener("mouseenter",function(){ showPop(el,p); });
+    el.addEventListener("mouseenter",function(){ if(finePointer.matches && !popPinned) showPop(el,p); });
     el.addEventListener("mouseleave",hidePop);
+    el.addEventListener("click",function(ev){
+      if(ev.ctrlKey||ev.metaKey||ev.shiftKey||ev.button===1) return; // modified click still opens the FantasyPros profile
+      ev.preventDefault();
+      if(popPinned && popAnchor===el){ hidePopNow(); return; }
+      popPinned=true; popScrollY=window.scrollY; showPop(el,p); pop.classList.add("pinned");
+    });
   }
 
   // ---- init ----
@@ -1052,8 +1086,9 @@
   function setValStatus(state){
     var el=document.getElementById("valStatus"); if(!el) return;
     el.className="chip valstat "+state;
-    if(state==="live")        el.innerHTML='<span class="dot"></span>Values: <b>live</b> · FantasyCalc + Dynasty Dealer';
-    else if(state==="partial")el.innerHTML='<span class="dot"></span>Values: <b>live</b> · FantasyCalc (Dynasty Dealer reconnecting)';
+    var fl = curFormatLabel ? ' · '+esc(curFormatLabel) : '';
+    if(state==="live")        el.innerHTML='<span class="dot"></span>Values: <b>live</b> · FantasyCalc + Dynasty Dealer'+fl+(curProjOk?'':' (scoring adjustment reconnecting)');
+    else if(state==="partial")el.innerHTML='<span class="dot"></span>Values: <b>live</b> · FantasyCalc (Dynasty Dealer reconnecting)'+fl;
     else if(state==="loading")el.innerHTML='<span class="dot"></span>Values: <b>refreshing…</b>';
     else                      el.innerHTML='<span class="dot"></span>Values: <b>snapshot</b> · click to retry';
   }
@@ -1066,12 +1101,23 @@
   var DD_URL = "https://www.dynastydealer.com/api/player-values";
   var REFRESH_MS = 15*60*1000, lastLive = 0, liveBusy = false;
   function getJSON(u){ return fetch(u, {cache:"no-store"}).then(function(r){ if(!r.ok) throw 0; return r.json(); }); }
-  function fetchLive(){
-    if(liveBusy) return; liveBusy = true;
+  // League scoring sync (js/data/scoring-format.js): FantasyCalc in the league's format, Dealer shifted the same
+  // way, passing-TD / TE-premium rules from live Sleeper projections. Inputs only; the calculator math is untouched.
+  var curFormatLabel = "", curProjOk = true, livePending = false;
+  function fetchLive(force){
+    force = force === true;
+    if(liveBusy){ livePending = true; return; } liveBusy = true;
     setValStatus("loading");
-    var dealer = getJSON(DD_URL).catch(function(){ return null; });
-    getJSON(FC_URL).then(function(data){ return dealer.then(function(dd){ return [data, dd]; }); }).then(function(pair){
-      var data = pair[0], dd = pair[1];
+    import("./js/data/scoring-format.js").then(function(F){
+      return F.getActiveFormat().then(function(fmt){
+        curFormatLabel = F.formatLabel(fmt);
+        var chip = document.getElementById("fmtChip"); if(chip) chip.innerHTML = "<b>"+esc(F.recLabel(fmt.rec))+"</b>"+(fmt.passTd!==4?" · "+fmt.passTd+"pt pass TD":"")+(fmt.tep?" · TEP":"")+(fmt.sf?" · SF":"");
+        return F.formatSources(fmt, {dynasty:true, force:force});
+      });
+    }).then(function(src){
+      if(!src.fc || !src.fc.length) throw 0;
+      curProjOk = src.projected;
+      var data = src.fc, dd = src.dealer;
       var live={}, meta={}, max=0;
       (data||[]).forEach(function(row){
         var pl=row.player||{}, pos=(pl.position||"").toUpperCase();
@@ -1086,6 +1132,7 @@
         }
       });
       if(max<=0) throw 0;
+      if(src.fcMax>0) max = src.fcMax; // anchor = FantasyCalc's own raw top value (a boosted QB never rescales others)
       // attach photos + live bio to matching players
       DB.forEach(function(p){
         var m=meta[keyOf(p.n)]; if(!m) return;
@@ -1107,6 +1154,7 @@
       if(dd && dd.players && dd.players.length){
         var byId={}, byName={}, dmax=0;
         dd.players.forEach(function(r){ if(r.position==="PICK") return; var v=+r.current_value||0; if(v>dmax) dmax=v; });
+        if(src.dMax>0) dmax = src.dMax; // Dealer's own raw top value
         if(dmax>0){
           dd.players.forEach(function(r){ if(r.position==="PICK") return; var v=(+r.current_value||0)/dmax*100;
             if(r.sleeper_id) byId[String(r.sleeper_id)]=v; byName[keyOf(r.name||"")]=v; });
@@ -1120,12 +1168,14 @@
       applyBlend(merged, max);
       lastLive = Date.now();
       setValStatus(dealerOk ? "live" : "partial");
-    }).catch(function(){ setValStatus("snap"); }).then(function(){ liveBusy = false; });
+    }).catch(function(){ setValStatus("snap"); }).then(function(){ liveBusy = false; if(livePending){ livePending = false; fetchLive(); } });
   }
+  window.addEventListener("kt:format-change", function(){ fetchLive(false); });
+  import("./js/ui/format-bar.js").then(function(B){ B.mountFormatBar(document.getElementById("ktFormat")); }).catch(function(){});
   // Keep values live on an open page: refresh every 15 minutes while visible, and on return if stale.
-  setInterval(function(){ if(!document.hidden) fetchLive(); }, REFRESH_MS);
-  document.addEventListener("visibilitychange", function(){ if(!document.hidden && Date.now()-lastLive > REFRESH_MS) fetchLive(); });
-  document.getElementById("valStatus").addEventListener("click",fetchLive);
+  setInterval(function(){ if(!document.hidden) fetchLive(true); }, REFRESH_MS);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden && Date.now()-lastLive > REFRESH_MS) fetchLive(true); });
+  document.getElementById("valStatus").addEventListener("click",function(){ fetchLive(true); });
   fetchLive();
 })();
 </script>

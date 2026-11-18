@@ -27,6 +27,12 @@ SUITES = [
     ('values_live.py', 'passed', False),               # live-only value sources, <=6 h cadence, open-page refresh, baselines
     ('winprob_calibration.py', 'passed', False),       # win probability: backtest vs real results + sanity laws
     ('live_mode.py', 'passed', False),                 # Drive live mode + Matchup Pill on an in-progress week
+    ('ai_json.py', 'passed', False),                   # AI answers: tolerant JSON parser (real malformed answer from 11/18)
+    ('nav_fit.py', 'passed', False),                   # desktop header: one row, no overlap, no sideways scroll at 1000-2560 px
+    ('format_verify.py', 'passed', False),             # league scoring sync: all values vs an independent recomputation from raw payloads
+    ('player_card.py', 'passed', False),               # calculator player card always closes (owner bug 11/11)
+    ('dynasty_test.py', 'passed', False),              # Dynasty calculator: engine vs Python, picks, rosters vs Sleeper, card, share link
+    ('trade_values_test.py', 'passed', False),         # Trade Value Chart: values, week, opponents and byes vs raw Sleeper
     ('market_parity.py', 'passed', False),             # Deals prices players + keeper picks exactly like the Keeper calculator
     ('market_read.py', 'passed', False),               # calculator Market read numbers = the calculators' own engines
     ('deals_test.py', 'passed', False),                # Deals: every real trade vs raw Sleeper, model math, tabs, binder, votes

@@ -42,7 +42,10 @@ async def main():
         check('Live' in status and '% to win' in status, f'race end is LIVE with win % ("{status}")')
         check('wins' not in label.lower(), f'no winner announced while live ("{label[:90]}")')
         summary = await pg.inner_text('#drive-summary') if await pg.locator('#drive-summary').is_visible() else ''
-        check('in progress' in summary.lower() and 'win by' not in summary.lower() and 'loss by' not in summary.lower(), f'summary is honest while live ("{summary[:80]}")')
+        # Before the week's first kickoff there is nothing to summarise and the panel stays hidden (correct). Once any
+        # team has points it must say 'In progress'. Either way it must never call a result. (Was: failed every Tue-Thu.)
+        started = any((m.get('points') or 0) > 0 for m in json.load(urllib.request.urlopen(urllib.request.Request(f'https://api.sleeper.app/v1/league/1370223929452433408/matchups/{WEEK}', headers={'User-Agent': 'KeeperTrade/1.0'}))))
+        check(('in progress' in summary.lower() if started else summary == '') and 'win by' not in summary.lower() and 'loss by' not in summary.lower(), f'summary is honest while live: {"says In progress" if started else "hidden before kickoff"}, never a result ("{summary[:80]}")')
         live = await pg.evaluate("(async () => { const m = await import('./js/features/drive-data.js'); const r = await m.loadDriveRecap('1370223929452433408', %d, 9); return r.race.live && { pA: r.race.live.pA, projA: r.race.live.projA, projB: r.race.live.projB, leftA: r.race.live.leftA, target: r.race.target, finalA: r.race.finalA }; })()" % WEEK)
         check(live and 0 <= live['pA'] <= 1 and live['projA'] >= live['finalA'] and live['target'] >= live['finalA'], f'race.live attached ({live})')
         await pg.click('[data-drive-mode="map"]'); await pg.wait_for_timeout(500)

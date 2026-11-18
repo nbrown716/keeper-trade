@@ -6,38 +6,42 @@ import { mountNavigation } from '../ui/navigation.js';
 import { mountPageTransitions } from '../ui/page-transitions.js';
 import { getSleeperLeagueId, getLeagueBundle, getNflState } from '../data/sleeper.js';
 import { getActiveLeagueConnection } from '../data/league-connections.js';
+import { getActiveFormat, formatSources, formatLabel, needsProjection } from '../data/scoring-format.js';
+import { mountFormatBar } from '../ui/format-bar.js';
 
 const MANAGER_KEY = 'kt-drive-manager:v1';
 const PAGE = 150;
 const REFRESH_MS = 15 * 60 * 1000; // values are live: refetch every 15 minutes while the page is open
 const $ = selector => document.querySelector(selector);
 const els = {
-  mode: $('#rk-mode'), ppr: $('#rk-ppr'), qb: $('#rk-qb'), pos: $('#rk-pos'), team: $('#rk-team'), search: $('#rk-search'),
-  mine: $('#rk-mine'), mineWrap: $('#rk-mine-wrap'), status: $('#rk-status'), tuned: $('#rk-tuned'), rows: $('#rk-rows'),
+  mode: $('#rk-mode'), format: $('#rk-format'), pos: $('#rk-pos'), team: $('#rk-team'), search: $('#rk-search'),
+  mine: $('#rk-mine'), mineWrap: $('#rk-mine-wrap'), status: $('#rk-status'), rows: $('#rk-rows'),
   more: $('#rk-more'), count: $('#rk-count'), table: $('#rk-table'), modeLabel: $('#rk-mode-label')
 };
-const state = { mode: 'redraft', ppr: '1', qb: '1', pos: 'ALL', team: 'ALL', q: '', mine: false, limit: PAGE, rows: [], roster: new Set(), seq: 0 };
-const cache = new Map();
+const state = { mode: 'redraft', format: null, projected: true, pos: 'ALL', team: 'ALL', q: '', mine: false, limit: PAGE, rows: [], roster: new Set(), seq: 0 };
 let lastLoaded = 0;
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const norm = value => String(value || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 
-function url(dynasty) {
-  return `https://api.fantasycalc.com/values/current?isDynasty=${dynasty}&numQbs=${state.qb}&numTeams=12&ppr=${state.ppr}`;
+// One board = FantasyCalc in the active format (league scoring unless the user picked one), re-priced for the
+// rules no source models (js/data/scoring-format.js). force: a timed refresh on an open page.
+async function board(dynasty, force) {
+  const src = await formatSources(state.format, { dynasty, dealer: false, force });
+  if (!src.fc.length) throw new Error('Values unavailable');
+  state.projected = src.projected;
+  return mapRows(src.fc);
 }
-async function getJson(address, force = false) {
-  const hit = cache.get(address);
-  if (hit && !force && Date.now() - hit.at < REFRESH_MS) return hit.promise;
-  const promise = fetch(address, { cache: 'no-store' }).then(response => { if (!response.ok) throw new Error('Values unavailable'); return response.json(); });
-  cache.set(address, { promise, at: Date.now() });
-  promise.catch(() => { if (cache.get(address)?.promise === promise) { if (hit) cache.set(address, hit); else cache.delete(address); } });
-  return promise;
+function rank(list) {
+  list.sort((a, b) => b.val - a.val);
+  const counts = {};
+  list.forEach(player => { counts[player.pos] = (counts[player.pos] || 0) + 1; player.posRank = counts[player.pos]; });
+  return list;
 }
 function mapRows(data) {
   return (data || []).map(row => {
     const player = row.player || {};
-    return { name: player.name, pos: String(player.position || '').toUpperCase(), team: player.maybeTeam || 'FA', val: row.value, espnId: player.espnId, sleeperId: player.sleeperId ? String(player.sleeperId) : '', age: player.maybeAge, tier: row.maybeTier, trend: row.trend30Day, posRank: row.positionRank };
+    return { name: player.name, pos: String(player.position || '').toUpperCase(), team: player.maybeTeam || 'FA', val: Math.round(Number(row.value || 0)), adj: row.formatM || 1, espnId: player.espnId, sleeperId: player.sleeperId ? String(player.sleeperId) : '', age: player.maybeAge, tier: row.maybeTier, trend: row.trend30Day, posRank: row.positionRank };
   }).filter(player => ['QB', 'RB', 'WR', 'TE'].includes(player.pos) && player.name);
 }
 
@@ -45,8 +49,8 @@ function setStatus(kind) {
   els.status.className = `rk-status${kind === 'loading' ? ' is-loading' : kind === 'offline' ? ' is-offline' : ''}`;
   els.status.innerHTML = kind === 'loading' ? '<span class="rk-dot"></span>Loading values…'
     : kind === 'offline' ? '<span class="rk-dot"></span>Values are reconnecting. <button type="button" class="rk-retry">Retry</button>'
-    : '<span class="rk-dot"></span>Live · FantasyCalc';
-  els.status.querySelector('.rk-retry')?.addEventListener('click', load);
+    : `<span class="rk-dot"></span>Live · FantasyCalc · ${escapeHtml(state.format ? formatLabel(state.format) : '')}${state.format && needsProjection(state.format) ? (state.projected ? ' · scoring rules from Sleeper projections' : ' · scoring adjustment reconnecting') : ''}`;
+  els.status.querySelector('.rk-retry')?.addEventListener('click', () => load(true));
 }
 
 function skeleton() {
@@ -59,21 +63,20 @@ async function load(force = false) {
   if (!state.rows.length) skeleton();
   const seq = ++state.seq;
   try {
+    state.format = await getActiveFormat();
     let list;
     if (state.mode === 'keeper') {
       // Keeper = average of redraft and dynasty value (rewards young, cheap-to-hold players without going full dynasty)
-      const [redraft, dynasty] = await Promise.all([getJson(url(false), force), getJson(url(true), force)]);
-      const rd = mapRows(redraft);
-      const byName = new Map(mapRows(dynasty).map(player => [player.name, player]));
+      const [rd, dynasty] = await Promise.all([board(false, force), board(true, force)]);
+      const byName = new Map(dynasty.map(player => [player.name, player]));
       list = rd.map(player => {
         const d = byName.get(player.name);
         return { ...player, trend: d ? d.trend : player.trend, val: d ? Math.round((player.val + d.val) / 2) : player.val };
-      }).sort((a, b) => b.val - a.val);
-      const counts = {};
-      list.forEach(player => { counts[player.pos] = (counts[player.pos] || 0) + 1; player.posRank = counts[player.pos]; });
+      });
     } else {
-      list = mapRows(await getJson(url(state.mode === 'dynasty'), force));
+      list = await board(state.mode === 'dynasty', force);
     }
+    rank(list); // values moved with the scoring rules, so order and position ranks are recomputed here
     if (seq !== state.seq) return;
     state.rows = list;
     lastLoaded = Date.now();
@@ -123,7 +126,7 @@ function render() {
       <td>${escapeHtml(player.team)}</td>
       <td>${player.age != null ? Math.round(player.age) : '—'}</td>
       <td class="rk-tier">${player.tier != null ? `T${player.tier}` : '—'}</td>
-      <td class="rk-value"><span class="rk-bar" style="--rk-w:${Math.max(4, Math.round((player.val || 0) / top * 100))}%"></span><strong>${(player.val || 0).toLocaleString()}</strong></td>
+      <td class="rk-value"><span class="rk-bar" style="--rk-w:${Math.max(4, Math.round((player.val || 0) / top * 100))}%"></span><strong>${(player.val || 0).toLocaleString()}</strong>${Math.abs(player.adj - 1) >= 0.005 ? `<span class="rk-adj ${player.adj > 1 ? 'is-up' : 'is-down'}" title="Change from your league's scoring rules">${player.adj > 1 ? '+' : '−'}${Math.abs(Math.round((player.adj - 1) * 100))}%</span>` : ''}</td>
       <td>${trend}</td>
     </tr>`;
   }).join('');
@@ -145,32 +148,23 @@ function press(element, value) {
   element.querySelectorAll('button[data-v]').forEach(item => item.setAttribute('aria-pressed', String(item.dataset.v === value)));
 }
 
-// League tuning: default scoring/QB format from the connected Sleeper league, and the "Your players" filter.
-async function tuneToLeague() {
+// "Your players": the connected league's roster for the saved manager (scoring sync lives in the format bar).
+async function loadRoster() {
   const leagueId = getSleeperLeagueId();
   if (!leagueId || getActiveLeagueConnection()?.provider === 'yahoo') return false;
   try {
     const nfl = await getNflState();
     const bundle = await getLeagueBundle(leagueId, Math.max(1, Number(nfl.display_week || nfl.week) || 1));
-    const rec = Number(bundle.league.scoring_settings?.rec ?? 1);
-    state.ppr = rec >= 0.75 ? '1' : rec >= 0.25 ? '0.5' : '0';
-    state.qb = (bundle.league.roster_positions || []).includes('SUPER_FLEX') || (bundle.league.roster_positions || []).filter(slot => slot === 'QB').length > 1 ? '2' : '1';
-    press(els.ppr, state.ppr);
-    press(els.qb, state.qb);
-    const label = { 1: 'PPR', 0.5: 'Half PPR', 0: 'Non-PPR' }[state.ppr];
-    els.tuned.textContent = `Tuned to ${bundle.league.name}: ${label} · ${state.qb === '2' ? 'Superflex' : '1QB'}`;
-    els.tuned.hidden = false;
     const saved = Number(localStorage.getItem(MANAGER_KEY));
     const roster = bundle.rosters.find(item => item.roster_id === saved);
-    if (roster) {
-      const players = await import('../data/player-db.js').then(module => module.getPlayerDatabase()).catch(() => new Map());
-      (roster.players || []).forEach(id => {
-        state.roster.add(String(id));
-        const name = players.get(String(id))?.name;
-        if (name) state.roster.add(`name:${norm(name)}`);
-      });
-      els.mineWrap.hidden = false;
-    }
+    if (!roster) return false;
+    const players = await import('../data/player-db.js').then(module => module.getPlayerDatabase()).catch(() => new Map());
+    (roster.players || []).forEach(id => {
+      state.roster.add(String(id));
+      const name = players.get(String(id))?.name;
+      if (name) state.roster.add(`name:${norm(name)}`);
+    });
+    els.mineWrap.hidden = false;
     return true;
   } catch (_) { return false; }
 }
@@ -182,8 +176,7 @@ async function start() {
   if (['redraft', 'keeper', 'dynasty'].includes(params.get('mode'))) { state.mode = params.get('mode'); press(els.mode, state.mode); }
   els.modeLabel.textContent = state.mode[0].toUpperCase() + state.mode.slice(1);
   group(els.mode, 'mode', () => { els.modeLabel.textContent = state.mode[0].toUpperCase() + state.mode.slice(1); load(); });
-  group(els.ppr, 'ppr', load);
-  group(els.qb, 'qb', load);
+  mountFormatBar(els.format, { onChange: () => { state.limit = PAGE; load(); } });
   group(els.pos, 'pos', render);
   els.team.addEventListener('change', () => { state.team = els.team.value; state.limit = PAGE; render(); });
   let timer;
@@ -193,10 +186,8 @@ async function start() {
   skeleton();
   setInterval(() => { if (!document.hidden) load(true); }, REFRESH_MS); // force: the cached copy may be seconds short of 15 min
   document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastLoaded > REFRESH_MS) load(true); });
-  // Don't make the board wait on the league: start loading immediately, re-load if the league changes the format.
-  const before = `${state.ppr}:${state.qb}`;
   load();
-  if (await tuneToLeague()) { if (`${state.ppr}:${state.qb}` !== before) load(); else render(); }
+  if (await loadRoster()) render();
 }
 
 start();

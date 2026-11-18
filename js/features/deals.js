@@ -268,13 +268,16 @@ async function load() {
     state.completed = completedWeeks(bundle.league, nfl);
     const tradedKey = `sleeper-traded-picks:${leagueId}`;
     liveData.register(tradedKey, { url: `https://api.sleeper.app/v1/league/${leagueId}/traded_picks`, cadence: 1800000 });
-    const [market, trades, traded] = await Promise.all([getMarket(state.ctx.type), loadLeagueTrades(leagueId, players), liveData.get(tradedKey).catch(() => [])]);
+    const { formatFromLeague, formatLabel } = await import('../data/scoring-format.js');
+    const leagueFormat = formatFromLeague(bundle.league); // a league's trades are priced in that league's own scoring
+    const [market, trades, traded] = await Promise.all([getMarket(state.ctx.type, leagueFormat), loadLeagueTrades(leagueId, players), liveData.get(tradedKey).catch(() => [])]);
+    state.formatLabel = formatLabel(leagueFormat);
     state.market = market;
     state.trades = trades;
     state.multiTeam = trades.multiTeam || 0;
     state.tradedPicks = Array.isArray(traded) ? traded : [];
     $('#dl-eyebrow').textContent = `${bundle.league.name} · ${trades.length} real trade${trades.length === 1 ? '' : 's'}`;
-    status.textContent = `Values live · ${market.sources.dealer ? 'FantasyCalc + Dynasty Dealer' : 'FantasyCalc'} · priced like your ${state.ctx.type === 'keeper' ? 'Keeper calculator' : 'trade calculator'}`;
+    status.textContent = `Values live · ${market.sources.dealer ? 'FantasyCalc + Dynasty Dealer' : 'FantasyCalc'} · your league's scoring (${state.formatLabel}) · priced like your ${state.ctx.type === 'keeper' ? 'Keeper calculator' : 'trade calculator'}`;
     status.classList.add('is-live');
     document.querySelector('.dl-tabs').hidden = false;
     loadCrowd().then(counts => { state.crowd = counts; if (counts && state.tab === 'call') renderCall(); });

@@ -1,3 +1,4 @@
+import { parseAiJson } from '../data/ai-json.js';
 import { getSleeperLeagueId, getNflState, getLeagueBundle, leagueUsers, rosterOwner } from '../data/sleeper.js';
 import { getPlayerDatabase } from '../data/player-db.js';
 import { dealerSource, normalizeDealerPlayers } from '../data/dynasty-dealer.js';
@@ -33,14 +34,8 @@ function waitForSource(key) {
 
 function parseAI(result) {
   if (result.status !== 'ready' || !result.text) throw new Error('AI is resting.');
-  const text = result.text.replace(/^```(?:json)?\s*/i, '').replace(/```$/g, '').trim();
-  try { return JSON.parse(text); }
-  catch (_) {
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
-    throw new Error('AI returned an unexpected format.');
-  }
+  try { return parseAiJson(result.text); }
+  catch (_) { throw new Error('AI returned an unexpected format.'); }
 }
 
 function teamAt(index) {

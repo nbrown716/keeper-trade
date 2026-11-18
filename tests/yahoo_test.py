@@ -70,7 +70,9 @@ async def handle(route):
     elif u.path == '/yahoo/connect': body = {"status": "unavailable", "reason": "yahoo-config"}; return await route.fulfill(status=503, headers=hdr, body=json.dumps(body))
     elif u.path == '/yahoo/proxy':
         r = q['resource'][0]; wk = q.get('week', ['1'])[0]
-        body = {'standings': STANDINGS, 'scoreboard': SCOREBOARD if wk == '9' else EMPTY_SB, 'settings': SETTINGS, 'transactions': TRANSACTIONS, 'rosters': ROSTERS}[r]
+        # Any in-season week has games; week 1 is the empty-scoreboard case. (The fixture was pinned to week 9 and
+        # went empty when the NFL week moved on.)
+        body = {'standings': STANDINGS, 'scoreboard': EMPTY_SB if wk == '1' else SCOREBOARD, 'settings': SETTINGS, 'transactions': TRANSACTIONS, 'rosters': ROSTERS}[r]
     else: return await route.fulfill(status=404, headers=hdr, body='{}')
     await route.fulfill(status=200, headers=hdr, body=json.dumps(body))
 

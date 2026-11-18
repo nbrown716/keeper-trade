@@ -8,7 +8,9 @@ import matrix as M
 from crawl import make_context
 B = 'https://api.sleeper.app/v1/'; L = '1370223929452433408'
 def g(p): return json.load(urllib.request.urlopen(urllib.request.Request(B + p, headers={'User-Agent': 'KeeperTrade/1.0'})))
-league = g('league/' + L); rosters = g(f'league/{L}/rosters'); W = 8
+league = g('league/' + L); rosters = g(f'league/{L}/rosters')
+# Completed weeks come from Sleeper, never a literal: this was hardcoded to 8 and failed the gate once week 9 finished (11/12).
+W = min(int(league['settings']['playoff_week_start']) - 1, int(g('state/nfl')['week']) - 1)
 players = json.load(open('sleeper_raw/players.json', encoding='utf-8'))
 pos = lambda pid: (players.get(pid) or {}).get('position') or ('DEF' if pid.isalpha() else '')
 weeks = {w: g(f'league/{L}/matchups/{w}') for w in range(1, W + 1)}

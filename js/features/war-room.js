@@ -1,3 +1,4 @@
+import { parseAiJson } from '../data/ai-json.js';
 import { getSleeperLeagueId, getNflState } from '../data/sleeper.js';
 import { friendlyError } from '../ui/friendly-error.js';
 import { askAI } from '../data/ai.js';
@@ -25,14 +26,8 @@ function escapeHtml(value) {
 
 function parseAI(result) {
   if (result.status !== 'ready' || !result.text) throw new Error('AI is resting. Your roster is still right here.');
-  const text = result.text.replace(/^```(?:json)?\s*/i, '').replace(/```$/g, '').trim();
-  try { return JSON.parse(text); }
-  catch (_) {
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-    if (start >= 0 && end > start) return JSON.parse(text.slice(start, end + 1));
-    throw new Error('AI returned an unexpected format. Try again.');
-  }
+  try { return parseAiJson(result.text); }
+  catch (_) { throw new Error('AI returned an unexpected format. Try again.'); }
 }
 
 function freshness(element, result) {
@@ -170,7 +165,13 @@ function buildCounterCandidates() {
 async function runCounter(force = false) {
   if (!data || loading) return;
   const offerText = document.querySelector('#war-offer-text').value.trim();
-  if (!offerText && !selectedTransaction) { document.querySelector('#war-freshness').textContent = 'Describe an offer or load one from Sleeper first.'; return; }
+  if (!offerText && !selectedTransaction) {
+    // Say it where the button is, too: the status line alone is easy to miss, so the button looked dead (found 11/18
+    // in a week with no trades in the feed to load).
+    document.querySelector('#war-freshness').textContent = 'Describe an offer or load one from Sleeper first.';
+    document.querySelector('#war-counter-results').innerHTML = '<p class="kt-muted">Describe an offer above, or load a real trade from the activity feed, then build counters.</p>';
+    return;
+  }
   const button = document.querySelector('#war-counter-run');
   loading = true;
   setBusy(button, true, '#war-counter-results');

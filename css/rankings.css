@@ -46,7 +46,7 @@
 .rk-pos-WR { background: rgb(89 168 255 / 16%); color: #9ec8ff; }
 .rk-pos-TE { background: rgb(255 168 89 / 16%); color: #ffbf86; }
 :root[data-theme="light"] .rk-pos-QB { color: #6b2fb3; }
-:root[data-theme="light"] .rk-pos-RB { color: #0d7a4c; }
+:root[data-theme="light"] .rk-pos-RB { color: #0a6039; }
 :root[data-theme="light"] .rk-pos-WR { color: #1f5bb8; }
 :root[data-theme="light"] .rk-pos-TE { color: #9a4c0a; }
 .rk-tier { color: var(--kt-text-muted); font-weight: 700; }
@@ -66,3 +66,9 @@
 .rk-note { max-width: 56rem; margin: var(--kt-space-6) 0 0; color: var(--kt-text-muted); font-size: var(--kt-text-xs); line-height: 1.6; }
 .rk-note b { color: var(--kt-text-secondary); }
 @media (prefers-reduced-motion: reduce) { .rk-status.is-loading .rk-dot { animation: none; } }
+
+/* scoring-format sync */
+.rk-format { margin-top: var(--kt-space-4); }
+.rk-adj { margin-left: 0.4rem; font-size: 0.6875rem; font-weight: 800; }
+.rk-adj.is-up { color: var(--kt-success); }
+.rk-adj.is-down { color: var(--kt-danger, #ff6b6b); }

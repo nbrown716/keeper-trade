@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="kt-js">
+<head>
+  <meta charset="utf-8">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('gi-theme')==='light'?'light':'dark'}catch(e){}</script>
+  <!-- kt:share-meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Keeper Trade">
+  <meta property="og:title" content="Trade Value Chart · Keeper Trade">
+  <meta property="og:description" content="This week's trade values for every QB, RB, WR and TE, live and in your league's scoring, with the next three matchups.">
+  <meta property="og:url" content="https://keeper-trade.pages.dev/trade-values.html">
+  <meta property="og:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Keeper Trade: your edge on draft day and every trade.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://keeper-trade.pages.dev/assets/og-image.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Keeper Trade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- /kt:share-meta -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0f1a">
+  <meta name="description" content="Weekly fantasy football trade value chart: live values by position in your league's scoring, 30-day movement, byes and the next three opponents.">
+  <title>Trade Value Chart — Keeper Trade</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/format-bar.css">
+  <link rel="stylesheet" href="css/trade-values.css">
+</head>
+<body>
+  <main class="tv-shell">
+    <header class="tv-heading">
+      <span class="kt-eyebrow" id="tv-eyebrow">This week · live</span>
+      <h1>TRADE VALUE <span>Chart</span></h1>
+      <p>What every player is worth in a trade right now, in your league's scoring. Add up each side of an offer and compare. Every number here is the number the matching Keeper Trade calculator and Rankings board show.</p>
+    </header>
+    <div class="tv-modes" id="tv-mode" role="group" aria-label="Chart">
+      <button class="kt-chip" type="button" data-v="redraft" aria-pressed="true">This season</button>
+      <button class="kt-chip" type="button" data-v="longterm" aria-pressed="false">Keeper &amp; Dynasty</button>
+    </div>
+    <div id="tv-format" class="kt-fmt"></div>
+    <div class="tv-meta">
+      <p class="tv-status is-loading" id="tv-status" role="status" aria-live="polite"><span class="tv-dot"></span>Loading live values…</p>
+      <nav class="tv-jump" aria-label="Jump to position"><a class="kt-chip" href="#tv-QB">QB</a><a class="kt-chip" href="#tv-RB">RB</a><a class="kt-chip" href="#tv-WR">WR</a><a class="kt-chip" href="#tv-TE">TE</a></nav>
+    </div>
+    <div id="tv-sections" aria-busy="true"></div>
+    <section class="tv-how" aria-label="How to use this chart">
+      <h2>How to use this chart</h2>
+      <ul>
+        <li><b>Add up each side.</b> Sides within about 5% of each other are a fair deal.</li>
+        <li><b>Two for one.</b> The side getting the single best player should give more: count the second-best piece on a side at about 85% of its value and a third at 75%.</li>
+        <li><b>This season</b> is rest-of-season value for redraft leagues: the same number as the Redraft board in Rankings and the Redraft calculator. <b>Keeper &amp; Dynasty</b> is long-term value: the same number the Keeper and Dynasty calculators use.</li>
+        <li><b>30-day</b> is how far FantasyCalc's market has moved the player in the last 30 days, on this chart's scale.</li>
+        <li><b>Matchups</b> are the next three opponents. BYE means the team is off that week.</li>
+      </ul>
+      <p id="tv-sources">Values are live from FantasyCalc and Dynasty Dealer and refresh every 15 minutes while this page is open. Scoring rules no market prices (passing-touchdown points, TE premium) come from Sleeper's live season projections. Schedule from Sleeper. Keeper Trade is not affiliated with FantasyCalc, Dynasty Dealer or Sleeper.</p>
+    </section>
+  </main>
+  <script type="module" src="js/features/trade-values.js"></script>
+  <script type="module" src="js/pwa.js"></script>
+</body>
+</html>

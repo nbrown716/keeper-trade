@@ -138,6 +138,12 @@ async def run(only):
             await pg.click('[data-war-tab="counter"]')
             opts = await pg.evaluate("[...document.querySelectorAll('#war-offer-select option')].map(o => o.value).filter(Boolean)")
             if opts: await pg.select_option('#war-offer-select', opts[0])
+            else:
+                # A week with no trades in the feed: nothing to load. First the empty click must explain itself
+                # (it used to look dead and this suite hung here on 11/18), then a typed offer drives the real flow.
+                await pg.click('#war-counter-run'); await pg.wait_for_timeout(300)
+                check('Describe an offer' in await pg.inner_text('#war-counter-results'), 'War Room: Build counters with no offer says what to do')
+                await pg.fill('#war-offer-text', 'They offer their best running back for my best wide receiver.')
             await pg.click('#war-counter-run')
             await pg.wait_for_function("document.querySelectorAll('#war-counter-results .kt-verdict-card').length >= 1 || /unavailable|break|resting|choose|select|add/i.test(document.querySelector('#war-counter-results').innerText)", timeout=90000)
             cnt = await pg.locator('#war-counter-results .kt-verdict-card').count()
