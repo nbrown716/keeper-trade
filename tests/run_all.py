@@ -27,6 +27,7 @@ SUITES = [
     ('values_live.py', 'passed', False),               # live-only value sources, <=6 h cadence, open-page refresh, baselines
     ('winprob_calibration.py', 'passed', False),       # win probability: backtest vs real results + sanity laws
     ('live_mode.py', 'passed', False),                 # Drive live mode + Matchup Pill on an in-progress week
+    ('draft_ai_guard.py', 'passed', False),            # mock draft finishes whatever the AI answers (froze on a drafted player, 11/19)
     ('ai_json.py', 'passed', False),                   # AI answers: tolerant JSON parser (real malformed answer from 11/18)
     ('tooltip_overflow.py', 'passed', False),          # weather badge tooltip never widens the page (War Room, 11/18)
     ('nav_fit.py', 'passed', False),                   # desktop header: one row, no overlap, no sideways scroll at 1000-2560 px

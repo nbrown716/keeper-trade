@@ -103,9 +103,16 @@ async function runAIRound() {
   catch (_) { parsed = null; }
   for (const team of order) {
     if (paused || runGeneration !== generation) break;
+    // An AI pick is a suggestion, never an order. It is used only if that player exists and is still on the board;
+    // otherwise the team picks by its own logic. Before 11/19 an AI answer naming a drafted player (the same player
+    // for two teams, or one taken earlier) made makePick throw, and the draft froze on that pick for good.
     const aiPick = parsed?.picks?.find(pick => Number(pick.team) === team.id);
-    const player = aiPick ? pool.find(item => item.id === aiPick.playerId) : fallbackPick(draft, pool, team);
-    makePick(draft, team, player || fallbackPick(draft, pool, team));
+    const wanted = aiPick ? pool.find(item => String(item.id) === String(aiPick.playerId)) : null;
+    const onBoard = wanted && !draft.history.some(pick => pick.player.id === wanted.id);
+    const player = onBoard ? wanted : fallbackPick(draft, pool, team);
+    if (!player) break; // nobody left to draft
+    try { makePick(draft, team, player); }
+    catch (_) { const safe = fallbackPick(draft, pool, team); if (!safe) break; makePick(draft, team, safe); }
     const comment = parsed?.comments?.find(item => Number(item.team) === team.id);
     if (comment) addComment(team, comment.text);
     else if (team.personality.rules.stealHumanTarget) addComment(team, `You wanted ${player?.name || 'that guy'}? I noticed.`);

@@ -772,3 +772,9 @@ Limit of the test: it runs in Chromium with a simulated keyboard, not on a real 
 
 ### Still open
 - Keeper side labels "Gives A / Gives B" versus the verdict's wording (owner decision, unchanged).
+
+### 2026-11-19 addendum: two faults the gate found (neither from the phone search work)
+| Failure | Root cause | Safeguard |
+|---|---|---|
+| Home failed contrast on weather badges; RAIN and WIND ADVISORY badges faded in and out | a badge is classed `kt-weather-<impact id>`, and `.kt-weather-rain` / `-wind` / `-snow` were also the unscoped classes of the animated icon parts, so badges inherited the icon animation. Showed up the first rainy week | icon rules scoped to `.kt-weather-icon`; `tests/tooltip_overflow.py` reads every impact id from the weather model and asserts each badge is steady and opaque |
+| Mock draft froze mid-draft ("That player is already drafted.") | an AI round named a player already off the board; `makePick` threw inside the AI loop and the draft never advanced | an AI pick is used only if the player exists and is still available, else the team's own logic picks; `tests/draft_ai_guard.py` feeds three hostile AI answers (same player for every team, unknown id, non-JSON) and requires a finished draft |

@@ -26,12 +26,14 @@
 .kt-weather-credit:hover { color: var(--kt-secondary); }
 .kt-weather-strip.is-loading .kt-skeleton { width: 3rem; height: 1.25rem; }
 .kt-weather-icon { width: 3.5rem; height: 3.5rem; flex: none; overflow: visible; }
-.kt-weather-sun { fill: var(--kt-accent); opacity: 0.9; transform-origin: 25px 23px; animation: kt-weather-pulse 2.8s ease-in-out infinite alternate; }
-.kt-weather-cloud { fill: var(--kt-surface-3); stroke: var(--kt-text-secondary); stroke-width: 2; stroke-linejoin: round; }
-.kt-weather-rain, .kt-weather-snow, .kt-weather-wind { fill: none; stroke: var(--kt-secondary); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-.kt-weather-rain { animation: kt-weather-rain 1.1s ease-in-out infinite; }
-.kt-weather-snow { animation: kt-weather-snow 1.8s ease-in-out infinite; }
-.kt-weather-wind { stroke-dasharray: 65; animation: kt-weather-wind 2s ease-in-out infinite; }
+.kt-weather-icon .kt-weather-sun { fill: var(--kt-accent); opacity: 0.9; transform-origin: 25px 23px; animation: kt-weather-pulse 2.8s ease-in-out infinite alternate; }
+.kt-weather-icon .kt-weather-cloud { fill: var(--kt-surface-3); stroke: var(--kt-text-secondary); stroke-width: 2; stroke-linejoin: round; }
+/* Icon parts are scoped to the icon. Unscoped, `.kt-weather-rain` also matched the RAIN badge (badges are classed
+   `kt-weather-<impact id>`), so the badge inherited the raindrop's fade animation and blinked. Found 11/19. */
+.kt-weather-icon .kt-weather-rain, .kt-weather-icon .kt-weather-snow, .kt-weather-icon .kt-weather-wind { fill: none; stroke: var(--kt-secondary); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.kt-weather-icon .kt-weather-rain { animation: kt-weather-rain 1.1s ease-in-out infinite; }
+.kt-weather-icon .kt-weather-snow { animation: kt-weather-snow 1.8s ease-in-out infinite; }
+.kt-weather-icon .kt-weather-wind { stroke-dasharray: 65; animation: kt-weather-wind 2s ease-in-out infinite; }
 
 .kt-weather-board { display: grid; gap: var(--kt-space-2); }
 .kt-weather-game { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--kt-space-3); padding: var(--kt-space-3); border: 1px solid var(--kt-border-subtle); border-radius: var(--kt-radius-md); background: var(--kt-surface-2); color: var(--kt-text-primary); text-decoration: none; transition: transform var(--kt-duration-micro) var(--kt-ease-out), border-color var(--kt-duration-micro) ease; }
@@ -60,6 +62,6 @@
   .kt-weather-credit { width: 100%; text-align: right; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .kt-weather-sun, .kt-weather-rain, .kt-weather-snow, .kt-weather-wind { animation: none; }
+  .kt-weather-icon .kt-weather-sun, .kt-weather-icon .kt-weather-rain, .kt-weather-icon .kt-weather-snow, .kt-weather-icon .kt-weather-wind { animation: none; }
   .kt-weather-game, .kt-weather-badge::after { transition: none; }
 }
