@@ -4,6 +4,7 @@ REPO = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 import asyncio, json, sys, urllib.request
 from playwright.async_api import async_playwright
 import yahoo_test as Y  # reuse fixtures + mock handler
+import matrix as M
 
 CUR, PREV = '1370223929452433408', '1255694966676537344'
 BASE = _os.environ.get('KT_BASE', 'http://127.0.0.1:4173/')
@@ -53,7 +54,7 @@ async def main():
         await c.close()
 
         # ---------- real Sleeper UI: add both leagues, switch, reload, remove ----------
-        c = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, service_workers='block')
+        c = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, service_workers='block'); M.auto_dismiss_rewards(c)
         pg = await c.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto(BASE + 'index.html#league'); await pg.wait_for_selector('#sleeper-id', timeout=30000)
         await pg.fill('#sleeper-id', f'https://sleeper.com/leagues/{CUR}/matchup'); await pg.click('#sleeper-connect button[type=submit]')
@@ -90,7 +91,7 @@ async def main():
         await c.close()
 
         # ---------- Yahoo UI with mocked Worker ----------
-        c = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, service_workers='block')
+        c = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, service_workers='block'); M.auto_dismiss_rewards(c)
         await c.route('https://keeper-trade-ai.nicholas-brown00.workers.dev/yahoo/**', Y.handle)
         await c.route('https://api.sleeper.app/v1/players/nfl', lambda r: r.fulfill(status=200, headers={'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}, body=json.dumps(Y.SLEEPER_PLAYERS)))
         pg = await c.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))

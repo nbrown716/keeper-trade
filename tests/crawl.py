@@ -32,6 +32,7 @@ async def ai_proxy(route):
 async def make_context(browser, viewport, mobile):
     c = await browser.new_context(viewport=viewport, is_mobile=mobile, has_touch=mobile, service_workers='block', accept_downloads=True)
     await c.add_init_script(M.LEAGUE)
+    M.auto_dismiss_rewards(c)
     await c.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/espn/.*'), M.espn_proxy)
     await c.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/(ai|yahoo)/.*'), ai_proxy)
     await c.route(re.compile(r'https://keeper-trade-ai\.nicholas-brown00\.workers\.dev/votes.*'), M.worker_relay)

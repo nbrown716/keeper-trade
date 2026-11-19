@@ -16,6 +16,23 @@ LEAGUE = "try{localStorage.setItem('kt-sleeper-league:v1',JSON.stringify({id:'13
 ESPN = {'/espn/scoreboard': 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard', '/espn/summary': 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary',
         '/espn/news': 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/news', '/espn/standings': 'https://site.api.espn.com/apis/v2/sports/football/nfl/standings'}
 
+# Reward pop-up. On a game day a first visit to a page that shows live scores earns the "Sunday Regular" badge. When the
+# page has already seen a click (or was opened from one), the badge opens as a full-screen pop-up, exactly as it does for
+# a real visitor, and it blocks the next click. Found 11/19, 6 pm on a Thursday game night: league_test and live_mode
+# passed all morning and failed against the live site in the evening. Tests of OTHER features dismiss it like a person
+# would; the pop-up itself is still covered by its own checks (gamification in features.py / deep.py).
+def auto_dismiss_rewards(context):
+    """Every page in this context closes a reward pop-up when it is in the way of an action."""
+    async def attach(page):
+        try: await page.add_locator_handler(page.locator('.kt-celebration:not([hidden])'), lambda: page.locator('.kt-celebration-close').click())
+        except Exception: pass
+    context.on('page', lambda page: asyncio.ensure_future(attach(page)))
+
+async def close_reward(page):
+    """For checks that only look (elementFromPoint, screenshots) and never click, so the handler above never runs."""
+    if await page.locator('.kt-celebration:not([hidden])').count():
+        await page.locator('.kt-celebration-close').click(); await page.wait_for_timeout(200)
+
 async def worker_relay(route):
     # The Worker only answers the production origin; relay local test calls with it (same answer production gets).
     # READS ONLY. A test must never write to the live Worker: 11/7 a production run relayed a POST /votes and cast a

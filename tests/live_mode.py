@@ -81,6 +81,7 @@ async def main():
                 ok = lay['pill'] and lay['brand'] and lay['pill'][0] >= lay['brand'][1] and (not lay['search'] or lay['pill'][1] <= lay['search'][0] + 1) and lay['pill'][3] <= lay['header'][3] + 1
                 check(ok, f'phone: pill sits inside the header bar between logo and search, over no page content ({lay})')
                 await pg.set_viewport_size({'width': 1280, 'height': 800}); await pg.wait_for_timeout(200)  # phones show the compact header pill, no close
+                await M.close_reward(pg)   # a game-night badge pop-up covers the whole page by design; this check is about the scores strip and toasts
                 over = await pg.evaluate("(() => { const p = document.querySelector('.kt-matchup-pill').getBoundingClientRect(); const x = p.left + p.width - 20, y = p.top + p.height / 2; const hit = document.elementFromPoint(x, y); return hit && hit.closest('.kt-matchup-pill') ? '' : (hit && (hit.className || hit.tagName)) + ''; })()")
                 check(not over, f'desktop: nothing covers the pill (scores strip, toasts) {over}')
                 await pg.click('.kt-pill-close'); await pg.wait_for_timeout(200)
