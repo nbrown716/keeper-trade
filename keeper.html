@@ -899,13 +899,17 @@
     function close(){ box.classList.remove("open"); box.innerHTML=""; hi=-1; if(!popPinned) hidePopNow(); }
     function render(q){
       q=q.trim().toLowerCase();
-      if(!q){ close(); return; }
+      // Phone search sheet (js/ui/mobile-sheet.js): an empty box lists the top players so you can scroll and tap
+      // without typing, and the list is longer because it has the whole screen.
+      var sheet=document.body.classList.contains("is-searching");
+      if(!q && !sheet){ close(); return; }
       var used={}; S.sides[side].forEach(function(e){ if(!e.ref.pick) used[e.ref.id]=1; });
       matches=ALL.filter(function(p){
         if(!p.pick && used[p.id]) return false;
+        if(!q) return !p.pick;
         return p.n.toLowerCase().indexOf(q)>=0 || p.t.toLowerCase().indexOf(q)>=0 ||
                p.p.toLowerCase()===q || (p.pick && ("pick 1st 2nd 3rd 4th 5th 6th draft 2026 2027".indexOf(q)>=0));
-      }).sort(function(a,b){return marketOf(b)-marketOf(a);}).slice(0,9);
+      }).sort(function(a,b){return marketOf(b)-marketOf(a);}).slice(0, sheet?40:9);
       if(!matches.length){ box.innerHTML='<div class="empty-note">No match. Try a name, team, position, or "pick".</div>'; box.classList.add("open"); return; }
       box.innerHTML=matches.map(function(p,i){
         return '<div class="res'+(i===hi?" hi":"")+'" data-i="'+i+'">'+
@@ -919,7 +923,9 @@
       box.querySelectorAll(".res").forEach(function(el){
         var p=matches[+el.getAttribute("data-i")];
         el.addEventListener("mousedown",function(ev){ ev.preventDefault(); hidePopNow();
-          addAsset(side, p); input.value=""; close(); input.focus(); });
+          addAsset(side, p); input.value=""; close();
+          if(document.body.classList.contains("is-searching")) window.dispatchEvent(new CustomEvent("kt:asset-picked",{detail:{side:side,name:p.n}}));
+          else input.focus(); });
         if(p && !p.pick){ el.addEventListener("mouseenter",function(){showPop(el,p);}); el.addEventListener("mouseleave",hidePop); }
       });
       box.querySelectorAll(".res-fp").forEach(function(a){
@@ -928,7 +934,8 @@
     }
     input.addEventListener("input",function(){ render(input.value); });
     input.addEventListener("focus",function(){ if(input.value) render(input.value); });
-    input.addEventListener("blur",function(){ setTimeout(close,120); });
+    // In the phone sheet the list stays up when the keyboard is dismissed (that is how you scroll it); Done closes it.
+    input.addEventListener("blur",function(){ if(document.body.classList.contains("is-searching")) return; setTimeout(close,120); });
     input.addEventListener("keydown",function(ev){
       if(!box.classList.contains("open")) return;
       if(ev.key==="ArrowDown"){ ev.preventDefault(); hi=Math.min(hi+1,matches.length-1); render(input.value); }
@@ -1073,13 +1080,7 @@
   setupSearch("A"); setupSearch("B");
   renderSide("A"); renderSide("B"); renderVerdict(); renderPickChart();
 
-  // seed an illustrative deal
-  addAsset("A", DB.find(function(p){return p.n==="Amon-Ra St. Brown";}));
-  addAsset("B", DB.find(function(p){return p.n==="Ashton Jeanty";}));
-  addAsset("B", PICKS.find(function(p){return p.n==="2027 3rd";}));
-  S.sides.A[0].cost=9;  // ARSB cheap keeper
-  S.sides.B[0].cost=4;  // Jeanty pricier
-  renderSide("A"); renderSide("B"); renderVerdict();
+  // The desk opens empty (0 / 0): no sample trade (owner, 11/19).
 
   // ---- live values: refresh FantasyCalc dynasty on load (snapshot stays as fallback) ----
   var FC_URL = "https://api.fantasycalc.com/values/current?isDynasty=true&numQbs=1&numTeams=12&ppr=1";

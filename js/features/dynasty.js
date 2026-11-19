@@ -11,6 +11,7 @@ import { sideTotal, verdict, evenUp, weightAt } from '../data/dynasty-engine.js'
 import { getSleeperLeagueId, getLeagueBundle, getNflState, leagueUsers, rosterOwner } from '../data/sleeper.js';
 import { getActiveLeagueConnection } from '../data/league-connections.js';
 import { liveData } from '../data/live-data.js';
+import { trackKeyboard, isPhone, lockScroll, toast, flash } from '../ui/mobile-sheet.js';
 
 const SLOTS = ['early', 'mid', 'late'];
 const ORDINAL = ['1st', '2nd', '3rd', '4th'];
@@ -247,10 +248,44 @@ function renderAll() {
 // ------------------------------------------------------------------ state changes
 function addAsset(side, asset) {
   if (asset.kind === 'player' && inTrade(asset.id)) return;
-  state.sides[side].push({ ...asset, uid: state.uid++ });
+  const uid = state.uid++;
+  state.sides[side].push({ ...asset, uid });
   try { navigator.vibrate?.(8); } catch (_) {}
   closeCard();
+  const fromSheet = sheetSide === side;
+  if (fromSheet) closeSheet();
   renderAll();
+  if (fromSheet) { // back to the trade, on the team that just changed, with the new piece marked
+    document.querySelector(`.dy-side[data-side="${side}"]`)?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    flash(document.querySelector(`.dy-piece[data-uid="${uid}"]`));
+    toast(`Added ${assetName(asset)} to ${sideName(side)}`);
+  }
+}
+
+// Phone search sheet: the add area (search, + Pick, position chips, list) fills the screen from the top and ends
+// where the keyboard starts, so names are never under the keyboard. Done or a pick returns to the trade.
+let sheetSide = '';
+function openSheet(side) {
+  if (!isPhone() || sheetSide === side) return;
+  closeSheet();
+  sheetSide = side;
+  trackKeyboard();
+  document.querySelector(`[data-dy-sheet-title="${side}"]`).textContent = `Add to ${sideName(side)}`;
+  $(`#dy-add-${side}`).classList.add('is-sheet');
+  lockScroll(true);
+}
+function closeSheet() {
+  if (!sheetSide) return;
+  const side = sheetSide;
+  sheetSide = '';
+  $(`#dy-add-${side}`).classList.remove('is-sheet');
+  lockScroll(false);
+  const input = $(`#dy-search-${side}`);
+  input.value = '';
+  state.q[side] = '';
+  state.limit[side] = PAGE;
+  if (document.activeElement === input) input.blur();
+  renderBrowse(side);
 }
 function encodeSide(side) {
   return state.sides[side].map(asset => (asset.kind === 'pick' ? `${asset.season}.${asset.round}.${asset.slot}` : asset.id)).join(',');
@@ -262,15 +297,19 @@ function decodeSide(text) {
     return /^\d{1,7}$/.test(token) ? { kind: 'player', id: token, name: '' } : null;
   }).filter(Boolean);
 }
-function persist() {
-  if (!state.market) return; // never overwrite a saved trade before values (and names) have loaded
+// The calculator opens empty (0 / 0) every time (owner, 11/19). Only the display choices are remembered. A trade
+// comes back only from a link someone copied (?a=...&b=...), and the link is taken out of the address bar once it is
+// loaded so a refresh starts clean.
+function shareUrl() {
+  const params = new URLSearchParams();
   const a = encodeSide('A');
   const b = encodeSide('B');
-  try { localStorage.setItem(STORE, JSON.stringify({ a, b, unit: state.unit, pkg: state.pkg })); } catch (_) {}
-  const params = new URLSearchParams();
   if (a) params.set('a', a);
   if (b) params.set('b', b);
-  window.history.replaceState(null, '', `${window.location.pathname}${params.size ? `?${params}` : ''}`);
+  return `${window.location.origin}${window.location.pathname}${params.size ? `?${params}` : ''}`;
+}
+function persist() {
+  try { localStorage.setItem(STORE, JSON.stringify({ unit: state.unit, pkg: state.pkg })); } catch (_) {}
 }
 function restore() {
   const params = new URLSearchParams(window.location.search);
@@ -278,8 +317,8 @@ function restore() {
   try { saved = JSON.parse(localStorage.getItem(STORE) || 'null'); } catch (_) {}
   if (saved?.unit === 'firsts') state.unit = 'firsts';
   if (saved?.pkg === false) state.pkg = false;
-  const fromUrl = params.has('a') || params.has('b');
-  state.pendingIds = { A: decodeSide(fromUrl ? params.get('a') : saved?.a), B: decodeSide(fromUrl ? params.get('b') : saved?.b) };
+  state.pendingIds = { A: decodeSide(params.get('a')), B: decodeSide(params.get('b')) };
+  if (params.has('a') || params.has('b')) window.history.replaceState(null, '', window.location.pathname);
 }
 function applyPending() {
   if (!state.pendingIds) return;
@@ -385,7 +424,7 @@ function bind() {
   $('#dy-clear').addEventListener('click', () => { state.sides.A = []; state.sides.B = []; closeCard(); renderAll(); });
   $('#dy-share').addEventListener('click', async event => {
     const button = event.currentTarget;
-    const url = window.location.href;
+    const url = shareUrl();
     let ok = false;
     try { await navigator.clipboard.writeText(url); ok = true; } catch (_) {}
     button.textContent = ok ? 'Link copied' : 'Copy the address bar';
@@ -401,6 +440,8 @@ function bind() {
       state.pos[side] = button.dataset.v; state.limit[side] = PAGE; renderBrowse(side);
     });
     let timer;
+    $(`#dy-search-${side}`).addEventListener('focus', () => openSheet(side));
+    document.querySelector(`[data-dy-done="${side}"]`).addEventListener('click', closeSheet);
     $(`#dy-search-${side}`).addEventListener('input', event => { clearTimeout(timer); timer = setTimeout(() => { state.q[side] = event.target.value; state.limit[side] = PAGE; renderBrowse(side); }, 100); });
     $(`#dy-team-${side}`).addEventListener('change', event => { state.team[side] = event.target.value; state.limit[side] = PAGE; closeCard(); renderAll(); });
     document.querySelector(`[data-dy-pick="${side}"]`).addEventListener('click', event => {
@@ -453,7 +494,11 @@ function bind() {
     if (card.contains(event.target) || cardAnchor?.contains(event.target)) return;
     closeCard();
   }, true);
-  document.addEventListener('keydown', event => { if (event.key === 'Escape' && card && !card.hidden) { const anchor = cardAnchor; closeCard(); anchor?.focus(); } });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (card && !card.hidden) { const anchor = cardAnchor; closeCard(); anchor?.focus(); } else if (sheetSide) closeSheet();
+  });
+  window.matchMedia('(max-width: 48rem)').addEventListener('change', event => { if (!event.matches) closeSheet(); });
   // Scrolling the page away closes the card. A few pixels of settle (a tap that nudges the page, a list scrolling
   // inside the page) must not: the first build closed the card the instant it opened whenever the tap scrolled.
   window.addEventListener('scroll', () => { if (Math.abs(window.scrollY - cardScrollY) > 24) closeCard(); }, { passive: true, capture: true });

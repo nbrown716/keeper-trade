@@ -10,6 +10,13 @@ from crawl import make_context
 results = []
 def check(ok, msg): results.append(bool(ok)); print('PASS' if ok else 'FAIL', msg)
 
+async def build(pg, sides):
+    """The calculators open empty now (11/19), so the test builds its own trade through the search boxes."""
+    for side, names in sides.items():
+        for name in names:
+            await pg.fill(f'[data-search="{side}"]', name)
+            await pg.locator(f'[data-results="{side}"] .res').first.click(); await pg.wait_for_timeout(150)
+
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -17,6 +24,7 @@ async def main():
         pg = await c.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto(M.BASE + 'keeper.html')
         await pg.wait_for_function("/FantasyCalc \\+ Dynasty Dealer/.test(document.querySelector('#valStatus').textContent)", timeout=60000)
+        await build(pg, {'A': ['Amon-Ra St. Brown'], 'B': ['Ashton Jeanty', '2027 3rd']})
         await pg.wait_for_selector('#kt-market-read:not([hidden])', timeout=15000)
         text = await pg.inner_text('#kt-market-read')
         expect = await pg.evaluate("""(() => {
@@ -39,7 +47,8 @@ async def main():
         check(not errs, f'keeper no errors {errs}')
         # redraft
         pg = await c.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-        await pg.goto(M.BASE + 'redraft.html'); await pg.wait_for_timeout(5000)
+        await pg.goto(M.BASE + 'redraft.html'); await pg.wait_for_function('window.TradeEngine && window.TradeEngine.players().length > 100', timeout=60000)
+        await build(pg, {'A': ["Ja'Marr Chase"], 'B': ['Breece Hall', 'Drake London']})
         await pg.wait_for_selector('#kt-market-read:not([hidden])', timeout=15000)
         text = await pg.inner_text('#kt-market-read')
         r = await pg.evaluate("""(() => {

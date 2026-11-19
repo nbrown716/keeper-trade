@@ -31,6 +31,7 @@ SUITES = [
     ('tooltip_overflow.py', 'passed', False),          # weather badge tooltip never widens the page (War Room, 11/18)
     ('nav_fit.py', 'passed', False),                   # desktop header: one row, no overlap, no sideways scroll at 1000-2560 px
     ('format_verify.py', 'passed', False),             # league scoring sync: all values vs an independent recomputation from raw payloads
+    ('phone_search.py', 'passed', False),              # phone search sheets: typing visible, list above the keyboard, pick confirms; calculators open empty
     ('player_card.py', 'passed', False),               # calculator player card always closes (owner bug 11/11)
     ('dynasty_test.py', 'passed', False),              # Dynasty calculator: engine vs Python, picks, rosters vs Sleeper, card, share link
     ('trade_values_test.py', 'passed', False),         # Trade Value Chart: values, week, opponents and byes vs raw Sleeper

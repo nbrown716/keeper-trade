@@ -1,3 +1,4 @@
+import { trackKeyboard, isPhone, lockScroll, toast, flash } from '../ui/mobile-sheet.js';
 import { mountNavigation } from '../ui/navigation.js';
 import { mountPageTransitions } from '../ui/page-transitions.js';
 import { liveData } from '../data/live-data.js';
@@ -182,28 +183,96 @@ function mountDrag() {
   document.querySelectorAll('.players').forEach(list => observer.observe(list, { childList: true, subtree: true }));
 }
 
+// Phone search sheet. Rebuilt 11/19 after the owner's iPhone report:
+// - results were pinned to the bottom of the screen, under the keyboard, and could not be scrolled;
+// - both teams' search boxes were pinned to the same spot, so Team B's empty box covered the one being typed in
+//   ("the trade won't hold a name");
+// - after a pick the dark overlay stayed up, so you could not see the player had been added.
+// Now: one full-screen sheet per search, laid out top-down (title + Done, the search box, then the list, which ends
+// where the keyboard starts). Picking a player closes the sheet, scrolls to that team and confirms what was added.
 function mountMobileSearch() {
-  const scrim = document.createElement('div');
-  scrim.className = 'kt-search-scrim';
-  scrim.hidden = true;
-  document.body.appendChild(scrim);
-  document.addEventListener('focusin', event => {
-    if (!event.target.matches('[data-search]') || !window.matchMedia('(max-width: 48rem)').matches) return;
-    scrim.hidden = false;
-    document.body.classList.add('is-searching');
-  });
-  document.addEventListener('focusout', event => {
-    if (!event.target.matches('[data-search]')) return;
-    window.setTimeout(() => {
-      scrim.hidden = true;
-      document.body.classList.remove('is-searching');
-    }, 150);
-  });
-  scrim.addEventListener('click', () => {
-    document.querySelectorAll('[data-search]').forEach(input => input.blur());
-    scrim.hidden = true;
+  trackKeyboard();
+  const sheet = document.createElement('div');
+  sheet.className = 'kt-search-sheet';
+  sheet.hidden = true;
+  // Quick filters: one tap lists a position (or the draft picks) without typing. They write the word into the box,
+  // which the page's own search already understands.
+  const filters = [['', 'All'], ['qb', 'QB'], ['rb', 'RB'], ['wr', 'WR'], ['te', 'TE'], ...(kind === 'keeper' ? [['draft', 'Picks']] : [])];
+  sheet.innerHTML = `<div class="kt-search-sheet-bar"><strong class="kt-search-sheet-title"></strong><button type="button" class="kt-btn kt-btn-sm kt-btn-primary kt-search-done">Done</button></div><div class="kt-search-filters" role="group" aria-label="Quick filters">${filters.map(([value, label]) => `<button type="button" class="kt-chip" data-filter="${value}" aria-pressed="${value === ''}">${label}</button>`).join('')}</div>`;
+  document.body.appendChild(sheet);
+  let active = null;
+  const teamName = side => document.querySelector(`.team.${side.toLowerCase()} .team-name`)?.value?.trim() || `Team ${side}`;
+
+  function close() {
+    if (!active) return;
+    const { input, box } = active;
+    active = null;
     document.body.classList.remove('is-searching');
+    lockScroll(false);
+    input.classList.remove('kt-search-active');
+    box.classList.remove('kt-search-results-active');
+    sheet.hidden = true;
+    input.value = '';
+    if (document.activeElement === input) input.blur(); else input.dispatchEvent(new Event('blur'));
+  }
+  function open(input) {
+    if (active?.input === input) return;
+    close();
+    const side = input.dataset.search;
+    const box = document.querySelector(`[data-results="${side}"]`);
+    if (!box) return;
+    active = { input, box, side };
+    input.classList.add('kt-search-active');
+    box.classList.add('kt-search-results-active');
+    document.body.classList.add('is-searching');
+    lockScroll(true);
+    sheet.querySelector('.kt-search-sheet-title').textContent = `Add to ${teamName(side)}`;
+    sheet.hidden = false;
+    trackKeyboard();
+    input.dispatchEvent(new Event('input', { bubbles: true })); // the page lists the top players for an empty box
+  }
+
+  document.addEventListener('focusin', event => {
+    if (event.target.matches?.('[data-search]') && isPhone()) open(event.target);
   });
+  sheet.querySelector('.kt-search-done').addEventListener('click', close);
+  const markFilter = () => sheet.querySelectorAll('[data-filter]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === (active?.input.value.trim().toLowerCase() || ''))));
+  sheet.querySelector('.kt-search-filters').addEventListener('click', event => {
+    const button = event.target.closest('[data-filter]');
+    if (!button || !active) return;
+    active.input.value = button.dataset.filter;
+    active.input.dispatchEvent(new Event('input', { bubbles: true }));
+    active.box.scrollTop = 0;
+  });
+  document.addEventListener('input', event => { if (active && event.target === active.input) markFilter(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && active) close(); });
+  window.matchMedia('(max-width: 48rem)').addEventListener('change', event => { if (!event.matches) close(); });
+  window.addEventListener('kt:asset-picked', event => {
+    const side = active?.side || event.detail?.side;
+    if (!active) return;
+    close();
+    const team = document.querySelector(`.team.${String(side).toLowerCase()}`);
+    team?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    flash(document.querySelector(`[data-list="${side}"] > li:last-child`));
+    toast(`Added ${event.detail?.name || 'player'} to ${teamName(side)}`);
+  });
+}
+
+// Team names are kept on this device, so a named team is still named after a reload.
+function mountTeamNames() {
+  const key = `kt-team-names:v1:${kind}`;
+  const inputs = [...document.querySelectorAll('.team-name')];
+  try {
+    const saved = JSON.parse(localStorage.getItem(key));
+    if (Array.isArray(saved)) inputs.forEach((input, index) => {
+      if (typeof saved[index] !== 'string' || !saved[index].trim()) return;
+      input.value = saved[index].slice(0, 40);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  } catch (_) {}
+  inputs.forEach(input => input.addEventListener('input', () => {
+    try { localStorage.setItem(key, JSON.stringify(inputs.map(item => item.value))); } catch (_) {}
+  }));
 }
 
 function lineItems(side) {
@@ -388,6 +457,7 @@ if (engine) {
   mountGauge();
   mountDrag();
   mountMobileSearch();
+  mountTeamNames();
   mountPanel();
   loadPendingTrade();
   subscribeDealer();

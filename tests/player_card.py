@@ -24,9 +24,9 @@ async def run(b, page_name, viewport, mobile):
         check(await pg.evaluate(SHOWN), f'{tag} hovering a search result previews the card')
     await first.click(); await pg.wait_for_timeout(300)
     check(not await pg.evaluate(SHOWN), f'{tag} picking a search result closes the card (the reported bug)')
-    if mobile:  # phone search stays open for adding several players; tapping out leaves it
-        await pg.locator('.kt-search-scrim').click(); await pg.wait_for_timeout(300)
-        check(not await pg.evaluate(SHOWN), f'{tag} leaving search leaves no card behind')
+    if mobile:
+        await pg.wait_for_timeout(600)   # the phone search sheet closes itself after a pick
+        check(not await pg.evaluate(SHOWN) and not await pg.evaluate("document.body.classList.contains('is-searching')"), f'{tag} the search sheet closes after a pick and leaves no card behind')
     name = pg.locator('#listA .plink', has_text='Bijan').first
     if not await name.count(): name = pg.locator('.plink', has_text='Bijan').first
     await name.click(); await pg.wait_for_timeout(250)

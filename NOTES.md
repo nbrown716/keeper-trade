@@ -741,3 +741,34 @@ Rule reinforced: a test may not contain a week number, a record, a score or any 
 Open: the Worker still caches an AI answer that is not valid JSON. The client now repairs the common slips; a Worker-side "do not cache unparseable answers" needs a Worker deploy (owner pastes `worker.js`). War Room shows the raw Dynasty Dealer number (a Superflex market) labelled "dealer"; it is not converted to league format.
 
 - **War Room scrolled sideways on phones (also on the live site), 11/18.** Root cause: the weather badge tooltip (`::after`, 13rem wide, anchored left) was only transparent, so it still counted as page width when a badge sat at a row's right edge; it appeared the week a roster player drew a wind advisory. Fix: the tooltip takes no space until shown, is capped to the screen width, and opens leftwards in War Room rows. Safeguard: `tests/tooltip_overflow.py` adds a badge to every roster row regardless of the week's weather.
+
+## 2026-11-19 - Phone search rebuilt on the calculators; calculators open empty
+
+Owner report (iPhone): "the trade won't hold a name", search names disappear under the keyboard and are hard to scroll, the trade analyzer UI is awful; also load with no players or picks (0 / 0).
+
+### What was wrong (reproduced on the live site with real touch taps)
+| Symptom | Root cause |
+|---|---|
+| Typed name not visible ("won't hold a name") | `.is-searching .adder > input` pinned BOTH teams' search boxes to the same fixed spot; Team B's empty box sat on top of the one being typed in |
+| Names under the keyboard, could not scroll | results were pinned to `bottom: 0` with `max-height: 60dvh`; iOS does not shrink the page for the keyboard, so the list sat exactly where the keyboard is. Dismissing the keyboard blurred the box, which closed the list |
+| No sign a pick was added | after a tap the dark overlay stayed up and the box cleared |
+| Page zoomed when the box was tapped | search text was 13.5px; iOS zooms any field under 16px |
+| A screen and a half of scrolling before adding anyone | on phones the verdict card sat above both teams, under a block of static league chips |
+| Team names reset | never saved |
+
+### What changed
+- `js/ui/mobile-sheet.js` (new, shared): tracks `window.visualViewport` into `--kt-vv-top` / `--kt-kb`, scroll lock, toast, flash.
+- Keeper + Redraft (`js/features/trade-desk.js`, `css/trade-desk.css`, small edits in each page's `setupSearch`): one full-screen sheet per search, laid out top-down: title + Done, the search box, quick filters (All / QB / RB / WR / TE / Picks), then the list, which ends at the keyboard. An empty box lists the top 40. The list stays up when the keyboard is dismissed. A pick closes the sheet, scrolls to that team, highlights the new row and says "Added X to Team". Only the active box is positioned. Desktop dropdown unchanged.
+- Dynasty (`js/features/dynasty.js`, `css/dynasty.css`, `dynasty.html`): the add area becomes the same kind of sheet on phones.
+- Phones: teams first, verdict after; static league-rule chips hidden; search and value fields 16px.
+- Team names saved per calculator (`kt-team-names:v1:keeper|redraft`).
+- All three calculators open empty. Keeper and Redraft sample trades removed. Dynasty no longer restores the last trade or writes it to the address bar; a copied link still opens its trade, then the address is cleaned so a refresh starts empty.
+- Calculator math untouched (search, layout and startup only).
+
+### Safeguard
+`tests/phone_search.py` (50 checks, in the gate): real touch taps at phone size on all three calculators; the iPhone keyboard is simulated by shrinking `visualViewport` the way iOS reports it. Asserts one visible search box that holds the typing, list between the box and the keyboard, last name reachable by scrolling, 16px text, pick adds + closes + confirms, Done adds nothing, filters, names kept after reload, desk empty after reload, desktop unchanged.
+
+Limit of the test: it runs in Chromium with a simulated keyboard, not on a real iPhone (WebKit is not installed for the test runner). The layout rule (top-down, ends at the keyboard) is the part that does not depend on the browser.
+
+### Still open
+- Keeper side labels "Gives A / Gives B" versus the verdict's wording (owner decision, unchanged).

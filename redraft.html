@@ -306,10 +306,12 @@
     var input=$('[data-search="'+side+'"]'), box=$('[data-results="'+side+'"]'), hi=-1, matches=[];
     function close(){box.classList.remove("open");box.innerHTML="";hi=-1;}
     function render(q){
-      q=q.trim().toLowerCase(); if(!q){close();return;}
+      q=q.trim().toLowerCase();
+      var sheet=document.body.classList.contains("is-searching"); // phone search sheet: empty box lists the top players
+      if(!q&&!sheet){close();return;}
       var used={}; S.sides[side].forEach(function(e){used[e.ref.name]=1;});
-      matches=players.filter(function(p){return !used[p.name]&&(p.name.toLowerCase().indexOf(q)>=0||p.team.toLowerCase()===q||p.pos.toLowerCase()===q);})
-        .sort(function(a,b){return b.val-a.val;}).slice(0,9);
+      matches=players.filter(function(p){return !used[p.name]&&(!q||p.name.toLowerCase().indexOf(q)>=0||p.team.toLowerCase()===q||p.pos.toLowerCase()===q);})
+        .sort(function(a,b){return b.val-a.val;}).slice(0,sheet?40:9);
       if(!matches.length){box.innerHTML='<div class="res" style="cursor:default;color:var(--ink-faint)">No match</div>';box.classList.add("open");return;}
       box.innerHTML=matches.map(function(p,i){return '<div class="res'+(i===hi?" hi":"")+'" data-i="'+i+'">'+
         '<img alt="" src="'+esc(photo(p))+'" onerror="this.style.visibility=\'hidden\'">'+
@@ -317,11 +319,12 @@
         '<span class="vv">'+fmt(valueOf(p))+'</span></div>';}).join("");
       box.classList.add("open");
       box.querySelectorAll(".res").forEach(function(elm){var i=+elm.getAttribute("data-i");if(isNaN(i))return;
-        elm.addEventListener("mousedown",function(ev){ev.preventDefault();addAsset(side,matches[i]);input.value="";close();input.focus();});});
+        elm.addEventListener("mousedown",function(ev){ev.preventDefault();var picked=matches[i];addAsset(side,picked);input.value="";close();
+          if(document.body.classList.contains("is-searching"))window.dispatchEvent(new CustomEvent("kt:asset-picked",{detail:{side:side,name:picked.name}}));else input.focus();});});
     }
     input.addEventListener("input",function(){render(input.value);});
     input.addEventListener("focus",function(){if(input.value)render(input.value);});
-    input.addEventListener("blur",function(){setTimeout(close,150);});
+    input.addEventListener("blur",function(){if(document.body.classList.contains("is-searching"))return;setTimeout(close,150);});
     input.addEventListener("keydown",function(ev){if(!box.classList.contains("open"))return;
       if(ev.key==="ArrowDown"){ev.preventDefault();hi=Math.min(hi+1,matches.length-1);render(input.value);}
       else if(ev.key==="ArrowUp"){ev.preventDefault();hi=Math.max(hi-1,0);render(input.value);}
@@ -352,11 +355,7 @@
   renderSide("A"); renderSide("B"); renderVerdict();
   loadValues();
 
-  // seed example
-  var seedTimer=setInterval(function(){ if(!players.length)return; clearInterval(seedTimer);
-    var a=byName["ja'marr chase"]||players[2], b1=byName["breece hall"], b2=byName["drake london"];
-    if(a)addAsset("A",a); if(b1)addAsset("B",b1); if(b2)addAsset("B",b2);
-  },120);
+  // The desk opens empty (0 / 0): no sample trade (owner, 11/19).
 })();
 </script>
 <script type="module" src="js/features/trade-desk.js"></script>

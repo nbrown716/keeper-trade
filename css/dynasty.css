@@ -131,3 +131,16 @@
 }
 @media (max-width: 26rem) { .dy-picker-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .dy-meter span { transition: none; } .dy-status.is-loading .dy-dot { animation: none; } }
+
+/* Phone search sheet (js/ui/mobile-sheet.js): the add area fills the screen top-down and ends at the keyboard. */
+.dy-sheet-bar { display: none; }
+.dy-side { scroll-margin-top: 5.25rem; } /* clear the sticky site header when scrolled to */
+.dy-add.is-sheet { position: fixed; z-index: 1400; top: var(--kt-vv-top, 0px); right: 0; bottom: var(--kt-kb, 0px); left: 0; display: flex; flex-direction: column; gap: var(--kt-space-2); margin: 0; padding: calc(env(safe-area-inset-top, 0px) + var(--kt-space-2)) var(--kt-space-3) 0; border: 0; background: var(--kt-bg); }
+.dy-add.is-sheet .dy-sheet-bar { display: flex; min-height: 3rem; flex: none; align-items: center; justify-content: space-between; gap: var(--kt-space-3); }
+.dy-sheet-bar strong { min-width: 0; overflow: hidden; font-family: var(--kt-font-display); font-size: 1.4rem; font-weight: 800; letter-spacing: 0.02em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.dy-sheet-bar .kt-btn { flex: none; min-width: 4.5rem; min-height: var(--kt-tap); }
+.dy-add.is-sheet .dy-add-row, .dy-add.is-sheet .dy-pos { flex: none; }
+.dy-add.is-sheet .dy-picker { flex: none; max-height: 42%; overflow-y: auto; }
+.dy-add.is-sheet .dy-browse { flex: 1 1 auto; min-height: 0; max-height: none; padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-overflow-scrolling: touch; }
+.dy-add.is-sheet .dy-row { min-height: 3.5rem; }
+.dy-add.is-sheet .dy-row-main b { font-size: 1rem; }

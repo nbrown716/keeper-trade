@@ -74,7 +74,22 @@
 .kt-trade-panel-head h2 { margin: 0; font-family: var(--kt-font-display); font-size: 2.25rem; text-transform: uppercase; }
 .kt-share-preview { display: block; width: 100%; border: 1px solid var(--kt-border); border-radius: var(--kt-radius-md); }
 .kt-share-actions { display: flex; flex-wrap: wrap; gap: var(--kt-space-2); margin-top: var(--kt-space-4); }
-.kt-search-scrim { position: fixed; z-index: 1400; inset: 0; background: rgb(3 6 12 / 75%); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+/* Phone search sheet (js/ui/mobile-sheet.js). Laid out from the top down; the list ends where the keyboard starts. */
+.kt-search-sheet { position: fixed; z-index: 1400; inset: 0; background: var(--kt-bg); }
+.kt-search-sheet[hidden] { display: none; }
+.kt-search-sheet-bar { position: absolute; top: calc(var(--kt-vv-top, 0px) + env(safe-area-inset-top, 0px)); right: 0; left: 0; display: flex; height: 3.25rem; align-items: center; justify-content: space-between; gap: var(--kt-space-3); padding: 0 var(--kt-space-3); }
+.kt-search-sheet-title { min-width: 0; overflow: hidden; color: var(--kt-text-primary); font-family: var(--kt-font-display); font-size: 1.4rem; font-weight: 800; letter-spacing: 0.02em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.kt-search-done { flex: none; min-width: 4.5rem; min-height: var(--kt-tap); }
+.kt-search-filters { position: absolute; top: calc(var(--kt-vv-top, 0px) + env(safe-area-inset-top, 0px) + 6.5rem); right: 0; left: 0; display: flex; gap: var(--kt-space-1); padding: 0 var(--kt-space-3); overflow-x: auto; scrollbar-width: none; }
+.kt-search-filters::-webkit-scrollbar { display: none; }
+.kt-search-filters .kt-chip { flex: none; min-width: var(--kt-tap); min-height: var(--kt-tap); justify-content: center; }
+.trade-desk-body.is-searching .kt-search-results-active .res-fp { display: none; } /* a profile link beside the value is a mis-tap on a phone */
+.trade-desk-body.is-searching .adder > input.kt-search-active { position: fixed; z-index: 1502; top: calc(var(--kt-vv-top, 0px) + env(safe-area-inset-top, 0px) + 3.25rem); right: var(--kt-space-3); left: var(--kt-space-3); width: auto; height: 3rem; font-size: 1rem; }
+.trade-desk-body.is-searching .results.kt-search-results-active { position: fixed; z-index: 1501; top: calc(var(--kt-vv-top, 0px) + env(safe-area-inset-top, 0px) + 9.75rem); right: 0; bottom: var(--kt-kb, 0px); left: 0; display: block; max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom, 0px); border: 0; border-top: 1px solid var(--kt-border-subtle); border-radius: 0; background: var(--kt-bg); box-shadow: none; }
+.trade-desk-body.is-searching .kt-search-results-active .res { min-height: 3.5rem; padding: 0.5rem var(--kt-space-4); font-size: 1rem; }
+.trade-desk-body.is-searching .kt-search-results-active .res b, .trade-desk-body.is-searching .kt-search-results-active .res .nm { font-size: 1rem; }
+.trade-desk-body.is-searching .kt-search-results-active .res .rv, .trade-desk-body.is-searching .kt-search-results-active .res .vv { margin-left: auto; font-size: 1rem; }
+.trade-desk-body.is-searching .kt-search-results-active .empty-note { padding: var(--kt-space-4); font-size: var(--kt-text-sm); }
 
 @keyframes kt-stamp { 0% { opacity: 0; transform: scale(1.35) rotate(-6deg); } 60% { opacity: 1; transform: scale(0.96) rotate(2deg); } 100% { transform: scale(1) rotate(0); } }
 
@@ -94,13 +109,18 @@
   .trade-desk-actions > * { flex: none; }
   .trade-desk-actions #dealer-status { font-size: 0.625rem; }
   .trade-desk-body .desk { grid-template-columns: 1fr; }
-  .trade-desk-body .verdict { grid-column: 1; }
+  /* Phones: build the trade first, read the verdict after it (it used to sit above both teams, a screen and a half
+     of scrolling before you could add anyone). */
+  .trade-desk-body .verdict { grid-column: 1; grid-row: auto; order: 5; }
+  /* Static league-rule chips give way to the calculator; the scoring chip and the live-values chip stay. */
+  .trade-desk-body .league > .chip:not(#fmtChip):not(#valStatus) { display: none; }
+  /* iOS zooms the whole page into any field with text under 16px. */
+  .trade-desk-body .adder input, .trade-desk-body .ctl input { font-size: 1rem; }
+  .trade-desk-body .team, .trade-desk-body .verdict { scroll-margin-top: 5.25rem; } /* clear the sticky site header when scrolled to */
   .trade-desk-body .seg button, .trade-desk-body .reset, .trade-desk-body .x, .trade-desk-body .ctl input { min-height: var(--kt-tap); }
   .trade-desk-body .seg button, .trade-desk-body .x, .trade-desk-body .tglbtn { min-width: var(--kt-tap); }
   .trade-desk-body .tglbtn { width: var(--kt-tap); height: var(--kt-tap); }
   .trade-desk-body .site-nav a { min-height: var(--kt-tap); }
-  .trade-desk-body.is-searching .adder > input { position: fixed; z-index: 1502; right: var(--kt-space-3); bottom: 60dvh; left: var(--kt-space-3); width: auto; }
-  .trade-desk-body.is-searching .results.open { position: fixed; top: auto; right: 0; bottom: 0; left: 0; max-height: 60dvh; border-radius: var(--kt-radius-xl) var(--kt-radius-xl) 0 0; }
   .kt-trade-panel { inset: auto 0 0; width: 100%; max-height: 86dvh; border: 1px solid var(--kt-border); border-bottom: 0; border-radius: var(--kt-radius-xl) var(--kt-radius-xl) 0 0; }
 }
 
